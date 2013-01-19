@@ -28,6 +28,7 @@ public class FilePointer {
 		atEndOfFile = false;
 	}
 	
+	// Load buffer will be called on a line by line basis.
 	public void loadBuffer() {
 		bufferLoaded = false;
 		
@@ -64,6 +65,7 @@ public class FilePointer {
 		}
 	}
 	
+	// No idea what this does.  Too heavy
 	public boolean endOfFile() {
 		return atEndOfFile;
 	}
@@ -80,11 +82,12 @@ public class FilePointer {
 		
 		bufferColumn++;
 		peekColumn = bufferColumn;
-		
 		if (bufferColumn >= buffer.length) {
+			// end of current line, buffer next line
 			fileLine++;
 			loadBuffer();
 		}
+		
 		return retChar;
 	}
 	
@@ -108,4 +111,15 @@ public class FilePointer {
 		bufferColumn = Math.max(bufferColumn, 0);
 		peekColumn = bufferColumn;
 	}
+	
+	// Returns current Line in File
+	public int getLineNumber() {
+		return fileLine;
+	}
+	
+	// Returns current column of current line in File
+	public int getColumnNumber() {
+		return bufferColumn;
+	}
+
 }

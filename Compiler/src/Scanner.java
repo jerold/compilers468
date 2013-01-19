@@ -2,16 +2,23 @@
 public class Scanner {
 	static FilePointer fp;
 	
-	public static void main(String[] args) {
-		
-		// An example of how to use the FilePointer
+	public Scanner() {
+		// We don't do anything here
+	}
+	
+	public void openFile(String fileIn) {
 		fp = new FilePointer("src/testFile.txt");
+	}
+	
+	public void test() {
+		// An example of how to use the FilePointer
 		char newChar = fp.getNext();
 		System.out.print(newChar);
 		
 		// peekNext should be used by the dispatcher
 		newChar = fp.peekNext();
 		System.out.print("[" + newChar + "]");
+		
 		newChar = fp.peekNext();
 		System.out.print("[" + newChar + "]");
 				
@@ -29,17 +36,12 @@ public class Scanner {
 		System.out.println("");
 	}
 	
-	public Token getNextToken() {
-		skipWhiteSpace();
-		char x = examine();
-		Tokenizer T = dispatch(x);
-		T.Scan();
-		return new Token();
-	}
-	
-	private Tokenizer dispatch(char x) {
-		Tokenizer T = new TokenizerNumeric(); // Gives error if not initially set
-		switch(x) {
+	// Driver which skips white space and then kicks off the right lexeme parser
+	// a Token is the constructed from the lexeme and returned to the driver
+	public Token getToken() {
+		// skip white space
+		char nextChar = fp.peekNext();
+		switch(nextChar) {
 			case '(':
 				// TODO: (
 				break;
@@ -116,25 +118,22 @@ public class Scanner {
 			case '7':
 			case '8':
 			case '9':
-				T = new TokenizerNumeric();
+				// TODO: numbers
 				break;
-//			case EOF:
-//				// TODO: EOF
-//				break;
 			default:
 				// TODO: other stuff
 				break;
 		}
-		return T;
+		// build token from returned lexeme
+		// return Token
+		return null;
 	}
 	
-	private void skipWhiteSpace() {
-		// TODO: skip whitespace
+	public int getLineNumber() {
+		return fp.getLineNumber();
 	}
 	
-	private char examine() {
-		// TODO: return char at file pointer but do not move file pointer
-		return 'x';
+	public int getColumnNumber() {
+		return fp.getColumnNumber();
 	}
-	
 }
