@@ -16,7 +16,8 @@ public class Driver {
 		// print out all the tokens while there are tokens to fetch
 		while (!scanner.endOfFile()) {
 			Token t = scanner.getToken();
-			t.describe();
+			if (t != null)
+				t.describe();
 		}
 		
 		System.exit(0);

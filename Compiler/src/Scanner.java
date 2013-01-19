@@ -41,7 +41,12 @@ public class Scanner {
 	public Token getToken() {
 		// skip white space
 		char nextChar = fp.peekNext();
-		String lexeme = "";
+		while (nextChar == '\u0000') {
+			fp.getNext();
+			nextChar = fp.peekNext();
+		}
+		
+		String lexeme;
 		switch(nextChar) {
 			case '(':
 				lexeme = fetchLexemeOpenParen();
@@ -125,27 +130,34 @@ public class Scanner {
 				// TODO: other stuff
 				break;
 		}
+		fp.getNext();
 		// build token from returned lexeme
 		// return Token
 		return null;
 	}
 	
 	public String fetchLexemeOpenParen() {
+		System.out.println("fetchLexemeOpenParen");
 		return null;
 	}
 	public String fetchLexemeCloseParen() {
+		System.out.println("fetchLexemeCloseParen");
 		return null;
 	}
 	public String fetchLexemeSemiColon() {
+		System.out.println("fetchLexemeSemiColon");
 		return null;
 	}
 	public String fetchLexemeColonOrAssignment() {
+		System.out.println("fetchLexemeColonOrAssignment");
 		return null;
 	}
 	public String fetchLexemeIdentifier() {
+		System.out.println("fetchLexemeIdentifier");
 		return null;
 	}
 	public String fetchLexemeInteger() {
+		System.out.println("fetchLexemeInteger");
 		return null;
 	}	
 	

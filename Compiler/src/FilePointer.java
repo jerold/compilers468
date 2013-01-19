@@ -32,7 +32,7 @@ public class FilePointer {
 	public void loadBuffer() {
 		bufferLoaded = false;
 		
-		// System.out.println("\nLoading Buffer: Line[" + fileLine + "] of file[" + fileName + "]");
+		System.out.println("\nLoading Buffer: Line[" + fileLine + "] of file[" + fileName + "]");
 		try {
 			String line = null;
 			int currentLineNo = 0;
@@ -97,6 +97,8 @@ public class FilePointer {
 	// terminate on.  It should never come to this because all tokenizers should see the
 	// NewLine character as a non-valid token component... just saying. :P
 	public char peekNext() {
+		if (!bufferLoaded)
+			loadBuffer();
 		if (peekColumn >= buffer.length) {
 			return '\u0000';
 		}
