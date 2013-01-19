@@ -41,18 +41,19 @@ public class Scanner {
 	public Token getToken() {
 		// skip white space
 		char nextChar = fp.peekNext();
+		String lexeme = "";
 		switch(nextChar) {
 			case '(':
-				// TODO: (
+				lexeme = fetchLexemeOpenParen();
 				break;
 			case ')':
-				// TODO: )
+				lexeme = fetchLexemeCloseParen();
 				break;
 			case ';':
-				// TODO: ;
+				lexeme = fetchLexemeSemiColon();
 				break;
 			case ':':
-				// TODO: :
+				lexeme = fetchLexemeColonOrAssignment();
 				break;
 			case 'a':
 			case 'b':
@@ -106,7 +107,7 @@ public class Scanner {
 			case 'X':
 			case 'Y':
 			case 'Z':
-				// TODO: vars
+				lexeme = fetchLexemeIdentifier();
 				break;
 			case '0':
 			case '1':
@@ -118,7 +119,7 @@ public class Scanner {
 			case '7':
 			case '8':
 			case '9':
-				// TODO: numbers
+				lexeme = fetchLexemeInteger();
 				break;
 			default:
 				// TODO: other stuff
@@ -129,11 +130,34 @@ public class Scanner {
 		return null;
 	}
 	
+	public String fetchLexemeOpenParen() {
+		return null;
+	}
+	public String fetchLexemeCloseParen() {
+		return null;
+	}
+	public String fetchLexemeSemiColon() {
+		return null;
+	}
+	public String fetchLexemeColonOrAssignment() {
+		return null;
+	}
+	public String fetchLexemeIdentifier() {
+		return null;
+	}
+	public String fetchLexemeInteger() {
+		return null;
+	}	
+	
 	public int getLineNumber() {
 		return fp.getLineNumber();
 	}
 	
 	public int getColumnNumber() {
 		return fp.getColumnNumber();
+	}
+	
+	public boolean endOfFile() {
+		return fp.endOfFile();
 	}
 }
