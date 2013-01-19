@@ -16,7 +16,7 @@ public class Token {
 	}
 	
 	public void describe() {
-		System.out.println(identifier + "  " + lineNum + "  " + colNum + "  " + lexeme);
+		System.out.println("[" + identifier + "] [" + lineNum + "] [" + colNum + "] [" + lexeme + "]");
 	}
 	
 	public String getIdentifier() {
