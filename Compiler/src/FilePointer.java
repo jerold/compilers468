@@ -31,7 +31,7 @@ public class FilePointer {
 	public void loadBuffer() {
 		bufferLoaded = false;
 		
-		System.out.println("\nLoading Buffer: Line[" + fileLine + "] of file[" + fileName + "]");
+		// System.out.println("\nLoading Buffer: Line[" + fileLine + "] of file[" + fileName + "]");
 		try {
 			String line = null;
 			int currentLineNo = 0;
@@ -73,30 +73,31 @@ public class FilePointer {
 	public char getNext() {
 		if (!bufferLoaded)
 			loadBuffer();
+		if (atEndOfFile)
+			return '\u0000';
+		
+		char retChar = buffer[bufferColumn];
+		
+		bufferColumn++;
+		peekColumn = bufferColumn;
 		
 		if (bufferColumn >= buffer.length) {
 			fileLine++;
 			loadBuffer();
 		}
-		
-		if (atEndOfFile)
-			return '\u0000';
-		
-		peekColumn++;
-		return buffer[bufferColumn++];
+		return retChar;
 	}
 	
 	// Liberty taken in this method is that we will never need to peek on a new line
 	// This is based on the assumption that tokens will not be split between lines
-	// if we peek past the end of the line we return a newline which all tokens should
+	// if we peek past the end of the line we return '\u0000' which all tokens should
 	// terminate on.  It should never come to this because all tokenizers should see the
 	// NewLine character as a non-valid token component... just saying. :P
 	public char peekNext() {
-		peekColumn++;
 		if (peekColumn >= buffer.length) {
-			return '\n';
+			return '\u0000';
 		}
-		return buffer[peekColumn];
+		return buffer[peekColumn++];
 	}
 	
 	// Only reason to use backUp is if we've gone to far trying to fetch a greedy token
@@ -104,6 +105,7 @@ public class FilePointer {
 	// to go back to a previous line because of the tokens don't extend to different lines thing
 	public void backUp(int distance) {
 		bufferColumn-=distance;
-		peekColumn-=distance;
+		bufferColumn = Math.max(bufferColumn, 0);
+		peekColumn = bufferColumn;
 	}
 }

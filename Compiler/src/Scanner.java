@@ -7,13 +7,26 @@ public class Scanner {
 		// An example of how to use the FilePointer
 		fp = new FilePointer("src/testFile.txt");
 		char newChar = fp.getNext();
+		System.out.print(newChar);
+		
+		// peekNext should be used by the dispatcher
+		newChar = fp.peekNext();
+		System.out.print("[" + newChar + "]");
+		newChar = fp.peekNext();
+		System.out.print("[" + newChar + "]");
+				
+		// getNext should be used by the tokenizers
+		newChar = fp.getNext();
+		System.out.println(newChar);
+		
+		// Backup will only back up as far as the 0'th char within the current line
+		fp.backUp(2);
+		
 		while (!fp.endOfFile()) {
-			System.out.print(newChar);
 			newChar = fp.getNext();
+			System.out.print(newChar);
 		}
 		System.out.println("");
-		
-		System.out.println("Hello World!");
 	}
 	
 	public Token getNextToken() {
