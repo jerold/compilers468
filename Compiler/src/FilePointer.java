@@ -23,7 +23,7 @@ public class FilePointer {
 		
 		fileLine = 0;
 		bufferColumn = 0;
-		peekColumn = 0;
+		setPeekToBufferColumn();
 		bufferLoaded = false;
 		atEndOfFile = false;
 	}
@@ -55,7 +55,7 @@ public class FilePointer {
 			} else {
 				buffer = line.toCharArray();
 				bufferColumn = 0;
-				peekColumn = 0;
+				setPeekToBufferColumn();
 				bufferLoaded = true;
 			}
 		} catch (IOException ex) {
@@ -81,7 +81,7 @@ public class FilePointer {
 		char retChar = buffer[bufferColumn];
 		
 		bufferColumn++;
-		peekColumn = bufferColumn;
+		setPeekToBufferColumn();
 		if (bufferColumn >= buffer.length) {
 			// end of current line, buffer next line
 			fileLine++;
@@ -105,13 +105,17 @@ public class FilePointer {
 		return buffer[peekColumn++];
 	}
 	
+	public void setPeekToBufferColumn() {
+		peekColumn = bufferColumn;
+	}
+	
 	// Only reason to use backUp is if we've gone to far trying to fetch a greedy token
 	// (smaller token already found, but we're going for paydirt).  Assume we'll never need
 	// to go back to a previous line because of the tokens don't extend to different lines thing
 	public void backUp(int distance) {
 		bufferColumn-=distance;
 		bufferColumn = Math.max(bufferColumn, 0);
-		peekColumn = bufferColumn;
+		setPeekToBufferColumn();
 	}
 	
 	// Returns current Line in File
@@ -123,5 +127,4 @@ public class FilePointer {
 	public int getColumnNumber() {
 		return bufferColumn;
 	}
-
 }

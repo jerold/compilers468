@@ -46,7 +46,7 @@ public class Scanner {
 			nextChar = fp.peekNext();
 		}
 		
-		String lexeme;
+		String lexeme = null;
 		switch(nextChar) {
 			case '(':
 				lexeme = fetchLexemeOpenParen();
@@ -130,10 +130,27 @@ public class Scanner {
 				// TODO: other stuff
 				break;
 		}
-		fp.getNext();
+		
+		// clear whitespace after token (covers us in the event a
+		// file ends with white space the driver is made awair of
+		// EOF sooner
+		nextChar = fp.peekNext();
+		while (nextChar == '\u0000' && !fp.endOfFile()) {
+			fp.getNext();
+			nextChar = fp.peekNext();
+		}
+		fp.setPeekToBufferColumn();
+		
+		
+		Token t = null;
+		if (lexeme != null)
+			t = new Token("Token ", getLineNumber(), (getColumnNumber() - lexeme.length()), lexeme);
+		
 		// build token from returned lexeme
 		// return Token
-		return null;
+		
+		fp.getNext(); // This is not needed once the fetchLexeme methods start advancing columnNumber in fp
+		return t;
 	}
 	
 	public String fetchLexemeOpenParen() {
@@ -154,6 +171,7 @@ public class Scanner {
 	}
 	public String fetchLexemeIdentifier() {
 		System.out.println("fetchLexemeIdentifier");
+		
 		return null;
 	}
 	public String fetchLexemeInteger() {
