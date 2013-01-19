@@ -167,9 +167,13 @@ public class Scanner {
 		return lex;
 	}
 	public String fetchLexemeSemiColon() {
-		System.out.println("fetchLexemeSemiColon");
-		fp.getNext();
-		return null;
+		String lex = new String();
+		char newChar = fp.getNext();
+		if (newChar == ';') {
+			lex = lex + newChar;
+		}
+		System.out.print("fetchLexemeSemiColon  :");
+		return lex;
 	}
 	public String fetchLexemeColonOrAssignment() {
 		System.out.println("fetchLexemeColonOrAssignment");
@@ -256,9 +260,31 @@ public class Scanner {
 		return lex;
 	}
 	public String fetchLexemeInteger() {
-		System.out.println("fetchLexemeInteger");
-		fp.getNext();
-		return null;
+		String lex = new String();
+		boolean sameToken = true;
+		while (sameToken) {
+			char newChar = fp.getNext();
+			switch(newChar) {
+				case '0':
+				case '1':
+				case '2':
+				case '3':
+				case '4':
+				case '5':
+				case '6':
+				case '7':
+				case '8':
+				case '9':
+					lex = lex + newChar;
+					break;
+				default:
+					fp.backUp(1);
+					sameToken = false;
+					break;
+			}
+		}
+		System.out.print("fetchLexemeInteger:  ");
+		return lex;
 	}	
 	
 	public boolean endOfFile() {
