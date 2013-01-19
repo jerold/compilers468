@@ -40,15 +40,13 @@ public class Scanner {
 	// a Token is the constructed from the lexeme and returned to the driver
 	public Token getToken() {
 		// skip white space
-		char nextChar = fp.peekNext();
-		while (nextChar == '\u0000') {
-			fp.getNext();
-			nextChar = fp.peekNext();
-		}
+		fp.skipWhiteSpace();
 		
+		char nextChar = fp.peekNext();
 		String lexeme = null;
 		int lineNumber = fp.getLineNumber();
 		int columnNumber = fp.getColumnNumber();
+		// System.out.println("Next Char [" + nextChar + "]");
 		switch(nextChar) {
 			case '(':
 				lexeme = fetchLexemeOpenParen();
@@ -129,6 +127,7 @@ public class Scanner {
 				lexeme = fetchLexemeInteger();
 				break;
 			default:
+				fp.getNext();
 				// TODO: other stuff
 				break;
 		}
@@ -136,12 +135,7 @@ public class Scanner {
 		// clear whitespace after token (covers us in the event a
 		// file ends with white space the driver is made awair of
 		// EOF sooner
-		nextChar = fp.peekNext();
-		while (nextChar == '\u0000' && !fp.endOfFile()) {
-			fp.getNext();
-			nextChar = fp.peekNext();
-		}
-		fp.setPeekToBufferColumn();
+		fp.skipWhiteSpace();
 		
 		
 		Token t = null;
@@ -151,24 +145,35 @@ public class Scanner {
 		// build token from returned lexeme
 		// return Token
 		
-		fp.getNext(); // This is not needed once the fetchLexeme methods start advancing columnNumber in fp
 		return t;
 	}
 	
 	public String fetchLexemeOpenParen() {
-		System.out.println("fetchLexemeOpenParen");
-		return null;
+		String lex = new String();
+		char newChar = fp.getNext();
+		if (newChar == '(') {
+			lex = lex + newChar;
+		}
+		System.out.print("fetchLexemeOpenParen  :");
+		return lex;
 	}
 	public String fetchLexemeCloseParen() {
-		System.out.println("fetchLexemeCloseParen");
-		return null;
+		String lex = new String();
+		char newChar = fp.getNext();
+		if (newChar == ')') {
+			lex = lex + newChar;
+		}
+		System.out.print("fetchLexemeCloseParen  :");
+		return lex;
 	}
 	public String fetchLexemeSemiColon() {
 		System.out.println("fetchLexemeSemiColon");
+		fp.getNext();
 		return null;
 	}
 	public String fetchLexemeColonOrAssignment() {
 		System.out.println("fetchLexemeColonOrAssignment");
+		fp.getNext();
 		return null;
 	}
 	public String fetchLexemeIdentifier() {
@@ -247,12 +252,12 @@ public class Scanner {
 					break;
 			}
 		}
-		System.out.print("fetchLexemeIdentifier :");
-		
+		System.out.print("fetchLexemeIdentifier:  ");
 		return lex;
 	}
 	public String fetchLexemeInteger() {
 		System.out.println("fetchLexemeInteger");
+		fp.getNext();
 		return null;
 	}	
 	

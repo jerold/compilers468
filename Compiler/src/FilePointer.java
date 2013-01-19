@@ -32,7 +32,7 @@ public class FilePointer {
 	public void loadBuffer() {
 		bufferLoaded = false;
 		
-		System.out.println("\nLoading Buffer: Line[" + fileLine + "] of file[" + fileName + "]");
+		// System.out.println("\nLoading Buffer: Line[" + fileLine + "] of file[" + fileName + "]");
 		try {
 			String line = null;
 			int currentLineNo = 0;
@@ -116,6 +116,21 @@ public class FilePointer {
 		bufferColumn-=distance;
 		bufferColumn = Math.max(bufferColumn, 0);
 		setPeekToBufferColumn();
+	}
+	
+	public void skipWhiteSpace() {
+		if (endOfFile())
+			return;
+		char nextChar = peekNext();
+		if (nextChar ==  '\u0000' || nextChar ==  ' ' || nextChar ==  '\n' || nextChar ==  '\t') {
+			getNext();
+			skipWhiteSpace();
+		} 
+		// setPeekToBufferColumn();
+		// nextChar = peekNext();
+		// System.out.println("w["+ nextChar + "]");
+		setPeekToBufferColumn();
+		return;
 	}
 	
 	// Returns current Line in File
