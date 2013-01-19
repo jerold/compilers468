@@ -1,9 +1,18 @@
 
 public class Scanner {
-	
-	private FilePointer fp;
+	static FilePointer fp;
 	
 	public static void main(String[] args) {
+		
+		// An example of how to use the FilePointer
+		fp = new FilePointer("src/testFile.txt");
+		char newChar = fp.getNext();
+		while (!fp.endOfFile()) {
+			System.out.print(newChar);
+			newChar = fp.getNext();
+		}
+		System.out.println("");
+		
 		System.out.println("Hello World!");
 	}
 	

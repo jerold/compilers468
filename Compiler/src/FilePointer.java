@@ -5,7 +5,6 @@
  * @author Jerold
  *
  */
-import java.util.*;
 import java.io.*;
 
 public class FilePointer {
@@ -14,20 +13,25 @@ public class FilePointer {
 	static int bufferColumn;
 	static int peekColumn;
 	static boolean bufferLoaded;
+	static boolean atEndOfFile;
 	
 	public static BufferedReader reader;
 	public char[] buffer;
 	
-	public static void FilePointer(String fileIn) {
+	public FilePointer(String fileIn) {
 		fileName = fileIn;
 		
 		fileLine = 0;
 		bufferColumn = 0;
 		peekColumn = 0;
 		bufferLoaded = false;
+		atEndOfFile = false;
 	}
 	
 	public void loadBuffer() {
+		bufferLoaded = false;
+		
+		System.out.println("\nLoading Buffer: Line[" + fileLine + "] of file[" + fileName + "]");
 		try {
 			String line = null;
 			int currentLineNo = 0;
@@ -41,13 +45,18 @@ public class FilePointer {
 				}
 				currentLineNo++;
 			}
-			
+
 			// Read in Current line and populate buffer
 			line = reader.readLine();
-			buffer = line.toCharArray();
-			bufferColumn = 0;
-			peekColumn = 0;
-			bufferLoaded = true;
+			
+			if (line == null) {
+				atEndOfFile = true;
+			} else {
+				buffer = line.toCharArray();
+				bufferColumn = 0;
+				peekColumn = 0;
+				bufferLoaded = true;
+			}
 		} catch (IOException ex) {
 			System.out.println("Problem reading file.\n" + ex.getMessage());
 		} finally {
@@ -55,18 +64,26 @@ public class FilePointer {
 		}
 	}
 	
+	public boolean endOfFile() {
+		return atEndOfFile;
+	}
+	
 	// getNext will grab the next character in the file, if we are at the end of the line
 	// this method will take us to the next line and fetch us the 1st character from there
 	public char getNext() {
 		if (!bufferLoaded)
 			loadBuffer();
-		bufferColumn++;
-		peekColumn++;
+		
 		if (bufferColumn >= buffer.length) {
 			fileLine++;
 			loadBuffer();
 		}
-		return buffer[bufferColumn];
+		
+		if (atEndOfFile)
+			return '\u0000';
+		
+		peekColumn++;
+		return buffer[bufferColumn++];
 	}
 	
 	// Liberty taken in this method is that we will never need to peek on a new line
