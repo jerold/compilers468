@@ -10,7 +10,7 @@ public class Driver {
 			// System.out.print("Please enter a filename to be compiled");
 			scanner.openFile("src/testFile.txt"); // Eventually use input instead of this hard value
 		} else {
-			scanner.openFile((String) args[0]);
+			scanner.openFile(args[0]);
 		}
 		
 		// print out all the tokens while there are tokens to fetch
