@@ -60,7 +60,6 @@ public class Scanner {
 				break;
 			case '+':
 				lexeme = fetchLexemePlusOperator();
-				
 				if (lexeme.length()==1){
 					id = "mp_plus";
 				} else {
