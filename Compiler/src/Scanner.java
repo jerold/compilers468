@@ -168,7 +168,7 @@ public class Scanner {
 				}
 				break;
 			default:
-				// System.out.print("DEFAULT");
+				// This is very strange...
 				fp.getNext();
 				break;
 		}
@@ -182,9 +182,9 @@ public class Scanner {
 		Token t = null;
 		if (lexeme != null && lexeme.length() > 0)
 			t = new Token(id, lineNumber, columnNumber, lexeme);
-
 		return t;
 	}
+	// Mystery Method
 	public boolean endOfFile() {
 		return fp.endOfFile();
 	}
@@ -192,27 +192,6 @@ public class Scanner {
 	public String fetchLexemeSymbol() {
 		String lex = "" + fp.getNext();
 		// System.out.print("fetchLexemeSymbol    :  ");
-		return lex;
-	}
-//	// I like this idea but the doubleSymbol() would match many combinations
-//	// that aren't valid ")>" ".:" ...
-//	private boolean doubleSymbol(char c){
-//		if(c == '>' || c == '<' || c == ':'){
-//			char nextChar = fp.peekNext();
-//			if (nextChar ==  '=' || nextChar ==  '>'){
-//				return true;
-//			}
-//		}
-//		return false;
-//	}
-	public String fetchLexemeOpenParen() {
-		String lex = "" + fp.getNext();
-		// System.out.print("fetchLexemeOpenParen:  ");
-		return lex;
-	}
-	public String fetchLexemeCloseParen() {
-		String lex = "" + fp.getNext();
-		// System.out.print("fetchLexemeCloseParen:  ");
 		return lex;
 	}
 	public String fetchLexemeOpenCarrot() {
@@ -242,11 +221,6 @@ public class Scanner {
 		// System.out.print("fetchLexemeCloseCarrot:  ");
 		return lex;
 	}
-	public String fetchLexemeSemiColon() {
-		String lex = "" + fp.getNext();
-		// System.out.print("fetchLexemeSemiColon:  ");
-		return lex;
-	}
 	public String fetchLexemeColon() {
 		String lex = "" + fp.getNext();
 		char newChar = fp.peekNext();
@@ -264,76 +238,12 @@ public class Scanner {
 		boolean sameToken = true;
 		while (sameToken) {
 			char newChar = fp.peekNext();
-			switch(newChar) {
-				case 'a':
-				case 'b':
-				case 'c':
-				case 'd':
-				case 'e':
-				case 'f':
-				case 'g':
-				case 'h':
-				case 'i':
-				case 'j':
-				case 'k':
-				case 'l':
-				case 'm':
-				case 'n':
-				case 'o':
-				case 'p':
-				case 'q':
-				case 'r':
-				case 's':
-				case 't':
-				case 'u':
-				case 'v':
-				case 'w':
-				case 'x':
-				case 'y':
-				case 'z':
-				case 'A':
-				case 'B':
-				case 'C':
-				case 'D':
-				case 'E':
-				case 'F':
-				case 'G':
-				case 'H':
-				case 'I':
-				case 'J':
-				case 'K':
-				case 'L':
-				case 'M':
-				case 'N':
-				case 'O':
-				case 'P':
-				case 'Q':
-				case 'R':
-				case 'S':
-				case 'T':
-				case 'U':
-				case 'V':
-				case 'W':
-				case 'X':
-				case 'Y':
-				case 'Z':
-				case '0':
-				case '1':
-				case '2':
-				case '3':
-				case '4':
-				case '5':
-				case '6':
-				case '7':
-				case '8':
-				case '9':
-					newChar = fp.getNext();
-					lex = lex + newChar;
-					break;
-				default:
-					fp.setPeekToBufferColumn();
-					sameToken = false;
-					break;
+			if ("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".contains("" + newChar)) {
+				newChar = fp.getNext();
+				lex = lex + newChar;
+			} else {
+				fp.setPeekToBufferColumn();
+				sameToken = false;
 			}
 		}
 		// System.out.print("fetchLexemeIdentifier:  ");
@@ -345,40 +255,26 @@ public class Scanner {
 		boolean decimalPointUsed = false;
 		while (sameToken) {
 			char newChar = fp.peekNext();
-			// System.out.println("# [" + newChar + "]");
-			switch(newChar) {
-				case '0':
-				case '1':
-				case '2':
-				case '3':
-				case '4':
-				case '5':
-				case '6':
-				case '7':
-				case '8':
-				case '9':
-				case '.':
-					if (newChar == '.') {
-						if (decimalPointUsed) {
-							fp.setPeekToBufferColumn();
-							sameToken = false;
-						} else {
-							newChar = fp.getNext();
-							lex = lex + newChar;
-							decimalPointUsed = true;
-						}
+			if ("0123456789.".contains("" + newChar)) {
+				if (newChar == '.') {
+					if (decimalPointUsed) {
+						fp.setPeekToBufferColumn();
+						sameToken = false;
 					} else {
 						newChar = fp.getNext();
 						lex = lex + newChar;
+						decimalPointUsed = true;
 					}
-					break;
-				default:
-					if (newChar == 'E' || newChar == 'e') {
-						lex = fetchLexemeFloatLit(lex);
-					}
-					fp.setPeekToBufferColumn();
-					sameToken = false;
-					break;
+				} else {
+					newChar = fp.getNext();
+					lex = lex + newChar;
+				}
+			} else {
+				if (newChar == 'E' || newChar == 'e') {
+					lex = fetchLexemeFloatLit(lex);
+				}
+				fp.setPeekToBufferColumn();
+				sameToken = false;
 			}
 		}
 		// System.out.print("fetchLexemeInteger:  ");
@@ -404,23 +300,12 @@ public class Scanner {
 			boolean sameToken = true;
 			while (sameToken) {
 				newChar = fp.peekNext();
-				switch(newChar) {
-					case '0':
-					case '1':
-					case '2':
-					case '3':
-					case '4':
-					case '5':
-					case '6':
-					case '7':
-					case '8':
-					case '9':
-						newChar = fp.getNext();
-						lex = lex + newChar;
-						break;
-					default:
-						fp.setPeekToBufferColumn();
-						sameToken = false;
+				if ("0123456789".contains("" + newChar)) {
+					newChar = fp.getNext();
+					lex = lex + newChar;
+				} else {
+					fp.setPeekToBufferColumn();
+					sameToken = false;
 				}
 			}
 		} else {
@@ -430,58 +315,4 @@ public class Scanner {
 		// System.out.print("fetchLexemeFloatLit:  ");
 		return leftSide + lex;
 	}
-	public String fetchLexemePlusOperator() {
-		String lex = "" + fp.getNext();
-		char newChar = fp.peekNext();
-		if (newChar == '+') {
-			newChar = fp.getNext();
-			lex = lex + newChar;
-		} else if (newChar == '=') {
-			newChar = fp.getNext();
-			lex = lex + newChar;
-		} else {
-			fp.setPeekToBufferColumn();
-		}
-		// System.out.print("fetchLexemeColonOrAssignment:  ");
-		return lex;
-	}
-	public String fetchLexemeMinusOperator() {
-		String lex = "" + fp.getNext();
-		char newChar = fp.peekNext();
-		if (newChar == '-') {
-			newChar = fp.getNext();
-			lex = lex + newChar;
-		} else if (newChar == '=') {
-			newChar = fp.getNext();
-			lex = lex + newChar;
-		} else {
-			fp.setPeekToBufferColumn();
-		}
-		// System.out.print("fetchLexemeColonOrAssignment:  ");
-		return lex;
-	}
-	public String fetchLexemeMultiplyOperator() {
-		String lex = "" + fp.getNext();
-		char newChar = fp.peekNext();
-		if (newChar == '=') {
-			newChar = fp.getNext();
-			lex = lex + newChar;
-		} else {
-			fp.setPeekToBufferColumn();
-		}
-		// System.out.print("fetchLexemeColonOrAssignment:  ");
-		return lex;
-	}
-	public String fetchLexemeDivideOperator() {
-		String lex = "" + fp.getNext();
-		char newChar = fp.peekNext();
-		if (newChar == '=') {
-			newChar = fp.getNext();
-			lex = lex + newChar;
-		} else {
-			fp.setPeekToBufferColumn();
-		}
-		// System.out.print("fetchLexemeColonOrAssignment:  ");
-		return lex;
-	}	
 }
