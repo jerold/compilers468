@@ -88,6 +88,13 @@ public class Scanner {
 					id = "mp_nequal";
 				}
 				break;
+			// handles a comment
+			case '{':
+				//nextChar = fp.getNext();
+				while(fp.peekNext()!= '}'){
+					fp.getNext();
+				}
+				break;
 			case 'a':
 			case 'b':
 			case 'c':
