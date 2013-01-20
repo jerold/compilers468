@@ -1,6 +1,6 @@
 public class Token {
 	
-	private static int tokenIdIterator = 0;
+	// private static int tokenIdIterator = 0;
 	private String identifier, lexeme;
 	private int lineNum, colNum;
 	
@@ -9,7 +9,8 @@ public class Token {
 	 * construct a Token object.
 	 */
 	public Token(String identifier, int lineNum, int colNum, String lexeme){
-		this.identifier = identifier + tokenIdIterator++;
+		this.identifier = identifier;
+		// this.identifier = identifier + tokenIdIterator++; // For unique token id
 		this.lineNum = lineNum;
 		this.colNum = colNum;
 		this.lexeme = lexeme;

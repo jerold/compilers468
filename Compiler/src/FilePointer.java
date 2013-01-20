@@ -14,7 +14,6 @@ public class FilePointer {
 	static int peekColumn;
 	static boolean bufferLoaded;
 	static boolean atEndOfFile;
-	static boolean newLine;
 	
 	public static BufferedReader reader;
 	public char[] buffer;
@@ -27,14 +26,13 @@ public class FilePointer {
 		setPeekToBufferColumn();
 		bufferLoaded = false;
 		atEndOfFile = false;
-		newLine = false;
 	}
 	
 	// Load buffer will be called on a line by line basis.
 	public void loadBuffer() {
 		bufferLoaded = false;
 		
-		// System.out.println("\nLoading Buffer: Line[" + fileLine + "] of file[" + fileName + "]");
+		// System.out.println("  Loading Buffer: Line[" + fileLine + "] of file[" + fileName + "]");
 		try {
 			String line = null;
 			int currentLineNo = 0;
@@ -55,6 +53,7 @@ public class FilePointer {
 			if (line == null) {
 				atEndOfFile = true;
 			} else {
+				line = line + '\n';
 				buffer = line.toCharArray();
 				bufferColumn = 0;
 				setPeekToBufferColumn();
@@ -75,10 +74,6 @@ public class FilePointer {
 	// getNext will grab the next character in the file, if we are at the end of the line
 	// this method will take us to the next line and fetch us the 1st character from there
 	public char getNext() {
-		if (newLine) {
-			newLine = false;
-			return '\n';
-		}
 		if (!bufferLoaded)
 			loadBuffer();
 		if (atEndOfFile)
@@ -91,7 +86,6 @@ public class FilePointer {
 		if (bufferColumn >= buffer.length) {
 			// end of current line, buffer next line
 			fileLine++;
-			newLine = true;
 			loadBuffer();
 		}
 		
