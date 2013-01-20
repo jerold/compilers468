@@ -1,13 +1,14 @@
 
 public class Scanner {
-	static FilePointer fp;
+	private static FilePointer fp;
 	
 	public Scanner() {
 		// We don't do anything here
 	}
 	
 	public void openFile(String fileIn) {
-		fp = new FilePointer("src/testFile.txt");
+		fp = new FilePointer(fileIn);
+		//fp = new FilePointer("src/testFile.txt");
 	}
 	
 	public void test() {
@@ -46,20 +47,95 @@ public class Scanner {
 		String lexeme = null;
 		int lineNumber = fp.getLineNumber();
 		int columnNumber = fp.getColumnNumber();
+		Token t;
 		// System.out.println("Next Char [" + nextChar + "]");
 		switch(nextChar) {
+		//the following cases are all symbols and call the 
+		//fetchLexemeSymbol method
+			case '.':
+				lexeme = fetchLexemeSymbol();
+				t = new Token("mp_period", lineNumber, columnNumber, lexeme);
+				//return t;
+				break;
+			case ',':
+				lexeme = fetchLexemeSymbol();
+				t = new Token("mp_comma", lineNumber, columnNumber, lexeme);
+				//return t;
+				break;
 			case '(':
-				lexeme = fetchLexemeOpenParen();
+				lexeme = fetchLexemeSymbol();
+				t = new Token("mp_lparen", lineNumber, columnNumber, lexeme);
+				//return t;
 				break;
 			case ')':
-				lexeme = fetchLexemeCloseParen();
+				lexeme = fetchLexemeSymbol();
+				t = new Token("mp_rparen", lineNumber, columnNumber, lexeme);
+				//return t;
 				break;
 			case ';':
-				lexeme = fetchLexemeSemiColon();
+				lexeme = fetchLexemeSymbol();
+				t = new Token("mp_scolon", lineNumber, columnNumber, lexeme);
+				//return t;
+				break;
+			case '=':	
+				lexeme = fetchLexemeSymbol();
+				t = new Token("mp_equal", lineNumber, columnNumber, lexeme);
+				//return t;
 				break;
 			case ':':
-				lexeme = fetchLexemeColonOrAssignment();
+				lexeme = fetchLexemeSymbol();
+				if (lexeme.length()==1){
+					t = new Token("mp_colon", lineNumber, columnNumber, lexeme);
+					//return t;
+				} else {
+					t = new Token("mp_assign", lineNumber, columnNumber, lexeme);
+					//return t;
+				}
 				break;
+			case '>':
+				lexeme = fetchLexemeSymbol();
+				if (lexeme.length()==1){
+					t = new Token("mp_gthan", lineNumber, columnNumber, lexeme);
+					//return t;
+				} else {
+					t = new Token("mp_gequal", lineNumber, columnNumber, lexeme);
+					//return t;
+				}
+				break;
+			case '<':
+				lexeme = fetchLexemeSymbol();
+				if (lexeme.length()==1){
+					t = new Token("mp_lthan", lineNumber, columnNumber, lexeme);
+					//return t;
+				} else if (lexeme.endsWith("=")){
+					t = new Token("mp_leqaul", lineNumber, columnNumber, lexeme);
+					//return t;
+				} else {
+					t = new Token("mp_neqaul", lineNumber, columnNumber, lexeme);
+					//return t;
+				}
+				break;
+			case '+':
+				lexeme = fetchLexemeSymbol();
+				t = new Token("mp_plus", lineNumber, columnNumber, lexeme);
+				//return t;
+				break;
+			case '-':
+				lexeme = fetchLexemeSymbol();
+				t = new Token("mp_minus", lineNumber, columnNumber, lexeme);
+				//return t;
+				break;
+			case '*':	
+				lexeme = fetchLexemeSymbol();
+				t = new Token("mp_times", lineNumber, columnNumber, lexeme);
+				//return t;
+				break;
+			case '/':	
+				lexeme = fetchLexemeSymbol();
+				t = new Token("mp_divide", lineNumber, columnNumber, lexeme);
+				//return t;
+				break;
+				
 			case 'a':
 			case 'b':
 			case 'c':
@@ -113,6 +189,8 @@ public class Scanner {
 			case 'Y':
 			case 'Z':
 				lexeme = fetchLexemeIdentifier();
+				t = new Token("mp_identifier", lineNumber, columnNumber, lexeme);
+				//return t;
 				break;
 			case '0':
 			case '1':
@@ -125,9 +203,12 @@ public class Scanner {
 			case '8':
 			case '9':
 				lexeme = fetchLexemeInteger();
+				t = new Token("mp_integer_lit", lineNumber, columnNumber, lexeme);
+				//return t;
 				break;
 			default:
 				fp.getNext();
+				t = null;
 				// TODO: other stuff
 				break;
 		}
@@ -138,14 +219,36 @@ public class Scanner {
 		fp.skipWhiteSpace();
 		
 		
-		Token t = null;
-		if (lexeme != null)
-			t = new Token("Token ", lineNumber, columnNumber, lexeme);
+		//Token t = null;
+		//if (lexeme != null)
+			//t = new Token("Token ", lineNumber, columnNumber, lexeme);
 		
 		// build token from returned lexeme
 		// return Token
-		
+		//t = new Token("default", lineNumber, columnNumber, "empty");
 		return t;
+	}
+	
+	public String fetchLexemeSymbol() {
+		String lex = new String();
+		char newChar = fp.getNext();
+		lex = lex + newChar;
+		if (doubleSymbol(newChar)){
+			newChar = fp.getNext();
+			lex = lex + newChar;
+		}
+		System.out.print("fetchLexemeSymbol    :  ");
+		return lex;
+	}
+	
+	private boolean doubleSymbol(char c){
+		if(c == '>' || c == '<' || c == ':'){
+			char nextChar = fp.peekNext();
+			if (nextChar ==  '=' || nextChar ==  '>'){
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	public String fetchLexemeOpenParen() {
@@ -154,7 +257,7 @@ public class Scanner {
 		if (newChar == '(') {
 			lex = lex + newChar;
 		}
-		System.out.print("fetchLexemeOpenParen  :");
+		System.out.print("fetchLexemeOpenParen :  ");
 		return lex;
 	}
 	public String fetchLexemeCloseParen() {
@@ -163,7 +266,7 @@ public class Scanner {
 		if (newChar == ')') {
 			lex = lex + newChar;
 		}
-		System.out.print("fetchLexemeCloseParen  :");
+		System.out.print("fetchLexemeCloseParen:  ");
 		return lex;
 	}
 	public String fetchLexemeSemiColon() {
@@ -172,13 +275,23 @@ public class Scanner {
 		if (newChar == ';') {
 			lex = lex + newChar;
 		}
-		System.out.print("fetchLexemeSemiColon  :");
+		System.out.print("fetchLexemeSemiColon :  ");
 		return lex;
 	}
 	public String fetchLexemeColonOrAssignment() {
-		System.out.println("fetchLexemeColonOrAssignment");
-		fp.getNext();
-		return null;
+		String lex = new String();
+		char newChar = fp.getNext();
+		if (newChar == ':') {
+			lex = lex + newChar;
+		}
+		if (fp.peekNext() == '='){
+			lex = lex +fp.getNext();
+			System.out.print("fetchLexemeAssignment:  ");
+			return lex;
+		} else {
+			System.out.print("fetchLexemeColon     :  ");
+			return lex;
+		}
 	}
 	public String fetchLexemeIdentifier() {
 		String lex = new String();
@@ -283,7 +396,7 @@ public class Scanner {
 					break;
 			}
 		}
-		System.out.print("fetchLexemeInteger:  ");
+		System.out.print("fetchLexemeInteger   :  ");
 		return lex;
 	}	
 	

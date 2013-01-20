@@ -1,2 +1,3 @@
-Hello World
-Boss(Hi:there:=123);
+Hello   World
+Boss(Hi:there:=123) skipsthelast one
+.,;=< <= > >= <> +-*/:= unless it is a word

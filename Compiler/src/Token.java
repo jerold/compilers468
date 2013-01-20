@@ -1,6 +1,6 @@
 public class Token {
 	
-	static int tokenIdIterator = 0;
+	private static int tokenIdIterator = 0;
 	private String identifier, lexeme;
 	private int lineNum, colNum;
 	

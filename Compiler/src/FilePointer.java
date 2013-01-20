@@ -110,6 +110,7 @@ public class FilePointer {
 			return '\u0000';
 		}
 		return buffer[peekColumn++];
+		
 	}
 	
 	public void setPeekToBufferColumn() {
