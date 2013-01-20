@@ -50,6 +50,18 @@ public class Scanner {
 				lexeme = fetchLexemeSymbol();
 				id = "mp_equal";
 				break;
+			case '+':
+				lexeme = fetchLexemeSymbol();
+				id = "mp_plus";
+				break;
+			case '-':
+				lexeme = fetchLexemeSymbol();
+				id = "mp_minus";
+				break;
+			case '*':
+				lexeme = fetchLexemeSymbol();
+				id = "mp_times";
+				break;
 			case ':':
 				lexeme = fetchLexemeColon();
 				if (lexeme.length()==1){
@@ -58,36 +70,12 @@ public class Scanner {
 					id = "mp_assign";
 				}
 				break;
-			case '+':
-				lexeme = fetchLexemePlusOperator();
+			case '>':
+				lexeme = fetchLexemeCloseCarrot();
 				if (lexeme.length()==1){
-					id = "mp_plus";
+					id = "mp_gthan";
 				} else {
-					id = "mp_aassign";
-				}
-				break;
-			case '-':
-				lexeme = fetchLexemeMinusOperator();
-				if (lexeme.length()==1){
-					id = "mp_minus";
-				} else {
-					id = "mp_sassign";
-				}
-				break;
-			case '*':
-				lexeme = fetchLexemeMultiplyOperator();
-				if (lexeme.length()==1){
-					id = "mp_times";
-				} else {
-					id = "mp_massign";
-				}
-				break;
-			case '/':
-				lexeme = fetchLexemeDivideOperator();
-				if (lexeme.length()==1){
-					id = "mp_divide";
-				} else {
-					id = "mp_dassign";
+					id = "mp_gequal";
 				}
 				break;
 			case '<':
@@ -96,14 +84,8 @@ public class Scanner {
 					id = "mp_lthan";
 				} else if (lexeme.endsWith("=")){
 					id = "mp_lequal";
-				}
-				break;
-			case '>':
-				lexeme = fetchLexemeCloseCarrot();
-				if (lexeme.length()==1){
-					id = "mp_gthan";
-				} else {
-					id = "mp_gequal";
+				} else if (lexeme.endsWith(">")){
+					id = "mp_nequal";
 				}
 				break;
 			case 'a':
@@ -158,6 +140,7 @@ public class Scanner {
 			case 'X':
 			case 'Y':
 			case 'Z':
+			case '_':
 				lexeme = fetchLexemeIdentifier();
 				id = "mp_identifier";
 				break;
@@ -171,8 +154,18 @@ public class Scanner {
 			case '7':
 			case '8':
 			case '9':
-				lexeme = fetchLexemeInteger();
-				id = "mp_integer_lit";
+				lexeme = fetchLexemeNumber();
+				if (lexeme.contains(".")){
+					id = "mp_fixed_lit";
+					if (lexeme.contains("E") || lexeme.contains("e") ){
+						id = "mp_float_lit";
+					}
+				} else {
+					id = "mp_integer_lit";
+					if (lexeme.contains("E") || lexeme.contains("e") ){
+						id = "mp_float_lit";
+					}
+				}
 				break;
 			default:
 				// System.out.print("DEFAULT");
@@ -226,6 +219,9 @@ public class Scanner {
 		String lex = "" + fp.getNext();
 		char newChar = fp.peekNext();
 		if (newChar == '=') {
+			newChar = fp.getNext();
+			lex = lex + newChar;
+		} else if (newChar == '>') {
 			newChar = fp.getNext();
 			lex = lex + newChar;
 		} else {
@@ -343,11 +339,13 @@ public class Scanner {
 		// System.out.print("fetchLexemeIdentifier:  ");
 		return lex;
 	}
-	public String fetchLexemeInteger() {
-		String lex = new String();
+	public String fetchLexemeNumber() {
+		String lex = "" + fp.getNext();
 		boolean sameToken = true;
+		boolean decimalPointUsed = false;
 		while (sameToken) {
 			char newChar = fp.peekNext();
+			// System.out.println("# [" + newChar + "]");
 			switch(newChar) {
 				case '0':
 				case '1':
@@ -359,10 +357,25 @@ public class Scanner {
 				case '7':
 				case '8':
 				case '9':
-					newChar = fp.getNext();
-					lex = lex + newChar;
+				case '.':
+					if (newChar == '.') {
+						if (decimalPointUsed) {
+							fp.setPeekToBufferColumn();
+							sameToken = false;
+						} else {
+							newChar = fp.getNext();
+							lex = lex + newChar;
+							decimalPointUsed = true;
+						}
+					} else {
+						newChar = fp.getNext();
+						lex = lex + newChar;
+					}
 					break;
 				default:
+					if (newChar == 'E' || newChar == 'e') {
+						lex = fetchLexemeFloatLit(lex);
+					}
 					fp.setPeekToBufferColumn();
 					sameToken = false;
 					break;
@@ -370,6 +383,52 @@ public class Scanner {
 		}
 		// System.out.print("fetchLexemeInteger:  ");
 		return lex;
+	}
+	// I am a God. mp_float_lit in the bag
+	public String fetchLexemeFloatLit(String leftSide) {
+		String lex = "" + fp.getNext();
+		char newChar = fp.peekNext();
+		// a [-|+] must follow after the [e|E]
+		if (newChar == '+' || newChar == '-') {
+			newChar = fp.getNext();
+			lex = lex + newChar;
+			newChar = fp.peekNext();
+			// A digit must follow after the [e|E][-|+] 
+			if (!"0123456789".contains("" + newChar)) {
+				fp.backUp(lex.length());
+				return leftSide;
+			} else {
+				newChar = fp.getNext();
+				lex = lex + newChar;
+			}
+			boolean sameToken = true;
+			while (sameToken) {
+				newChar = fp.peekNext();
+				switch(newChar) {
+					case '0':
+					case '1':
+					case '2':
+					case '3':
+					case '4':
+					case '5':
+					case '6':
+					case '7':
+					case '8':
+					case '9':
+						newChar = fp.getNext();
+						lex = lex + newChar;
+						break;
+					default:
+						fp.setPeekToBufferColumn();
+						sameToken = false;
+				}
+			}
+		} else {
+			fp.backUp(lex.length());
+			return leftSide;
+		}
+		// System.out.print("fetchLexemeFloatLit:  ");
+		return leftSide + lex;
 	}
 	public String fetchLexemePlusOperator() {
 		String lex = "" + fp.getNext();

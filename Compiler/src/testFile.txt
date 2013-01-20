@@ -1,3 +1,7 @@
 Hello   World
-Boss(Hi:there:=123) skipsthelast one
+Boss(Hi:_there:=123) skipsthelast one
 .,;=< <= > >= <> +-*/:= unless it is a word
+353.1511 1.6 123.123.123
+1e-2
+41.41E+123
+37234.123E+ror
