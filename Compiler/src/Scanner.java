@@ -158,8 +158,12 @@ public class Scanner {
 		case 'Z':
 		case '_':
 			lexeme = fetchLexemeIdentifier();
-			id = "mp_identifier";
-			break;
+            if(identifyResWord(lexeme) >= 0){
+                id = "mp_" + lexeme;
+            } else{
+                id = "mp_identifier";
+            }
+            break;
 		case '0':
 		case '1':
 		case '2':
