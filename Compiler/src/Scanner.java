@@ -1,7 +1,7 @@
 public class Scanner {
 	private static FilePointer fp;
 	private static String[] resWords;
-
+	private boolean error;
 	public Scanner() {
 		// We don't do anything here
 		resWords = new String[] { "and", "begin", "div", "do", "downto",
@@ -18,6 +18,8 @@ public class Scanner {
 	// Driver which skips white space and then kicks off the right lexeme parser
 	// a Token is the constructed from the lexeme and returned to the driver
 	public Token getToken() {
+		//set error flag to false
+		error = false;
 		// skip white space
 		fp.skipWhiteSpace();
 
@@ -200,6 +202,9 @@ public class Scanner {
 
 		// build token from returned lexeme
 		Token t = null;
+		if(error){
+			id = "mp_error";
+		}
 		if (lexeme != null && lexeme.length() > 0)
 			t = new Token(id, lineNumber, columnNumber, lexeme);
 		return t;
@@ -265,7 +270,8 @@ public class Scanner {
 			char newChar = fp.peekNext();
 			//check for two underscores in a row
             if (lex.endsWith("_") && newChar == '_'){
-                System.out.print("This is not a valid identifier.");
+                //System.out.print("This is not a valid identifier.");
+            	error = true;
             }
 			if ("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_"
 					.contains("" + newChar)) {

@@ -8,7 +8,7 @@ public class Driver {
 		Scanner scanner = new Scanner();
 		if(args.length == 0){
 			// System.out.print("Please enter a filename to be compiled");
-			scanner.openFile("src/testFile2.txt"); // Eventually use input instead of this hard value
+			scanner.openFile("src/testFile.txt"); // Eventually use input instead of this hard value
 		} else {
 			scanner.openFile(args[0]);
 		}
