@@ -2,7 +2,7 @@
 public class Driver {
 
 	/**
-	 * @param args
+	 * @param args Input file to scan
 	 * git address to push
 	 * https://github.com/jerold/compilers468.git
 	 */
