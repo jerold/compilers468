@@ -98,8 +98,9 @@ public class Scanner {
 		// handles a comment
 		case '{':
 			// nextChar = fp.getNext();
-			while (fp.peekNext() != '}') {
-				fp.getNext();
+			lexeme = fetchLexemeComment();
+			if (lexeme != null) {
+				id = "mp_run_comment";
 			}
 			break;
 		case '\'':
@@ -372,4 +373,20 @@ public class Scanner {
 		lex = lex + fp.getNext();
 		return lex;
 	}
+	
+	public String fetchLexemeComment() {
+		String lex = "" + fp.getNext();
+		while (fp.peekNext() != '}') {
+			lex = lex + fp.getNext();
+			if (fp.peekNext() == '\u0000' || fp.peekNext() == '{') {
+				//error = true;
+				return lex;
+			}
+			//fp.getNext();
+		}
+		fp.getNext();
+		fp.getNext();
+		return null;
+	}
+	
 }

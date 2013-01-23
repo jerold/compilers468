@@ -8,3 +8,7 @@ Boss(Hi:_there:=123) skipsthelast one
 {this is a
  comment} not this
  _my__name
+ {test_comment
+ integer 34
+ {test_comment2}
+ end.
