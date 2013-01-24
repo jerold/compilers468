@@ -283,6 +283,9 @@ public class Scanner {
 				sameToken = false;
 			}
 		}
+		if (lex.endsWith("_")){
+			error = true;
+		}
 		// System.out.print("fetchLexemeIdentifier:  ");
 		return lex;
 	}
