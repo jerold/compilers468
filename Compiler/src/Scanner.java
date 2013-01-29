@@ -2,6 +2,7 @@ public class Scanner {
 	private static FilePointer fp;
 	private static String[] resWords;
 	private boolean error;
+	private boolean warning;
 	public Scanner() {
 		// We don't do anything here
 		resWords = new String[] { "and", "begin", "div", "do", "downto",
@@ -20,6 +21,7 @@ public class Scanner {
 	public Token getToken() {
 		//set error flag to false
 		error = false;
+		warning = false;
 		// skip white space
 		fp.skipWhiteSpace();
 
@@ -99,13 +101,18 @@ public class Scanner {
 		case '{':
 			// nextChar = fp.getNext();
 			lexeme = fetchLexemeComment();
-			if (lexeme != null) {
+			// should return a warning vs an error in the future, now just an error
+			if (error) {
+				id = "mp_run_comment";
+			} else if (warning) {
 				id = "mp_run_comment";
 			}
 			break;
 		case '\'':
 			lexeme = fetchLexemeString();
 			id = "mp_String_lit";
+			if (error)
+				id = "mp_run_string";
 			break;
 		case 'a':
 		case 'b':
@@ -203,9 +210,6 @@ public class Scanner {
 
 		// build token from returned lexeme
 		Token t = null;
-		if(error){
-			id = "mp_error";
-		}
 		if (lexeme != null && lexeme.length() > 0)
 			t = new Token(id, lineNumber, columnNumber, lexeme);
 		return t;
@@ -371,21 +375,27 @@ public class Scanner {
 		String lex = "" + fp.getNext();
 		// char newChar = fp.peekNext();
 		while (fp.peekNext() != '\'') {
+			if (fp.endOfLine() || fp.endOfFile()) {
+				error = true;
+				return lex.substring(0,lex.length()-1);
+			}
 			lex = lex + fp.getNext();
 		}
 		lex = lex + fp.getNext();
-		return lex;
+		return lex.substring(1,lex.length()-1);
 	}
 	
 	public String fetchLexemeComment() {
 		String lex = "" + fp.getNext();
 		while (fp.peekNext() != '}') {
-			lex = lex + fp.getNext();
-			if (fp.peekNext() == '\u0000' || fp.peekNext() == '{') {
-				//error = true;
-				return lex;
+			if (fp.endOfLine()) {
+				warning = true;
+				return lex.substring(0,lex.length()-1);
+			} else if (fp.endOfFile()) {
+				error = true;
+				return lex.substring(0,lex.length()-1);
 			}
-			//fp.getNext();
+			lex = lex + fp.getNext();
 		}
 		fp.getNext();
 		fp.getNext();

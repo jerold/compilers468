@@ -1,16 +1,17 @@
+/*
+ * git address to push
+ * https://github.com/jerold/compilers468.git
+ */
 
 public class Driver {
 
 	/**
 	 * @param args Input file to scan
-	 * git address to push
-	 * https://github.com/jerold/compilers468.git
 	 */
 	public static void main(String[] args) {
 		Scanner scanner = new Scanner();
 		if(args.length == 0){
-			// System.out.print("Please enter a filename to be compiled");
-			scanner.openFile("src/testFile.txt"); // Eventually use input instead of this hard value
+			scanner.openFile("src/testFile.txt");
 		} else {
 			scanner.openFile(args[0]);
 		}

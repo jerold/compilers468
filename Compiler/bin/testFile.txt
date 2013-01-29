@@ -5,3 +5,13 @@ Boss(Hi:_there:=123) skipsthelast one
 1e-2
 41.41E+123
 37234.123E+ror
+{this is a
+ comment} not this
+ _my__name
+ myName_
+ {test_comment
+ integer 34
+ {test_comment2}
+ myString = 'test string that is a long lexeme'
+ myErrorString = 'This is a running string that will throw an error because there is no apostrophe at the end
+ end.
