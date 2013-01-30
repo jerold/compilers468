@@ -2,9 +2,11 @@ public class Scanner {
 	private static FilePointer fp;
 	private static String[] resWords;
 	private boolean error;
-	private boolean warning;
+	//didn't need this with the solution David and Clark came up with
+	//private boolean warning;
+	private static boolean recCall;  //flag for recursive call in findLexemeString()
 	public Scanner() {
-		// We don't do anything here
+		// array containing the reserved words of the language
 		resWords = new String[] { "and", "begin", "div", "do", "downto",
 				"else", "end", "fixed", "float", "for", "function", "if",
 				"integer", "mod", "not", "or", "procedure", "procedure",
@@ -21,7 +23,7 @@ public class Scanner {
 	public Token getToken() {
 		//set error flag to false
 		error = false;
-		warning = false;
+		//warning = false;
 		// skip white space
 		fp.skipWhiteSpace();
 
@@ -104,18 +106,27 @@ public class Scanner {
 			// should return a warning vs an error in the future, now just an error
 			if (error) {
 				id = "mp_run_comment";
-			} else if (warning) {
-				id = "mp_run_comment";
 			}
+			//now handle this in the fetchLexemeComment() function to print the error directly
+			//} else if (warning) {
+			//	id = "mp_run_comment";
+				
+			//}
+			break;
+		case '}':
+			lexeme = "" + fp.getNext();
+			id = "mp_error";
 			break;
 		case '\'':
+			recCall = false;  //assume this will not be a recursive call
 			lexeme = fetchLexemeString();
 			id = "mp_String_lit";
-			if (error)
+			if (error){
 				id = "mp_run_string";
+			}
 			break;
 		case 'a':
-		case 'b':
+		case 'b': 
 		case 'c':
 		case 'd':
 		case 'e':
@@ -173,6 +184,9 @@ public class Scanner {
             } else{
                 id = "mp_identifier";
             }
+            if (error){
+				id = "mp_error";
+			}
             break;
 		case '0':
 		case '1':
@@ -370,27 +384,52 @@ public class Scanner {
 		}
 		return -1;
 	}
-
+	/*
+	 * Strings now handled. There are three cases handled here
+	 * 1--the string is legal and is a string_lit
+	 * 2--the string is legal with escape char used if apostrophe used in string
+	 * 	  the function is recursive if this is the case
+	 * 3--the escape char was not used if apostrophe used in string
+	 * 	  in this case, the apostrophe is used to close the string, creating a string_lit
+	 * 	  the remainder of the string is scanned as if not a string and the parser deals with
+	 *    any tokens sent to it(most likely not valid) when the intended string closing apostrophe 
+	 *    is reached end of line will be reached and run_string token will be sent
+	 *    this case is now the first line in testFile.txt
+	 */
 	public String fetchLexemeString() {
 		String lex = "" + fp.getNext();
-		// char newChar = fp.peekNext();
 		while (fp.peekNext() != '\'') {
 			if (fp.endOfLine() || fp.endOfFile()) {
 				error = true;
-				return lex.substring(0,lex.length()-1);
-			}
+				return lex.substring(0,lex.length() - 1);
+			} 
 			lex = lex + fp.getNext();
 		}
+		// this handles the escape char '' inside a string.
 		lex = lex + fp.getNext();
-		return lex.substring(1,lex.length()-1);
+		if (fp.peekNext() == '\''){
+			recCall = true;		//set recCall to true if a recursive call is made here
+			lex = lex + fetchLexemeString().substring(1);  //the .substring(1) peels off the escape char'
+		} if(recCall){
+			return lex; //this is the proper return if recursive call was made
+			
+		} else {
+			//this is the proper return if a recursive call was not made
+			return lex.substring(1,lex.length() - 1);
+		}
 	}
 	
 	public String fetchLexemeComment() {
 		String lex = "" + fp.getNext();
 		while (fp.peekNext() != '}') {
-			if (fp.endOfLine()) {
-				warning = true;
-				return lex.substring(0,lex.length()-1);
+			if (fp.peekNext() == '{') {
+				//comments can be on multiple lines but perhaps
+				//the comment was not closed properly
+				//warning = true;
+				System.out.println("WARNING: Found '{' inside a comment. ");
+				System.out.println("In line " + fp.getLineNumber() + " column " + fp.getColumnNumber());
+				//return lex.substring(0,lex.length()-1);
+				fp.setPeekToBufferColumn();
 			} else if (fp.endOfFile()) {
 				error = true;
 				return lex.substring(0,lex.length()-1);
@@ -398,7 +437,7 @@ public class Scanner {
 			lex = lex + fp.getNext();
 		}
 		fp.getNext();
-		fp.getNext();
+		//fp.getNext();
 		return null;
 	}
 	
