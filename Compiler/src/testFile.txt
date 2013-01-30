@@ -10,6 +10,7 @@ Boss(Hi:_there:=123) skipsthelast one
  comment} not this
  _my__name
  myName_
+ &
  {test_comment
  integer 34
  {test}_comment2}

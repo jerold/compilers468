@@ -213,7 +213,10 @@ public class Scanner {
 			break;
 		default:
 			// This is very strange...
-			fp.getNext();
+			//package the next char(not valid in the language) as an error token and 
+			//pass it to the parser
+			lexeme = "" + fp.getNext();
+			id = "mp_error";
 			break;
 		}
 
@@ -305,7 +308,9 @@ public class Scanner {
 			error = true;
 		}
 		// System.out.print("fetchLexemeIdentifier:  ");
-		return lex;
+		// send all identifiers to the parser in lower case
+		//because language is case insensitive
+		return lex.toLowerCase();
 	}
 
 	public String fetchLexemeNumber() {
