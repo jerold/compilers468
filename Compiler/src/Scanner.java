@@ -124,6 +124,9 @@ public class Scanner {
 			if (error){
 				id = "mp_run_string";
 			}
+			if(recCall){
+				lexeme = lexeme.substring(1, lexeme.length() - 1);
+			}
 			break;
 		case 'a':
 		case 'b': 

@@ -74,7 +74,6 @@ public class FilePointer {
 		}
 	}
 	
-	// No idea what this does.  Too heavy
 	public boolean endOfFile() {
 		return atEndOfFile;
 	}
