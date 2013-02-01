@@ -409,7 +409,7 @@ public class Scanner {
 		while (fp.peekNext() != '\'') {
 			if (fp.endOfLine() || fp.endOfFile()) {
 				error = true;
-				return lex.substring(0,lex.length() - 1);
+				return lex.substring(1,lex.length() - 1);
 			} 
 			lex = lex + fp.getNext();
 		}
