@@ -348,7 +348,7 @@ public class Scanner {
 		return lex;
 	}
 
-	// I am a God. mp_float_lit in the bag
+	// I am a god. mp_float_lit in the bag
 	public String fetchLexemeFloatLit(String leftSide) {
 		String lex = "" + fp.getNext();
 		char newChar = fp.peekNext();
@@ -357,6 +357,7 @@ public class Scanner {
 			newChar = fp.getNext();
 			lex = lex + newChar;
 			newChar = fp.peekNext();
+		}
 			// A digit must follow after the [e|E][-|+]
 			if (!"0123456789".contains("" + newChar)) {
 				fp.backUp(lex.length());
@@ -376,10 +377,10 @@ public class Scanner {
 					sameToken = false;
 				}
 			}
-		} else {
-			fp.backUp(lex.length());
-			return leftSide;
-		}
+//		} else {
+//			fp.backUp(lex.length());
+//			return leftSide;
+//		}
 		// System.out.print("fetchLexemeFloatLit:  ");
 		return leftSide + lex;
 	}
