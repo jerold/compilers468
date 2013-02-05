@@ -17,6 +17,10 @@ public class Scanner {
 	public void openFile(String fileIn) {
 		fp = new FilePointer(fileIn);
 	}
+	
+	public FilePointer getFP(){
+		return fp;
+	}
 
 	// Driver which skips white space and then kicks off the right lexeme parser
 	// a Token is the constructed from the lexeme and returned to the driver

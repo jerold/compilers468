@@ -22,6 +22,8 @@ public class Driver {
 				t.describe();
 			}
 		}
+		Token t = new Token("mp_eof", scanner.getFP().getLineNumber(),scanner.getFP().getLineNumber()+1,"eof");
+		t.describe();
 		
 		System.exit(0);
 	}
