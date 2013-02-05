@@ -11,7 +11,7 @@ public class Driver {
 	public static void main(String[] args) {
 		Scanner scanner = new Scanner();
 		if(args.length == 0){
-			scanner.openFile("src/TestFile3.txt");
+			scanner.openFile("src/TestFile1.txt");
 		} else {
 			scanner.openFile(args[0]);
 		}
@@ -22,7 +22,7 @@ public class Driver {
 				t.describe();
 			}
 		}
-		Token t = new Token("mp_eof", scanner.getFP().getLineNumber(),scanner.getFP().getLineNumber()+1,"eof");
+		Token t = new Token("mp_eof", scanner.getFP().getLineNumber(),0,"eof");
 		t.describe();
 		
 		System.exit(0);
