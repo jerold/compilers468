@@ -1,3 +1,4 @@
+myString = 'test ' inside string. this should be an error' 
 Hello   World
 Boss(Hi:_there:=123) skipsthelast one
 .,;=< <= > >= <> +-*/:= unless it is a word
@@ -9,9 +10,11 @@ Boss(Hi:_there:=123) skipsthelast one
  comment} not this
  _my__name
  myName_
+ &
  {test_comment
  integer 34
- {test_comment2}
+ {test}_comment2}
  myString = 'test string that is a long lexeme'
+ myString = 'I''m rooting cat''s hah'
  myErrorString = 'This is a running string that will throw an error because there is no apostrophe at the end
  end.

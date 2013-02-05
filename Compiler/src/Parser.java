@@ -25,11 +25,20 @@ public class Parser {
 		
 	}
 	
+	private void match(String s){
+		if(s.equals(lookAhead.getLexeme())){
+			lookAhead = scanner.getToken();
+		}
+		else {
+			handleError();
+		}
+	}
+	
 	//David's Section
-	public void program(){
+	private void program(){
 		lookAhead.describe();
 		switch(lookAhead.getIdentifier()){
-		case "program":
+		case "mp_program":
 			programHeading();
 			break;
 		default:
@@ -193,13 +202,32 @@ public class Parser {
 		
 		
 	}
+	//this is not LL1 for some reason??!!
 	private void factor() {
-		
+		switch(lookAhead.getIdentifier()){
+		case "mp_integer_lit":	
+			unsignedInteger();
+			break;
+		case "mp_identifier":
+			variable();
+			break;
+			//something must go here later the EBNF is WRONG!
+//		case "mp_identifier":
+//			variable();
+//			break;
+		case "mp_lparen":
+			match("(");
+			expression();
+			match(")");
+			break;
+		case "mp_not":	
+		default:
+			handleError();
+		}
 		
 	}
 	private void relationalOperator() {
-		
-		
+			
 	}
 	private void addingOperator() {
 		

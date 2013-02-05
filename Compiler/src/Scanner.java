@@ -124,7 +124,7 @@ public class Scanner {
 		case '\'':
 			recCall = false;  //assume this will not be a recursive call
 			lexeme = fetchLexemeString();
-			id = "mp_String_lit";
+			id = "mp_string_lit";
 			if (error){
 				id = "mp_run_string";
 			}
