@@ -16,14 +16,8 @@ public class Driver {
 			scanner.openFile(args[0]);
 		}
 		// print out all the tokens while there are tokens to fetch
-		while (!scanner.endOfFile()) {
-			Token t = scanner.getToken();
-			if (t != null){
-				t.describe();
-			}
-		}
-		Token t = new Token("mp_eof", scanner.getFP().getLineNumber(),0,"eof");
-		t.describe();
+		Parser parser = new Parser(scanner);
+		parser.run();
 		
 		System.exit(0);
 	}
