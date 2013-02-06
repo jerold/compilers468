@@ -35,12 +35,15 @@ public class Parser {
 		}
 	}
 	
-	//David's Section
+	//David's Section---work in process, NOT DONE with my section
 	private void program(){
 		lookAhead.describe();
 		switch(lookAhead.getIdentifier()){
 		case "mp_program":
 			programHeading();
+			match(";");
+			block();
+			match(".");
 			break;
 		default:
 			handleError();
@@ -50,50 +53,167 @@ public class Parser {
 
 
 	private void programHeading() {
-		// TODO Auto-generated method stub
+		switch(lookAhead.getIdentifier()) {
+		case "mp_program":
+			match("program");
+			identifier();
+			break;
+		default:
+			handleError();
+		}
 		
 	}
 	
+	//THIS METHOD IS WRONG....NEEDS TO HIT vDP() and pAFDP() and sP()...see alternative below
 	private void block() {
-		
+		switch(lookAhead.getIdentifier()) {
+		case "mp_var":
+			variableDeclarationPart();
+			break;
+		case "mp_procedure":
+			procedureAndFunctionDeclarationPart();
+			break;
+		case "mp_begin":
+			statementPart();
+			break;
+		default:
+			handleError();
+		}
 		
 	}
+	
+//	private void block() {
+//		switch(lookAhead.getIdentifier()) {
+//		case "mp_var":
+//			variableDeclarationPart();
+//			match("var");
+//			procedureAndFunctionDeclarationPart();
+//			match("procedure");
+//			statementPart();
+//			match("begin");
+//			break;
+//		}
+//	}
 
 	private void variableDeclarationPart() {
-		
+		switch(lookAhead.getIdentifier()) {
+		case "mp_var":
+			match("var");
+			variableDeclaration();
+			match(";");
+			break;
+			//not sure about this recursion...need to be able to hit
+			//variableDeclaration() multiple times...
+		case "mp_identifier":
+			variableDeclaration();
+			match(";");
+			break;
+		default:
+			handleError();
+		}
 		
 	}
 	
 	private void procedureAndFunctionDeclarationPart() {
-		
+		switch(lookAhead.getIdentifier()) {
+		case "mp_function":
+			functionDeclaration(); //must be able to repeat this || procedureDelcaration()
+			break;
+		case "mp_procedure":
+			procedureDeclaration();//must be able to repeat this || functionDelcaration()
+			break;
+		default:
+			handleError();
+		}
 		
 	}
-	private void statementPart() {
 		
+
+	private void statementPart() {
+		switch(lookAhead.getIdentifier()) {
+		case "mp_begin":
+			compoundStatement();
+			break;
+		default:
+			handleError();
+		}
 		
 	}
 	private void variableDeclaration() {
-		
+		switch(lookAhead.getIdentifier()) {
+		case "mp_identifier":
+			identifierList();
+			match(":");
+			type();
+			break;
+		default:
+			handleError();
+		}
 		
 	}
 	private void type() {
-		
+		switch(lookAhead.getIdentifier()) {
+		case "mp_integer_lit":
+			match("integer");
+			break;
+		case "mp_float_lit":
+			match("float");
+			break;
+		default:
+			handleError();
+		}
 		
 	}
 	private void procedureDeclaration() {
-		
+		switch(lookAhead.getIdentifier()) {
+		case "mp_prodedure":
+			procedureHeading();
+			match(";");
+			block();
+			break;
+		default:
+			handleError();
+		}
 		
 	}
+		
+	
 	private void functionDeclaration() {
-		
-		
+		switch(lookAhead.getIdentifier()) {
+		case "mp_function":
+			functionHeading();
+			match(";");
+			block();
+			break;
+		default:
+			handleError();
+		}
 	}
+	
 	private void procedureHeading() {
-		
+		switch(lookAhead.getIdentifier()) {
+		case "mp_prodecure":
+			match("procedure");
+			identifier();
+			//NEED TO ADD OPTIONAL STUFF HERE???
+			break;
+		default:
+			handleError();
+		}
 		
 	}
 	private void functionHeading() {
-		
+		switch(lookAhead.getIdentifier()) {
+		case "mp_function":
+			match("function");
+			identifier();
+			//NEED TO ADD OPTIONAL STUFF HERE???
+			match(":");
+			type();
+			break;
+		default:
+			handleError();
+		}
 		
 	}
 	private void formalParameterList() {
