@@ -132,6 +132,10 @@ public class Scanner {
 				lexeme = lexeme.substring(1, lexeme.length() - 1);
 			}
 			break;
+		case '\u0000':
+			lexeme = "eof";
+			id = "mp_eof";
+			break;
 		case 'a':
 		case 'b': 
 		case 'c':

@@ -32,6 +32,10 @@ public class Parser {
 			System.out.println("Expected \"" + s + "\" but found " + errorToken
 					+ " on line " + lookAhead.getLineNum() + " in column "
 					+ lookAhead.getColNum() + ".");
+			//get the next token and keep trying
+			//at some point we will have to determine the appropriate method to 
+			//call after getting the next token
+			lookAhead = scanner.getToken(); 
 		} else {
 			if (lookAhead == null) {
 				// this happens with a valid comment. we just want the next
@@ -60,8 +64,8 @@ public class Parser {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_program":
 			program();
-			int lineNum = lookAhead.getLineNum() + 1;
-			lookAhead = new Token("mp_eof", lineNum, 0, "eof");
+//			int lineNum = lookAhead.getLineNum() + 1;
+//			lookAhead = new Token("mp_eof", lineNum, 0, "eof");
 			match("eof");
 			return 1;
 		default:
