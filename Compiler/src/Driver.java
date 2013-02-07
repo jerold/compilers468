@@ -11,7 +11,7 @@ public class Driver {
 	public static void main(String[] args) {
 		Scanner scanner = new Scanner();
 		if(args.length == 0){
-			scanner.openFile("src/TestFile1.txt");
+			scanner.openFile("src/testFile2.txt");
 		} else {
 			scanner.openFile(args[0]);
 		}
