@@ -48,16 +48,30 @@ public class Parser {
 
 	}
 
-	private void match(String s) {
+	/**
+	 * Matches the left token to lookahead.
+	 * If there is a match, the lookahead is moved to the next scanned token
+	 * 
+	 * @param s		The string to match to
+	 * @param test	Whether or not this is a test (if so, suppress errors) (maybe we should keep it from getting next lookahead as well)
+	 * @return		Whether or not there was a match
+	 */
+	private boolean match(String s, boolean test) {
 		if (s.equals(lookAhead.getLexeme())) {
 			lookAhead.describe();
 			lookAhead = scanner.getToken();
 			while (lookAhead == null){
 				lookAhead = scanner.getToken();
 			}
+			return true;
 		} else {
-			handleError(true, s);
+			if (!test) handleError(true, s);
+			return false;
 		}
+	}
+	
+	private boolean match(String s) {
+		return match(s,false);
 	}
 
 	private int start() {
@@ -658,86 +672,235 @@ public class Parser {
 
 	// Logan's section
 	private void actualParameterList() {
-
+		switch (lookAhead.getIdentifier()) {
+			case "mp_lparen":
+				match("(");
+				actualParameter();
+				while (match(",",true)) {
+					actualParameter();
+				}
+				match(")");
+				break;
+			default:
+				handleError(false, null);
+		}
 	}
 
 	private void actualParameter() {
-
+		switch (lookAhead.getIdentifier()) {
+			case "not":
+			case "mp_identifier":
+			case "mp_integer_lit":
+			case "mp_lparen":
+			case "mp_plus":
+			case "mp_minus":
+				expression();
+				break;
+			default:
+				handleError(false, null);
+		}
 	}
 
 	private void readParameterList() {
-
+		switch (lookAhead.getIdentifier()) {
+			case "mp_lparen":
+				match("(");
+				readParameter();
+				while (match(",",true)) {
+					readParameter();
+				}
+				match(")");
+				break;
+			default:
+				handleError(false, null);
+		}
 	}
 
 	private void readParameter() {
-
+		switch (lookAhead.getIdentifier()) {
+			case "mp_identifier":
+				variable();
+				break;
+			default:
+				handleError(false, null);
+		}
 	}
 
 	private void writeParameterList() {
-
+		switch (lookAhead.getIdentifier()) {
+			case "mp_lparen":
+				match("(");
+				writeParameter();
+				while (match(",",true)) {
+					writeParameter();
+				}
+				match(")");
+				break;
+			default:
+				handleError(false, null);
+		}
 	}
 
 	private void writeParameter() {
-
+		switch (lookAhead.getIdentifier()) {
+			case "not":
+			case "mp_identifier":
+			case "mp_integer_lit":
+			case "mp_lparen":
+			case "mp_plus":
+			case "mp_minus":
+				expression();
+				break;
+			default:
+				handleError(false, null);
+		}
 	}
 
 	private void booleanExpression() {
-
+		switch (lookAhead.getIdentifier()) {
+			case "not":
+			case "mp_identifier":
+			case "mp_integer_lit":
+			case "mp_lparen":
+			case "mp_plus":
+			case "mp_minus":
+				ordinalExpression();
+				break;
+			default:
+				handleError(false, null);
+		}
 	}
 
 	private void ordinalExpression() {
-
+		switch (lookAhead.getIdentifier()) {
+			case "not":
+			case "mp_identifier":
+			case "mp_integer_lit":
+			case "mp_lparen":
+			case "mp_plus":
+			case "mp_minus":
+				expression();
+				break;
+			default:
+				handleError(false, null);
+		}
 	}
 
 	private void variableIdentifier() {
-
+		switch (lookAhead.getIdentifier()) {
+			case "mp_identifier":
+				identifier();
+				break;
+			default:
+				handleError(false, null);
+		}
 	}
 
 	private void procedureIdentifier() {
-
+		switch (lookAhead.getIdentifier()) {
+			case "mp_identifier":
+				identifier();
+				break;
+			default:
+				handleError(false, null);
+		}
 	}
 
 	private void functionIdentifier() {
-
+		switch (lookAhead.getIdentifier()) {
+			case "mp_identifier":
+				identifier();
+				break;
+			default:
+				handleError(false, null);
+		}
 	}
 
 	private void identifierList() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_identifier":
-			identifier();
-			if (lookAhead.getIdentifier().equals("mp_identifier")) {
-				match(",");
-				identifierList();
-			}
+			case "mp_identifier":
+				identifier();
+				while (match(",",true)) {
+					identifier();
+				}
+				break;
+			default:
+				handleError(false, null);
 		}
 	}
 
 	private void identifier() {
-		match(lookAhead.getLexeme());
+		switch (lookAhead.getIdentifier()) {
+			case "mp_identifier":
+				match(lookAhead.getLexeme());
+				break;
+			default:
+				handleError(false, null);
+		}
 	}
 
 	private void unsignedInteger() {
-
+		switch (lookAhead.getIdentifier()) {
+			case "mp_integer_lit":
+				digitSequence();
+				break;
+			default:
+				handleError(false, null);
+		}
 	}
 
-	private void signedInteger() {
-
+	private void sign() {
+		switch (lookAhead.getIdentifier()) {
+			case "mp_plus":
+				match("+");
+				break;
+			case "mp_minus":
+				match("-");
+				break;
+			default:
+				handleError(false, null);
+		}
 	}
 
+	/* TODO: We have to take a look at this one */
 	private void under() {
-
+		match("_");
 	}
 
 	private void digitSequence() {
-
+		switch (lookAhead.getIdentifier()) {
+			case "mp_integer_lit":
+				for (int i=0; i<lookAhead.getIdentifier().length(); i++)
+					digit();
+				break;
+			default:
+				handleError(false, null);
+		}
 	}
 
 	private void letter() {
-
+		boolean found = false;
+		String letters[] = {"a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z",
+						   "A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"};
+		for (int i=0; i<letters.length; i++) {
+			found = match(letters[i],true);
+			if (found)
+				break;
+		}
+		if (!found)
+			handleError(true,"digit");
 	}
 
 	private void digit() {
-
+		boolean found = false;
+		String digits[] = {"0","1","2","3","4","5","6","7","8","9"};
+		for (int i=0; i<digits.length; i++) {
+			found = match(digits[i],true);
+			if (found)
+				break;
+		}
+		if (!found)
+			handleError(true,"digit");
 	}
 
 }
