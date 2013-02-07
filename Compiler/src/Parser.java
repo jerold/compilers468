@@ -101,8 +101,7 @@ public class Parser {
 
 	}
 
-	// THIS METHOD IS WRONG....NEEDS TO HIT vDP() and pAFDP() and sP()...see
-	// alternative below
+
 	// I changed this David. We'll see if it works.
 	private void block() {
 		variableDeclarationPart();
@@ -110,18 +109,6 @@ public class Parser {
 		statementPart();
 	}
 
-	// private void block() {
-	// switch(lookAhead.getIdentifier()) {
-	// case "mp_var":
-	// variableDeclarationPart();
-	// match("var");
-	// procedureAndFunctionDeclarationPart();
-	// match("procedure");
-	// statementPart();
-	// match("begin");
-	// break;
-	// }
-	// }
 
 	// I think this works now David. check it out and see what you think
 	private void variableDeclarationPart() {
@@ -158,13 +145,16 @@ public class Parser {
 
 	private void procedureAndFunctionDeclarationPart() {
 		switch (lookAhead.getIdentifier()) {
+		// must be able to repeat this || procedureDelcaration()....not sure if this will work
 		case "mp_function":
-			functionDeclaration(); // must be able to repeat this ||
-									// procedureDelcaration()
+			functionDeclaration(); 
+			match(";");	
+			procedureAndFunctionDeclarationPart();
 			break;
 		case "mp_procedure":
-			procedureDeclaration();// must be able to repeat this ||
-									// functionDelcaration()
+			procedureDeclaration();
+			match(";");	
+			procedureAndFunctionDeclarationPart();
 			break;
 		default:
 			return;
@@ -240,7 +230,11 @@ public class Parser {
 		case "mp_prodecure":
 			match("procedure");
 			identifier();
-			// NEED TO ADD OPTIONAL STUFF HERE???
+			// This if should work assuming identifier is
+			// moving lookAhead.getIdentifier() forward
+			if (lookAhead.getIdentifier().equals("(")) {
+				formalParameterList();
+			}
 			break;
 		default:
 			handleError(false, null);
@@ -253,7 +247,11 @@ public class Parser {
 		case "mp_function":
 			match("function");
 			identifier();
-			// NEED TO ADD OPTIONAL STUFF HERE???
+			// This if should work assuming identifier is
+			// moving lookAhead.getIdentifier() forward
+			if (lookAhead.getIdentifier().equals("(")) {
+				formalParameterList();
+			}
 			match(":");
 			type();
 			break;
@@ -264,11 +262,35 @@ public class Parser {
 	}
 
 	private void formalParameterList() {
-
+		switch (lookAhead.getIdentifier()) {
+		case "mp_lparen":
+			match("lparen");
+			formalParameterSection();  
+			//need to handle { ";" FormalParameterSection } here
+			//maybe like this...?
+			while(lookAhead.getIdentifier().equals(";")) {
+				match(";");
+				formalParameterSection();
+			}
+			match("rparen");
+			break;
+		default:
+			return;
+		}
 	}
 
 	private void formalParameterSection() {
-
+		switch (lookAhead.getIdentifier()) {
+		case "mp_identifier":
+			valueParameterSection();  //check this one 
+			break;
+		case "mp_var":
+			match("var");
+			variableParameterSection();
+			break;
+		default:
+			return;
+		}
 	}
 
 	// Clark's section
