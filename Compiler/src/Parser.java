@@ -259,25 +259,25 @@ public class Parser {
 	// Clark's section
 	private void valueParameterSection() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_identifier":
+		case "mp_identifier":		//valueParameterSection -> IdentifierList, ":", Type
 			identifierList();
 			match(":");
 			type();
 			break;
-		default:
+		default:				//default case is an invalid lookAhead token in language
 			handleError(false, null);
 		}
 	}
 
 	private void variableParameterSection() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_var":
+		case "mp_var":		//variableParameterSection -> "var" ,identifierList, ":", Type
 			match("var");
 			identifierList();
 			match(":");
 			type();
 			break;
-		default:
+		default:				//default case is an invalid lookAhead token in language
 			handleError(false, null);
 		}
 
@@ -285,12 +285,12 @@ public class Parser {
 
 	private void compoundStatement() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_begin":
+		case "mp_begin":		//compoundStatement -> "begin", statementSequence, "end"
 			match("begin");
 			statementSequence();
 			match("end");
 			break;
-		default:
+		default:			//default case is an invalid lookAhead token in language
 			handleError(false, null);
 		}
 
@@ -298,35 +298,35 @@ public class Parser {
 
 	private void statementSequence() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_begin":
+		case "mp_begin":		//statementSequence -> statement
 			statement();
 			break;
-		case "mp_for":
+		case "mp_for":			//statementSequence -> statement
 			statement();
 			break;
-		case "mp_if":
+		case "mp_if":			//statementSequence -> statement
 			statement();
 			break;
-		case "mp_read":
+		case "mp_read":			//statementSequence -> statement
 			statement();
 			break;
-		case "mp_repeat":
+		case "mp_repeat":		//statementSequence -> statement
 			statement();
 			break;
-		case "mp_while":
+		case "mp_while":		//statementSequence -> statement
 			statement();
 			break;
-		case "mp_write":
+		case "mp_write":		//statementSequence -> statement
 			statement();
 			break;
-		case "mp_identifier":
+		case "mp_identifier":	//statementSequence -> statement
 			statement();
 			break;
-		case "mp_scolon":
+		case "mp_scolon":		//statementSequence -> statement
 			match(";");
-			statement();
+			statementSequence(); //recursive here
 			break;
-		default:
+		default:			//default case is an invalid lookAhead token in language
 			handleError(false, null);
 		}
 
@@ -334,31 +334,31 @@ public class Parser {
 
 	private void statement() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_begin":
+		case "mp_begin":			//statement -> compoundStatement
 			compoundStatement();
 			break;
-		case "mp_for":
+		case "mp_for":				//statement -> compoundStatement
 			compoundStatement();
 			break;
-		case "mp_if":
+		case "mp_if":				//statement -> compoundStatement
 			compoundStatement();
 			break;
-		case "mp_read":
+		case "mp_read":				//statement -> simpleStatement
 			simpleStatement();
 			break;
-		case "mp_repeat":
+		case "mp_repeat":			//statement -> compoundStatement
 			compoundStatement();
 			break;
-		case "mp_while":
+		case "mp_while":			//statement -> compoundStatement
 			compoundStatement();
 			break;
-		case "mp_write":
+		case "mp_write":			//statement -> simpleStatement
 			simpleStatement();
 			break;
-		case "mp_identifier":
+		case "mp_identifier":		//statement -> simpleStatement
 			simpleStatement();
 			break;
-		default:
+		default:			//default case is an invalid lookAhead token in language
 			handleError(false, null);
 		}
 
@@ -366,20 +366,20 @@ public class Parser {
 
 	private void simpleStatement() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_read":
+		case "mp_read":			//simpleStatement -> readStatement
 			readStatement();
 			break;
-		case "mp_write":
+		case "mp_write":		//simpleStatement -> writeStatement
 			writeStatement();
 			break;
 		// seems ambiguous here???
-		case "mp_identifier":
+		case "mp_identifier":  //simpleStatement -> assignmentStatement and procedureStatement if lookAhead is identifier
 			assignmentStatement();
 			procedureStatement();
 			break;
-		case "":
+		case ";":				//simpleStatement -> emptyStatement-- not really sure what epsilon is yet?!
 			emptyStatement();
-		default:
+		default:			//default case is an invalid lookAhead token in language
 			handleError(false, null);
 		}
 
@@ -387,32 +387,32 @@ public class Parser {
 
 	private void structuredStatement() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_begin":
+		case "mp_begin":			//structuredStatement -> compoundStatement
 			compoundStatement();
 			break;
-		case "mp_for":
+		case "mp_for":				//structuredStatement -> compoundStatement
 			compoundStatement();
 			break;
-		case "mp_if":
+		case "mp_if":				//structuredStatement -> conditionalStatement
 			conditionalStatement();
 			break;
-		case "mp_repeat":
+		case "mp_repeat":			//structuredStatement -> compoundStatement
 			compoundStatement();
 			break;
-		case "mp_while":
+		case "mp_while":			//structuredStatement -> compoundStatement
 			compoundStatement();
 			break;
-		default:
+		default:			//default case is an invalid lookAhead token in language
 			handleError(false, null);
 		}
 	}
 
 	private void conditionalStatement() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_if":
+		case "mp_if":		//conditionalStatement -> ifStatement
 			ifStatement();
 			break;
-		default:
+		default:			//default case is an invalid lookAhead token in language
 			handleError(false, null);
 		}
 
@@ -420,16 +420,16 @@ public class Parser {
 
 	private void repetitiveStatement() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_while":
+		case "mp_while":		//repetitiveStatement -> whileStatement
 			whileStatement();
 			break;
-		case "mp_repeat":
+		case "mp_repeat":		//repetitiveStatement -> repeatStatement
 			repeatStatement();
 			break;
-		case "mp_for":
+		case "mp_for":			//repetitiveStatement -> forStatement
 			forStatement();
 			break;
-		default:
+		default:			//default case is an invalid lookAhead token in language
 			handleError(false, null);
 		}
 
@@ -437,8 +437,8 @@ public class Parser {
 
 	private void emptyStatement() {
 		switch (lookAhead.getIdentifier()) {
-		case "":
-			match("");
+		case ";":			//not really sure what to do here.
+			match(";");		//I'm assuming ;;;; would be empty statements
 			break;
 		default:
 			handleError(false, null);
@@ -448,11 +448,11 @@ public class Parser {
 
 	private void readStatement() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_read":
+		case "mp_read":			//readStatement -> "read", readParameterList
 			match("read");
 			readParameterList();
 			break;
-		default:
+		default:				//default case is an invalid lookAhead token in language
 			handleError(false, null);
 		}
 
@@ -460,11 +460,11 @@ public class Parser {
 
 	private void writeStatement() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_write":
+		case "mp_write":		//writeStatement -> "write", writeParameterList
 			match("write");
 			writeParameterList();
 			break;
-		default:
+		default:			//default case is an invalid lookAhead token in language
 			handleError(false, null);
 		}
 
@@ -473,14 +473,14 @@ public class Parser {
 	// this seems ambiguous also??
 	private void assignmentStatement() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_identifier":
+		case "mp_identifier":		//assignmentStatement -> (Variable|FunctionIdentifier), ":=", expression
 			// on the next two lines
 			variable();
 			functionIdentifier();
 			match(":=");
 			expression();
 			break;
-		default:
+		default:			//default case is an invalid lookAhead token in language
 			handleError(false, null);
 		}
 
@@ -488,15 +488,20 @@ public class Parser {
 
 	private void procedureStatement() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_identifier":
+		case "mp_identifier":		//procedureStatement -> procedureIdentifier, [actualParameterList]
 			procedureIdentifier();
-			break;
-		case "mp_lparen":
-			match("(");
-			actualParameterList();
-			match(")");
-			break;
-		default:
+			//break;
+//		case "mp_lparen":
+//			match("(");
+//			actualParameterList();
+//			match(")");
+//			break;
+			if(lookAhead.getIdentifier().equals("mp_lparen")){
+				match("(");
+				actualParameterList();
+				match(")");
+			}
+		default:			//default case is an invalid lookAhead token in language
 			handleError(false, null);
 		}
 
@@ -504,16 +509,20 @@ public class Parser {
 
 	private void ifStatement() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_if":
+		case "mp_if":		//ifStatement -> "if", booleanExpression, "then", statement, ["else", statement]
 			match("if");
 			booleanExpression();
 			match("then");
 			statement();
-			break;
-		case "mp_else":
-			match("else");
-			statement();
-		default:
+//			break;
+//		case "mp_else":
+//			match("else");
+//			statement();
+			if(lookAhead.getIdentifier().equals("mp_else")){
+				match("else");
+				statement();
+			}
+		default:			//default case is an invalid lookAhead token in language
 			handleError(false, null);
 		}
 
