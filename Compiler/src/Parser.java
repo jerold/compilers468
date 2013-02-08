@@ -275,6 +275,9 @@ public class Parser {
 
 	}
 
+	// I'm not sure whose this is, but the matches need to match lexemes, not token names.
+	// lparen should be "(", rparen should be ")"
+	// I'm not sure where else this may be, but should be changed everywhere.
 	private void formalParameterList() {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_lparen":
