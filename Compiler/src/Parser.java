@@ -87,7 +87,7 @@ public class Parser {
 		}
 	}
 
-	// David's Section---work in process, NOT DONE with my section
+	// David's Section
 	private void program() {
 		// lookAhead.describe();
 		switch (lookAhead.getIdentifier()) {
@@ -275,21 +275,17 @@ public class Parser {
 
 	}
 
-	// I'm not sure whose this is, but the matches need to match lexemes, not token names.
-	// lparen should be "(", rparen should be ")"
-	// I'm not sure where else this may be, but should be changed everywhere.
+
 	private void formalParameterList() {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_lparen":
-			match("lparen");
+			match("(");
 			formalParameterSection();  
-			//need to handle { ";" FormalParameterSection } here
-			//maybe like this...?
 			while(lookAhead.getIdentifier().equals(";")) {
 				match(";");
 				formalParameterSection();
 			}
-			match("rparen");
+			match(")");
 			break;
 		default:
 			return;
@@ -301,6 +297,7 @@ public class Parser {
 		case "mp_identifier":
 			valueParameterSection();  //check this one 
 			break;
+//is this the correct match on var???
 		case "mp_var":
 			match("var");
 			variableParameterSection();
