@@ -556,6 +556,8 @@ public class Parser {
 			// match(")");
 			// break;
 			if (lookAhead.getIdentifier().equals("mp_lparen")) {
+				
+				// This is JJ, should we be eating these parens here? Think actualParameter should do that
 				match("(");
 				actualParameterList();
 				match(")");
@@ -590,39 +592,96 @@ public class Parser {
 
 	// Jerold's section
 	private void repeatStatement() {
-
+		switch (lookAhead.getIdentifier()) {
+		case "mp_repeat": // repeatStatement -> "repeat", statementSequence, "until", booleanExpression
+			match("repeat");
+			statementSequence();
+			match("until");
+			booleanExpression();
+			break;
+		default: // default case is an invalid lookAhead token in language
+			handleError(false, null);
+		}
 	}
 
 	private void whileStatement() {
-
+		switch (lookAhead.getIdentifier()) {
+		case "mp_while": // whileStatement -> "while", booleanExpression, "do" statement
+			match("while");
+			booleanExpression();
+			match("do");
+			statement();
+			break;
+		default: // default case is an invalid lookAhead token in language
+			handleError(false, null);
+		}
 	}
 
 	private void forStatement() {
-
+		switch (lookAhead.getIdentifier()) {
+		case "mp_for": // forStatement -> "for", controlVariable, ":=", initialValue, ("to"|"downto"), finalVariable, "do", statement
+			match("for");
+			controlVariable();
+			match(":=");
+			initialValue();
+			if (lookAhead.getIdentifier().equals("mp_to")) {
+				match("to");
+			} else if (lookAhead.getIdentifier().equals("mp_downto")) {
+				match("downto");
+			} else {
+				handleError(false, null);
+			}
+			finalValue();
+			match("do");
+			statement();
+			break;
+		default: // default case is an invalid lookAhead token in language
+			handleError(false, null);
+		}
 	}
 
 	private void controlVariable() {
-
+		variableIdentifier();
 	}
 
 	private void initialValue() {
-
+		ordinalExpression();
 	}
 
 	private void finalValue() {
-
+		ordinalExpression();
 	}
 
 	private void expression() {
-
+		// I should be switching on all Factor token id's and sign id's I think...
+//		switch (lookAhead.getIdentifier()) {
+//		case "mp_equal":
+//			simpleExpression();
+//			break;
+//		default: // optional case statement proceed citizen...
+//			break;
+//		}
+		switch (lookAhead.getIdentifier()) {
+		case "mp_equal":
+		case "mp_lthan":
+		case "mp_gthan":
+		case "mp_lequal":
+		case "mp_gequal":
+		case "mp_nequal":
+			relationalOperator();
+			simpleExpression();
+			break;
+		default: // optional case statement proceed citizen...
+			break;
+		}
 	}
 
 	private void simpleExpression() {
-
+		// Not sure what mustaches mean, so I'll wait on this one.
 	}
 
 	private void term() {
-
+		// Not sure what mustaches mean, so I'll wait on this one.
 	}
 
 	// this is not LL1 for some reason??!!
@@ -644,6 +703,7 @@ public class Parser {
 			match(")");
 			break;
 		case "mp_not":
+			// recurses!
 		default:
 			handleError(false, null);
 		}
@@ -651,23 +711,86 @@ public class Parser {
 	}
 
 	private void relationalOperator() {
-
+		switch (lookAhead.getIdentifier()) {
+		case "mp_equal":
+			match("=");
+			break;
+		case "mp_lthan":
+			match("<");
+			break;
+		case "mp_gthan":
+			match(">");
+			break;
+		case "mp_lequal":
+			match("<=");
+			break;
+		case "mp_gequal":
+			match(">=");
+			break;
+		case "mp_nequal":
+			match("<>");
+			break;
+		default: // default case is an invalid lookAhead token in language
+			handleError(false, null);
+		}
 	}
 
 	private void addingOperator() {
-
+		switch (lookAhead.getIdentifier()) {
+		case "mp_plus":
+			match("+");
+			break;
+		case "mp_minus":
+			match("-");
+			break;
+		case "mp_or": // How is this an adding operator?
+			match("or");
+			break;
+		default: // default case is an invalid lookAhead token in language
+			handleError(false, null);
+		}
 	}
 
 	private void multiplyingOperator() {
-
+		switch (lookAhead.getIdentifier()) {
+		case "mp_times":
+			match("*");
+			break;
+		case "mp_div":
+			match("div");
+			break;
+		case "mp_mod":
+			match("mod");
+			break;
+		case "mp_and":
+			match("and");
+			break;
+		default: // default case is an invalid lookAhead token in language
+			handleError(false, null);
+		}
 	}
 
 	private void functionDesegnator() {
-
+		switch (lookAhead.getIdentifier()) {
+		case "mp_identifier":
+			functionIdentifier();
+			if (lookAhead.getIdentifier().equals("mp_lparen")) {
+				actualParameterList();
+			}
+			break;
+		default: // default case is an invalid lookAhead token in language
+			handleError(false, null);
+		}
 	}
 
 	private void variable() {
-
+		switch (lookAhead.getIdentifier()) {
+		case "mp_identifier":
+			variableIdentifier();
+			break;
+		default: // default case is an invalid lookAhead token in language
+			handleError(false, null);
+		}
 	}
 
 	// Logan's section
