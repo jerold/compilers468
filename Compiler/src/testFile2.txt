@@ -6,7 +6,7 @@ program Tester;
 
   begin {tester}
     Write; Write;
-    Write('Please enter an integer value for I: ');
+    Write('Please enter an integer value for I: ' );
     Read(I);
     I := I + 1;
     Write('The current value of I is ' , I-1);
