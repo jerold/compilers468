@@ -11,13 +11,13 @@ public class Parser {
 		// while (!scanner.endOfFile()) {
 		lookAhead = scanner.getToken();
 		int i = 0;
-		//lookAhead would be null if comment opens the program
+		// lookAhead would be null if comment opens the program
 		while (lookAhead == null) {
 			// lookAhead.describe();
 			// if(lookAhead.getLexeme().equals("program")){
 			// program();
 			// }
-			lookAhead = scanner.getToken();	
+			lookAhead = scanner.getToken();
 		}
 		i = start();
 		// }
@@ -32,54 +32,42 @@ public class Parser {
 			System.out.println("Expected \"" + s + "\" but found " + errorToken
 					+ " on line " + lookAhead.getLineNum() + " in column "
 					+ lookAhead.getColNum() + ".");
-			//get the next token and keep trying
-			//at some point we will have to determine the appropriate method to 
-			//call after getting the next token
-			lookAhead = scanner.getToken(); 
+			// get the next token and keep trying
+			// at some point we will have to determine the appropriate method to
+			// call after getting the next token
+			lookAhead = scanner.getToken();
 		} else {
 			if (lookAhead == null) {
 				// this happens with a valid comment. we just want the next
 				// token and continue
 				lookAhead = scanner.getToken();
 			} else {
-				System.out.println("the other kind of error to be handled here");
+				System.out.println("Expected syntax of type \"" + s
+						+ "\" on line " + lookAhead.getLineNum()
+						+ " in column " + lookAhead.getColNum() + ".");
 			}
 		}
 
 	}
 
-	/**
-	 * Matches the left token to lookahead.
-	 * If there is a match, the lookahead is moved to the next scanned token
-	 * 
-	 * @param s		The string to match to
-	 * @param test	Whether or not this is a test (if so, suppress errors) (maybe we should keep it from getting next lookahead as well)
-	 * @return		Whether or not there was a match
-	 */
-	private boolean match(String s, boolean test) {
+	private void match(String s) {
 		if (s.equals(lookAhead.getLexeme())) {
 			lookAhead.describe();
 			lookAhead = scanner.getToken();
-			while (lookAhead == null){
+			while (lookAhead == null) {
 				lookAhead = scanner.getToken();
 			}
-			return true;
 		} else {
-			if (!test) handleError(true, s);
-			return false;
+			handleError(true, s);
 		}
-	}
-	
-	private boolean match(String s) {
-		return match(s,false);
 	}
 
 	private int start() {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_program":
 			program();
-//			int lineNum = lookAhead.getLineNum() + 1;
-//			lookAhead = new Token("mp_eof", lineNum, 0, "eof");
+			// int lineNum = lookAhead.getLineNum() + 1;
+			// lookAhead = new Token("mp_eof", lineNum, 0, "eof");
 			match("eof");
 			return 1;
 		default:
@@ -98,7 +86,7 @@ public class Parser {
 			match(".");
 			break;
 		default:
-			handleError(false, null);
+			handleError(false, "Program");
 		}
 
 	}
@@ -110,11 +98,10 @@ public class Parser {
 			identifier();
 			break;
 		default:
-			handleError(false, null);
+			handleError(false, "Program Heading");
 		}
 
 	}
-
 
 	// I changed this David. We'll see if it works.
 	private void block() {
@@ -122,7 +109,6 @@ public class Parser {
 		procedureAndFunctionDeclarationPart();
 		statementPart();
 	}
-
 
 	// I think this works now David. check it out and see what you think
 	private void variableDeclarationPart() {
@@ -142,7 +128,7 @@ public class Parser {
 			}
 			break;
 		default:
-			handleError(false, null);
+			handleError(false, "Variable Declaration Part");
 		}
 	}
 
@@ -159,15 +145,16 @@ public class Parser {
 
 	private void procedureAndFunctionDeclarationPart() {
 		switch (lookAhead.getIdentifier()) {
-		// must be able to repeat this || procedureDelcaration()....not sure if this will work
+		// must be able to repeat this || procedureDelcaration()....not sure if
+		// this will work
 		case "mp_function":
-			functionDeclaration(); 
-			match(";");	
+			functionDeclaration();
+			match(";");
 			procedureAndFunctionDeclarationPart();
 			break;
 		case "mp_procedure":
 			procedureDeclaration();
-			match(";");	
+			match(";");
 			procedureAndFunctionDeclarationPart();
 			break;
 		default:
@@ -182,7 +169,7 @@ public class Parser {
 			compoundStatement();
 			break;
 		default:
-			handleError(false, null);
+			handleError(false, "Statement Part");
 		}
 
 	}
@@ -195,7 +182,7 @@ public class Parser {
 			type();
 			break;
 		default:
-			handleError(false, null);
+			handleError(false, "Variable Declaration");
 		}
 
 	}
@@ -209,7 +196,7 @@ public class Parser {
 			match("float");
 			break;
 		default:
-			handleError(false, null);
+			handleError(false, "Type");
 		}
 
 	}
@@ -222,7 +209,7 @@ public class Parser {
 			block();
 			break;
 		default:
-			handleError(false, null);
+			handleError(false, "Procedure Declaration");
 		}
 
 	}
@@ -235,7 +222,7 @@ public class Parser {
 			block();
 			break;
 		default:
-			handleError(false, null);
+			handleError(false, "Function Declaration");
 		}
 	}
 
@@ -251,7 +238,7 @@ public class Parser {
 			}
 			break;
 		default:
-			handleError(false, null);
+			handleError(false, "Procedure Heading");
 		}
 
 	}
@@ -270,18 +257,17 @@ public class Parser {
 			type();
 			break;
 		default:
-			handleError(false, null);
+			handleError(false, "Function Heading");
 		}
 
 	}
-
 
 	private void formalParameterList() {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_lparen":
 			match("(");
-			formalParameterSection();  
-			while(lookAhead.getIdentifier().equals(";")) {
+			formalParameterSection();
+			while (lookAhead.getIdentifier().equals(";")) {
 				match(";");
 				formalParameterSection();
 			}
@@ -295,9 +281,9 @@ public class Parser {
 	private void formalParameterSection() {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_identifier":
-			valueParameterSection();  //check this one 
+			valueParameterSection(); // check this one
 			break;
-//is this the correct match on var???
+		// is this the correct match on var???
 		case "mp_var":
 			match("var");
 			variableParameterSection();
@@ -317,7 +303,7 @@ public class Parser {
 			type();
 			break;
 		default: // default case is an invalid lookAhead token in language
-			handleError(false, null);
+			handleError(false, "Value Parameter Section");
 		}
 	}
 
@@ -331,7 +317,7 @@ public class Parser {
 			type();
 			break;
 		default: // default case is an invalid lookAhead token in language
-			handleError(false, null);
+			handleError(false, "Variable Parameter Section");
 		}
 
 	}
@@ -345,12 +331,13 @@ public class Parser {
 			match("end");
 			break;
 		default: // default case is an invalid lookAhead token in language
-			handleError(false, null);
+			handleError(false, "Compound Statement");
 		}
 
 	}
 
 	private void statementSequence() {
+
 		switch (lookAhead.getIdentifier()) {
 		case "mp_begin": // statementSequence -> statement
 			statement();
@@ -377,13 +364,12 @@ public class Parser {
 			statement();
 			break;
 		case "mp_scolon": // statementSequence -> statement
-			match(";");
-			statement(); // recursive here
+		case "mp_end":
 			break;
 		default: // default case is an invalid lookAhead token in language
-			handleError(false, null);
+			handleError(false, "Statement Sequence");
 		}
-		while (lookAhead.getIdentifier().equals("mp_scolon")){
+		while (lookAhead.getIdentifier().equals("mp_scolon")) {
 			match(";");
 			statementSequence();
 		}
@@ -391,9 +377,6 @@ public class Parser {
 
 	private void statement() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_scolon": // statementSequence -> statement
-			match(";");
-			break;
 		case "mp_begin": // statement -> compoundStatement
 			compoundStatement();
 			break;
@@ -419,7 +402,7 @@ public class Parser {
 			simpleStatement();
 			break;
 		default: // default case is an invalid lookAhead token in language
-			handleError(false, null);
+			handleError(false, "Statement");
 		}
 
 	}
@@ -436,14 +419,13 @@ public class Parser {
 		case "mp_identifier": // simpleStatement -> assignmentStatement and
 								// procedureStatement if lookAhead is identifier
 			assignmentStatement();
-			procedureStatement();
+			//procedureStatement();
 			break;
 		case ";": // simpleStatement -> emptyStatement-- not really sure what
 					// epsilon is yet?!
 			emptyStatement();
-			break;
 		default: // default case is an invalid lookAhead token in language
-			handleError(false, null);
+			handleError(false, "Simple Statement");
 		}
 
 	}
@@ -466,7 +448,7 @@ public class Parser {
 			compoundStatement();
 			break;
 		default: // default case is an invalid lookAhead token in language
-			handleError(false, null);
+			handleError(false, "Structured Statement");
 		}
 	}
 
@@ -476,7 +458,7 @@ public class Parser {
 			ifStatement();
 			break;
 		default: // default case is an invalid lookAhead token in language
-			handleError(false, null);
+			handleError(false, "Conditional Statement");
 		}
 
 	}
@@ -493,7 +475,7 @@ public class Parser {
 			forStatement();
 			break;
 		default: // default case is an invalid lookAhead token in language
-			handleError(false, null);
+			handleError(false, "Repetitive Statement");
 		}
 
 	}
@@ -504,7 +486,7 @@ public class Parser {
 			match(";"); // I'm assuming ;;;; would be empty statements
 			break;
 		default:
-			handleError(false, null);
+			handleError(false, "Empty Statement");
 		}
 
 	}
@@ -516,7 +498,7 @@ public class Parser {
 			readParameterList();
 			break;
 		default: // default case is an invalid lookAhead token in language
-			handleError(false, null);
+			handleError(false, "Read Statement");
 		}
 
 	}
@@ -526,10 +508,9 @@ public class Parser {
 		case "mp_write": // writeStatement -> "write", writeParameterList
 			match("write");
 			writeParameterList();
-			//match(";");
 			break;
 		default: // default case is an invalid lookAhead token in language
-			handleError(false, null);
+			handleError(false, "Write Statement");
 		}
 
 	}
@@ -542,12 +523,12 @@ public class Parser {
 								// expression
 			// on the next two lines
 			variable();
-			functionIdentifier();
+			//functionIdentifier();
 			match(":=");
 			expression();
 			break;
 		default: // default case is an invalid lookAhead token in language
-			handleError(false, null);
+			handleError(false, "Assignment Statement");
 		}
 
 	}
@@ -557,23 +538,13 @@ public class Parser {
 		case "mp_identifier": // procedureStatement -> procedureIdentifier,
 								// [actualParameterList]
 			procedureIdentifier();
-			// break;
-			// case "mp_lparen":
-			// match("(");
-			// actualParameterList();
-			// match(")");
-			// break;
-			if (lookAhead.getIdentifier().equals("mp_lparen")) {
-				
-				// This is JJ, should we be eating these parens here? Think actualParameter should do that
-				match("(");
-				actualParameterList();
-				match(")");
-			}
+			break;	
 		default: // default case is an invalid lookAhead token in language
-			handleError(false, null);
+			handleError(false, "Procedure Statement");
 		}
-
+		if (lookAhead.getIdentifier().equals("mp_lparen")) {
+			actualParameterList();
+		}
 	}
 
 	private void ifStatement() {
@@ -593,7 +564,7 @@ public class Parser {
 				statement();
 			}
 		default: // default case is an invalid lookAhead token in language
-			handleError(false, null);
+			handleError(false, "If Statement");
 		}
 
 	}
@@ -601,33 +572,37 @@ public class Parser {
 	// Jerold's section
 	private void repeatStatement() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_repeat": // repeatStatement -> "repeat", statementSequence, "until", booleanExpression
+		case "mp_repeat": // repeatStatement -> "repeat", statementSequence,
+							// "until", booleanExpression
 			match("repeat");
 			statementSequence();
 			match("until");
 			booleanExpression();
 			break;
 		default: // default case is an invalid lookAhead token in language
-			handleError(false, null);
+			handleError(false, "Repeat Statement");
 		}
 	}
 
 	private void whileStatement() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_while": // whileStatement -> "while", booleanExpression, "do" statement
+		case "mp_while": // whileStatement -> "while", booleanExpression, "do"
+							// statement
 			match("while");
 			booleanExpression();
 			match("do");
 			statement();
 			break;
 		default: // default case is an invalid lookAhead token in language
-			handleError(false, null);
+			handleError(false, "While Statement");
 		}
 	}
 
 	private void forStatement() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_for": // forStatement -> "for", controlVariable, ":=", initialValue, ("to"|"downto"), finalVariable, "do", statement
+		case "mp_for": // forStatement -> "for", controlVariable, ":=",
+						// initialValue, ("to"|"downto"), finalVariable, "do",
+						// statement
 			match("for");
 			controlVariable();
 			match(":=");
@@ -637,14 +612,14 @@ public class Parser {
 			} else if (lookAhead.getIdentifier().equals("mp_downto")) {
 				match("downto");
 			} else {
-				handleError(false, null);
+				handleError(false, "For Statement Argument");
 			}
 			finalValue();
 			match("do");
 			statement();
 			break;
 		default: // default case is an invalid lookAhead token in language
-			handleError(false, null);
+			handleError(false, "For Statement");
 		}
 	}
 
@@ -661,15 +636,26 @@ public class Parser {
 	}
 
 	private void expression() {
-		// I should be switching on all Factor token id's and sign id's I think...
-//		switch (lookAhead.getIdentifier()) {
-//		case "mp_equal":
-//			simpleExpression();
-//			break;
-//		default: // optional case statement proceed citizen...
-//			break;
-//		}
+		// I should be switching on all Factor token id's and sign id's I
+		// think...
+		// switch (lookAhead.getIdentifier()) {
+		// case "mp_equal":
+		// simpleExpression();
+		// break;
+		// default: // optional case statement proceed citizen...
+		// break;
+		// }
+		
 		switch (lookAhead.getIdentifier()) {
+		case "mp_plus":
+		case "mp_minus":
+		case "mp_integer_lit":
+		case "mp_identifier":
+		case "mp_string_lit":
+		case "mp_lparen":
+		case "mp_not":
+			simpleExpression(); //still might have missed a few here
+			break;
 		case "mp_equal":
 		case "mp_lthan":
 		case "mp_gthan":
@@ -686,10 +672,31 @@ public class Parser {
 
 	private void simpleExpression() {
 		// Not sure what mustaches mean, so I'll wait on this one.
+		switch (lookAhead.getIdentifier()) {
+		case "mp_plus":
+		case "mp_minus":
+			sign();
+			break;
+		default:
+			term();
+			//handleError(false, "Factor");
+		}
+		//I think this should be an if, not a while. We will go over it.
+		while (lookAhead.getIdentifier().equals("mp_plus") | lookAhead.getIdentifier().equals("mp_minus") 
+				| lookAhead.getIdentifier().equals("mp_or")) {
+			addingOperator();
+			term();
+		}
 	}
 
 	private void term() {
 		// Not sure what mustaches mean, so I'll wait on this one.
+		factor();
+		while (lookAhead.getIdentifier().equals("mp_times") | lookAhead.getIdentifier().equals("mp_div") 
+				| lookAhead.getIdentifier().equals("mp_mod") | lookAhead.getIdentifier().equals("mp_and")) {
+			multiplyingOperator();
+			factor();
+		}
 	}
 
 	// this is not LL1 for some reason??!!
@@ -699,6 +706,7 @@ public class Parser {
 			unsignedInteger();
 			break;
 		case "mp_identifier":
+		case "mp_string_lit":
 			variable();
 			break;
 		// something must go here later the EBNF is WRONG!
@@ -712,8 +720,9 @@ public class Parser {
 			break;
 		case "mp_not":
 			// recurses!
+			factor();
 		default:
-			handleError(false, null);
+			handleError(false, "Factor");
 		}
 
 	}
@@ -739,7 +748,7 @@ public class Parser {
 			match("<>");
 			break;
 		default: // default case is an invalid lookAhead token in language
-			handleError(false, null);
+			handleError(false, "Relational Operator");
 		}
 	}
 
@@ -755,7 +764,7 @@ public class Parser {
 			match("or");
 			break;
 		default: // default case is an invalid lookAhead token in language
-			handleError(false, null);
+			handleError(false, "Adding Operator");
 		}
 	}
 
@@ -774,11 +783,11 @@ public class Parser {
 			match("and");
 			break;
 		default: // default case is an invalid lookAhead token in language
-			handleError(false, null);
+			handleError(false, "Multiplying Operator");
 		}
 	}
 
-	private void functionDesegnator() {
+	private void functionDesignator() {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_identifier":
 			functionIdentifier();
@@ -787,211 +796,221 @@ public class Parser {
 			}
 			break;
 		default: // default case is an invalid lookAhead token in language
-			handleError(false, null);
+			handleError(false, "Function Designator");
 		}
 	}
 
 	private void variable() {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_identifier":
+		case "mp_string_lit":
 			variableIdentifier();
 			break;
 		default: // default case is an invalid lookAhead token in language
-			handleError(false, null);
+			handleError(false, "Variable");
 		}
 	}
 
 	// Logan's section
 	private void actualParameterList() {
 		switch (lookAhead.getIdentifier()) {
-			case "mp_lparen":
-				match("(");
+		case "mp_lparen":
+			match("(");
+			actualParameter();
+			while (lookAhead.getIdentifier().equals(",")) {
+				match(",");
 				actualParameter();
-				while (match(",",true)) {
-					actualParameter();
-				}
-				match(")");
-				break;
-			default:
-				handleError(false, null);
+			}
+			match(")");
+			break;
+		default:
+			handleError(false, "Actual Parameter List");
 		}
 	}
 
 	private void actualParameter() {
 		switch (lookAhead.getIdentifier()) {
-			case "not":
-			case "mp_identifier":
-			case "mp_integer_lit":
-			case "mp_lparen":
-			case "mp_plus":
-			case "mp_minus":
-				expression();
-				break;
-			default:
-				handleError(false, null);
+		case "not":
+		case "mp_identifier":
+		case "mp_integer_lit":
+		case "mp_lparen":
+		case "mp_plus":
+		case "mp_minus":
+			expression();
+			break;
+		default:
+			handleError(false, "Actual Parameter");
 		}
 	}
 
 	private void readParameterList() {
 		switch (lookAhead.getIdentifier()) {
-			case "mp_lparen":
-				match("(");
+		case "mp_lparen":
+			match("(");
+			readParameter();
+			while (lookAhead.getIdentifier().equals(",")) {
+				match(",");
 				readParameter();
-				while (match(",",true)) {
-					readParameter();
-				}
-				match(")");
-				break;
-			default:
-				handleError(false, null);
+			}
+			match(")");
+			break;
+		default:
+			handleError(false, "Read Parameter List");
 		}
 	}
 
 	private void readParameter() {
 		switch (lookAhead.getIdentifier()) {
-			case "mp_identifier":
-				variable();
-				break;
-			default:
-				handleError(false, null);
+		case "mp_identifier":
+			variable();
+			break;
+		default:
+			handleError(false, "Read Parameter");
 		}
 	}
 
 	private void writeParameterList() {
 		switch (lookAhead.getIdentifier()) {
-			case "mp_lparen":
-				match("(");
+		case "mp_scolon":
+			break;
+		case "mp_lparen":
+			match("(");
+			writeParameter();
+			while (lookAhead.getIdentifier().equals("mp_comma")) {
+				match(",");
 				writeParameter();
-				while (match(",",true)) {
-					writeParameter();
-				}
-				match(")");
-				break;
-			default:
-				return;
-				//handleError(false, null);
+			}
+			match(")");
+			break;
+		default:
+			handleError(false, "Write Parameter List");
 		}
+		
 	}
 
 	private void writeParameter() {
 		switch (lookAhead.getIdentifier()) {
-			case "not":
-			case "mp_identifier":
-			case "mp_integer_lit":
-			case "mp_lparen":
-			case "mp_plus":
-			case "mp_minus":
-			case "mp_string_lit":
-				expression();
-				break;
-			default:
-				handleError(false, null);
+		case "not":
+		case "mp_identifier":
+		case "mp_integer_lit":
+		case "mp_lparen":
+		case "mp_plus":
+		case "mp_minus":
+		case "mp_float_lit": 
+		case "mp_string_lit":
+			expression();
+			break;
+		default:
+			handleError(false, "Write");
 		}
 	}
 
 	private void booleanExpression() {
 		switch (lookAhead.getIdentifier()) {
-			case "not":
-			case "mp_identifier":
-			case "mp_integer_lit":
-			case "mp_lparen":
-			case "mp_plus":
-			case "mp_minus":
-				ordinalExpression();
-				break;
-			default:
-				handleError(false, null);
+		case "not":
+		case "mp_identifier":
+		case "mp_integer_lit":
+		case "mp_lparen":
+		case "mp_plus":
+		case "mp_minus":
+			ordinalExpression();
+			break;
+		default:
+			handleError(false, "Boolean Expression");
 		}
 	}
 
 	private void ordinalExpression() {
 		switch (lookAhead.getIdentifier()) {
-			case "not":
-			case "mp_identifier":
-			case "mp_integer_lit":
-			case "mp_lparen":
-			case "mp_plus":
-			case "mp_minus":
-				expression();
-				break;
-			default:
-				handleError(false, null);
+		case "not":
+		case "mp_identifier":
+		case "mp_integer_lit":
+		case "mp_lparen":
+		case "mp_plus":
+		case "mp_minus":
+			expression();
+			break;
+		default:
+			handleError(false, "Ordinal Expression");
 		}
 	}
 
 	private void variableIdentifier() {
 		switch (lookAhead.getIdentifier()) {
-			case "mp_identifier":
-				identifier();
-				break;
-			default:
-				handleError(false, null);
+		case "mp_identifier":
+		case "mp_string_lit":
+			identifier();
+			break;
+		default:
+			handleError(false, "Variable Identifier");
 		}
 	}
 
 	private void procedureIdentifier() {
 		switch (lookAhead.getIdentifier()) {
-			case "mp_identifier":
-				identifier();
-				break;
-			default:
-				handleError(false, null);
+		case "mp_identifier":
+			identifier();
+			break;
+		default:
+			handleError(false, "Procedure Identifier");
 		}
 	}
 
 	private void functionIdentifier() {
 		switch (lookAhead.getIdentifier()) {
-			case "mp_identifier":
-				identifier();
-				break;
-			default:
-				handleError(false, null);
+		case "mp_identifier":
+			identifier();
+			break;
+		default:
+			handleError(false, "Function Identifier");
 		}
 	}
 
 	private void identifierList() {
 		switch (lookAhead.getIdentifier()) {
-			case "mp_identifier":
+		case "mp_identifier":
+			identifier();
+			while (lookAhead.getIdentifier().equals(",")) {
+				match(",");
 				identifier();
-				while (match(",",true)) {
-					identifier();
-				}
-				break;
-			default:
-				handleError(false, null);
+			}
+			break;
+		default:
+			handleError(false, "Identifier List");
 		}
 	}
 
 	private void identifier() {
 		switch (lookAhead.getIdentifier()) {
-			case "mp_identifier":
-				match(lookAhead.getLexeme());
-				break;
-			default:
-				handleError(false, null);
+		case "mp_identifier":
+		case "mp_string_lit":
+			match(lookAhead.getLexeme());
+			break;
+		default:
+			handleError(false, "Identifier");
 		}
 	}
 
 	private void unsignedInteger() {
 		switch (lookAhead.getIdentifier()) {
-			case "mp_integer_lit":
-				digitSequence();
-				break;
-			default:
-				handleError(false, null);
+		case "mp_integer_lit":
+			digitSequence();
+			break;
+		default:
+			handleError(false, "Unsigned Integer");
 		}
 	}
 
 	private void sign() {
 		switch (lookAhead.getIdentifier()) {
-			case "mp_plus":
-				match("+");
-				break;
-			case "mp_minus":
-				match("-");
-				break;
-			default:
-				handleError(false, null);
+		case "mp_plus":
+			match("+");
+			break;
+		case "mp_minus":
+			match("-");
+			break;
+		default:
+			handleError(false, "Sign");
 		}
 	}
 
@@ -1001,39 +1020,47 @@ public class Parser {
 	}
 
 	private void digitSequence() {
-		switch (lookAhead.getIdentifier()) {
-			case "mp_integer_lit":
-				for (int i=0; i<lookAhead.getIdentifier().length(); i++)
-					digit();
-				break;
-			default:
-				handleError(false, null);
-		}
+		//this isn't right...but
+		match(lookAhead.getLexeme());
+		//this  was not working
+//		switch (lookAhead.getIdentifier()) {
+//		case "mp_integer_lit":
+//			for (int i = 0; i < lookAhead.getIdentifier().length(); i++)
+//				digit();
+//			break;
+//		default:
+//			handleError(false, "Digit Sequence");
+//		}
 	}
 
 	private void letter() {
 		boolean found = false;
-		String letters[] = {"a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z",
-						   "A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"};
-		for (int i=0; i<letters.length; i++) {
-			found = match(letters[i],true);
-			if (found)
+		String letters[] = { "a", "b", "c", "d", "e", "f", "g", "h", "i", "j",
+				"k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v",
+				"w", "x", "y", "z", "A", "B", "C", "D", "E", "F", "G", "H",
+				"I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T",
+				"U", "V", "W", "X", "Y", "Z" };
+		for (int i = 0; i < letters.length; i++) {
+			if (lookAhead.getIdentifier().equals(letters[i])) {
+				found = true;
 				break;
+			}
 		}
 		if (!found)
-			handleError(true,"digit");
+			handleError(true, "digit");
 	}
 
 	private void digit() {
 		boolean found = false;
-		String digits[] = {"0","1","2","3","4","5","6","7","8","9"};
-		for (int i=0; i<digits.length; i++) {
-			found = match(digits[i],true);
-			if (found)
+		String digits[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+		for (int i = 0; i < digits.length; i++) {
+			if (lookAhead.getIdentifier().equals(digits[i])) {
+				found = true;
 				break;
+			}
 		}
 		if (!found)
-			handleError(true,"digit");
+			handleError(true, "digit");
 	}
 
 }
