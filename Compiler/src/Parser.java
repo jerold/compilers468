@@ -378,16 +378,22 @@ public class Parser {
 			break;
 		case "mp_scolon": // statementSequence -> statement
 			match(";");
-			statementSequence(); // recursive here
+			statement(); // recursive here
 			break;
 		default: // default case is an invalid lookAhead token in language
 			handleError(false, null);
 		}
-
+		while (lookAhead.getIdentifier().equals("mp_scolon")){
+			match(";");
+			statementSequence();
+		}
 	}
 
 	private void statement() {
 		switch (lookAhead.getIdentifier()) {
+		case "mp_scolon": // statementSequence -> statement
+			match(";");
+			break;
 		case "mp_begin": // statement -> compoundStatement
 			compoundStatement();
 			break;
@@ -435,6 +441,7 @@ public class Parser {
 		case ";": // simpleStatement -> emptyStatement-- not really sure what
 					// epsilon is yet?!
 			emptyStatement();
+			break;
 		default: // default case is an invalid lookAhead token in language
 			handleError(false, null);
 		}
@@ -519,6 +526,7 @@ public class Parser {
 		case "mp_write": // writeStatement -> "write", writeParameterList
 			match("write");
 			writeParameterList();
+			//match(";");
 			break;
 		default: // default case is an invalid lookAhead token in language
 			handleError(false, null);
@@ -860,7 +868,8 @@ public class Parser {
 				match(")");
 				break;
 			default:
-				handleError(false, null);
+				return;
+				//handleError(false, null);
 		}
 	}
 
@@ -872,6 +881,7 @@ public class Parser {
 			case "mp_lparen":
 			case "mp_plus":
 			case "mp_minus":
+			case "mp_string_lit":
 				expression();
 				break;
 			default:

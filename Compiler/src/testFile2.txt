@@ -1,6 +1,8 @@
 program Tester;
 
- var I: Integer;
+ var I: Integer; j:float; k:integer;
+ 	count:integer;
+ 	{comment}
 
   begin {tester}
     Write; Write;
