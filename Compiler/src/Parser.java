@@ -364,7 +364,6 @@ public class Parser {
 			statement();
 			break;
 		case "mp_scolon": // statementSequence -> statement
-		case "mp_end":
 			break;
 		default: // default case is an invalid lookAhead token in language
 			handleError(false, "Statement Sequence");
