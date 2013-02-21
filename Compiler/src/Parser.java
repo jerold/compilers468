@@ -564,6 +564,7 @@ public class Parser {
 				match("else");
 				statement();
 			}
+			break;
 		default: // default case is an invalid lookAhead token in language
 			handleError(false, "If Statement");
 		}
@@ -656,6 +657,8 @@ public class Parser {
 		case "mp_lparen":
 		case "mp_not":
 			simpleExpression(); //still might have missed a few here
+			//not sure about this yet???
+			expression();
 			break;
 		case "mp_equal":
 		case "mp_lthan":
@@ -668,6 +671,7 @@ public class Parser {
 			break;
 		default: // optional case statement proceed citizen...
 			break;
+			
 		}
 	}
 
