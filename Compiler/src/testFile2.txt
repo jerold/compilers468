@@ -12,6 +12,9 @@ program Tester;
     Write('The current value of I is ' , I-1);
     Write; Write;
     if (count < 10)
-    then write;
+    then  if (count <> 5) 
+    then write('WTF Man?');
     else write('something');
+    while (1)
+    do read(j);
   end. {tester}

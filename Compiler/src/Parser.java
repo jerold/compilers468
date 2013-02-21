@@ -351,14 +351,12 @@ public class Parser {
 			statement();
 			//match(";");
 			break;
-		case "mp_end":
-			break;
 		default: // default case is an invalid lookAhead token in language
 			handleError(false, "Statement Sequence");
 		}
 		while (lookAhead.getIdentifier().equals("mp_scolon")) {
 			match(";");
-			statementSequence();
+			statement();
 		}
 	}
 
@@ -377,7 +375,9 @@ public class Parser {
 		case "mp_scolon":    // statement -> simpleStatement
 			simpleStatement();
 			break;
-		
+		case "mp_else":
+		case "mp_end":
+			break;  //this is end the statement calls without an error when reaching an else or end statement
 		default: // default case is an invalid lookAhead token in language
 			handleError(false, "Statement");
 		}
@@ -528,15 +528,15 @@ public class Parser {
 			match("if");
 			booleanExpression();
 			match("then");
-			statement();
-			match(";");
+			statementSequence();
+			//match(";");
 			// break;
 			// case "mp_else":
 			// match("else");
 			// statement();
 			if (lookAhead.getIdentifier().equals("mp_else")) {
 				match("else");
-				statement();
+				statementSequence();
 			}
 			break;
 		default: // default case is an invalid lookAhead token in language
