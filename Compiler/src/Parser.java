@@ -20,9 +20,9 @@ public class Parser {
 			lookAhead = scanner.getToken();
 		}
 		i = start();
-		// }
-
-		// lookAhead.describe();
+		if(i == 1){
+			System.out.println("File Parsed successfully!");
+		}
 		return i;
 	}
 
@@ -365,6 +365,8 @@ public class Parser {
 			break;
 		case "mp_scolon": // statementSequence -> statement
 			break;
+		case "mp_end":
+			break;
 		default: // default case is an invalid lookAhead token in language
 			handleError(false, "Statement Sequence");
 		}
@@ -377,22 +379,22 @@ public class Parser {
 	private void statement() {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_begin": // statement -> compoundStatement
-			compoundStatement();
+			structuredStatement();
 			break;
 		case "mp_for": // statement -> compoundStatement
-			compoundStatement();
+			structuredStatement();
 			break;
 		case "mp_if": // statement -> compoundStatement
-			compoundStatement();
+			structuredStatement();
 			break;
 		case "mp_read": // statement -> simpleStatement
 			simpleStatement();
 			break;
 		case "mp_repeat": // statement -> compoundStatement
-			compoundStatement();
+			structuredStatement();
 			break;
 		case "mp_while": // statement -> compoundStatement
-			compoundStatement();
+			structuredStatement();
 			break;
 		case "mp_write": // statement -> simpleStatement
 			simpleStatement();
@@ -481,7 +483,7 @@ public class Parser {
 
 	private void emptyStatement() {
 		switch (lookAhead.getIdentifier()) {
-		case ";": // not really sure what to do here.
+		case "mp_scolon": // not really sure what to do here.
 			match(";"); // I'm assuming ;;;; would be empty statements
 			break;
 		default:

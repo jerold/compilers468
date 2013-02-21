@@ -5,10 +5,12 @@ program Tester;
  	{comment}
 
   begin {tester}
-    Write; Write;
+    Write; Write;;
     Write('Please enter an integer value for I: ' );
     Read(I);
     I := I + 1;
     Write('The current value of I is ' , I-1);
     Write; Write;
+    if (count < 10)
+    then write;
   end. {tester}
