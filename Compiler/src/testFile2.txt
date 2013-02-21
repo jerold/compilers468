@@ -1,8 +1,11 @@
 program Tester;
 
- var I: Integer; j:float; k:integer;
+ var I: Integer; j:float; k,x:integer;
  	count:integer;
  	{comment}
+
+function myFun1(j,k:float):integer;
+procedure myProc1(l:integer);
 
   begin {tester}
     Write; Write;;
@@ -22,6 +25,7 @@ program Tester;
     do i:=i-1;write('Waaasuuuuup!?');
     repeat
     write('What''s up pussy cat?');
+    I := i * 0.5;
     k:=k-1;
     until (k=0)
   end. {tester}

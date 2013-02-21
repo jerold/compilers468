@@ -105,9 +105,20 @@ public class Parser {
 
 	// I changed this David. We'll see if it works.
 	private void block() {
-		variableDeclarationPart();
-		procedureAndFunctionDeclarationPart();
-		statementPart();
+		switch (lookAhead.getIdentifier()) {
+		case "mp_var":
+			variableDeclarationPart();
+			//break;
+		case "mp_procedure":
+		case "mp_function":
+			procedureAndFunctionDeclarationPart();
+			break;
+		case "mp_begin":
+			statementPart();
+			break;
+		default:
+			handleError(false, "Block");
+		}
 	}
 
 	// I think this works now David. check it out and see what you think
@@ -121,25 +132,13 @@ public class Parser {
 			// not sure about this recursion...need to be able to hit
 			// variableDeclaration() multiple times...
 			// case "mp_identifier":
-			if (lookAhead.getIdentifier().equals("mp_identifier")) {
-				variableDeclarationPart2();
-				// match(";");
-				// variableDeclarationPart();
+			while (lookAhead.getIdentifier().equals("mp_identifier")) {
+				variableDeclaration();
+				 match(";");
 			}
 			break;
 		default:
 			handleError(false, "Variable Declaration Part");
-		}
-	}
-
-	private void variableDeclarationPart2() {
-		switch (lookAhead.getIdentifier()) {
-		case "mp_identifier":
-			variableDeclaration();
-			match(";");
-			variableDeclarationPart2();
-		default:
-			return;
 		}
 	}
 
@@ -149,13 +148,13 @@ public class Parser {
 		// this will work
 		case "mp_function":
 			functionDeclaration();
-			match(";");
-			procedureAndFunctionDeclarationPart();
+			//match(";");
+			//procedureAndFunctionDeclarationPart();
 			break;
 		case "mp_procedure":
 			procedureDeclaration();
-			match(";");
-			procedureAndFunctionDeclarationPart();
+			//match(";");
+			//procedureAndFunctionDeclarationPart();
 			break;
 		default:
 			return;
@@ -203,7 +202,7 @@ public class Parser {
 
 	private void procedureDeclaration() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_prodedure":
+		case "mp_procedure":
 			procedureHeading();
 			match(";");
 			block();
@@ -228,12 +227,12 @@ public class Parser {
 
 	private void procedureHeading() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_prodecure":
+		case "mp_procedure":
 			match("procedure");
 			identifier();
 			// This if should work assuming identifier is
 			// moving lookAhead.getIdentifier() forward
-			if (lookAhead.getIdentifier().equals("(")) {
+			if (lookAhead.getIdentifier().equals("mp_lparen")) {
 				formalParameterList();
 			}
 			break;
@@ -250,7 +249,7 @@ public class Parser {
 			identifier();
 			// This if should work assuming identifier is
 			// moving lookAhead.getIdentifier() forward
-			if (lookAhead.getIdentifier().equals("(")) {
+			if (lookAhead.getIdentifier().equals("mp_lparen")) {
 				formalParameterList();
 			}
 			match(":");
@@ -402,6 +401,7 @@ public class Parser {
 		case "mp_scolon": // simpleStatement -> emptyStatement-- not really sure what
 					// epsilon is yet?!
 			emptyStatement();
+			break;
 		default: // default case is an invalid lookAhead token in language
 			handleError(false, "Simple Statement");
 		}
@@ -682,6 +682,8 @@ public class Parser {
 			break;
 		case "mp_identifier":
 		case "mp_string_lit":
+		case "mp_float_lit":
+		case "mp_fixed_lit":
 			variable();
 			break;
 		// something must go here later the EBNF is WRONG!
@@ -779,6 +781,9 @@ public class Parser {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_identifier":
 		case "mp_string_lit":
+		case "mp_int_lit":
+		case "mp_fixed_lit":
+		case "mp_float_lit":
 			variableIdentifier();
 			break;
 		default: // default case is an invalid lookAhead token in language
@@ -914,6 +919,9 @@ public class Parser {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_identifier":
 		case "mp_string_lit":
+		case "mp_int_lit":
+		case "mp_fixed_lit":
+		case "mp_float_lit":
 			identifier();
 			break;
 		default:
@@ -945,7 +953,7 @@ public class Parser {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_identifier":
 			identifier();
-			while (lookAhead.getIdentifier().equals(",")) {
+			while (lookAhead.getIdentifier().equals("mp_comma")) {
 				match(",");
 				identifier();
 			}
@@ -959,6 +967,9 @@ public class Parser {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_identifier":
 		case "mp_string_lit":
+		case "mp_int_lit":
+		case "mp_fixed_lit":
+		case "mp_float_lit":
 			match(lookAhead.getLexeme());
 			break;
 		default:
