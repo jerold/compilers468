@@ -13,4 +13,5 @@ program Tester;
     Write; Write;
     if (count < 10)
     then write;
+    else write('something');
   end. {tester}
