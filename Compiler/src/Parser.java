@@ -2,6 +2,7 @@ public class Parser {
 
 	private Token lookAhead;
 	private Scanner scanner;
+	private boolean parseError = false;
 
 	public Parser(Scanner scanner) {
 		this.scanner = scanner;
@@ -13,35 +14,38 @@ public class Parser {
 		int i = 0;
 		// lookAhead would be null if comment opens the program
 		while (lookAhead == null) {
-			// lookAhead.describe();
-			// if(lookAhead.getLexeme().equals("program")){
-			// program();
-			// }
 			lookAhead = scanner.getToken();
 		}
 		i = start();
 		if(i == 1){
 			System.out.println("File Parsed successfully!");
+		} else {
+			System.out.println("File Did Not Parse successfully!");
 		}
 		return i;
 	}
 
 	private void handleError(boolean matchError, String s) {
 		if (matchError) {
-			String errorToken = lookAhead.getIdentifier().substring(3);
-			System.out.println("Expected \"" + s + "\" but found " + errorToken
-					+ " on line " + lookAhead.getLineNum() + " in column "
+			parseError = true;
+			String errorToken = lookAhead.getLexeme();
+			System.out.println("Expected \"" + s + "\" but found \"" + errorToken
+					+ "\" on line " + lookAhead.getLineNum() + " in column "
 					+ lookAhead.getColNum() + ".");
 			// get the next token and keep trying
 			// at some point we will have to determine the appropriate method to
 			// call after getting the next token
 			lookAhead = scanner.getToken();
+			while (lookAhead == null){
+				lookAhead = scanner.getToken();
+			}
 		} else {
 			if (lookAhead == null) {
 				// this happens with a valid comment. we just want the next
 				// token and continue
 				lookAhead = scanner.getToken();
 			} else {
+				parseError = true;
 				System.out.println("Expected syntax of type \"" + s
 						+ "\" on line " + lookAhead.getLineNum()
 						+ " in column " + lookAhead.getColNum() + ".");
@@ -51,6 +55,9 @@ public class Parser {
 	}
 
 	private void match(String s) {
+//		if(lookAhead==null){
+//			return;
+//		} 
 		if (s.equals(lookAhead.getLexeme())) {
 			lookAhead.describe();
 			lookAhead = scanner.getToken();
@@ -66,10 +73,12 @@ public class Parser {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_program":
 			program();
-			// int lineNum = lookAhead.getLineNum() + 1;
-			// lookAhead = new Token("mp_eof", lineNum, 0, "eof");
 			match("eof");
-			return 1;
+			if(parseError){
+				return 0;
+			} else {
+				return 1;
+			}
 		default:
 			return 0;
 		}
