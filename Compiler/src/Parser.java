@@ -377,6 +377,7 @@ public class Parser {
 			break;
 		case "mp_else":
 		case "mp_end":
+		case "mp_until":
 			break;  //this is end the statement calls without an error when reaching an else or end statement
 		default: // default case is an invalid lookAhead token in language
 			handleError(false, "Statement");
@@ -529,11 +530,6 @@ public class Parser {
 			booleanExpression();
 			match("then");
 			statementSequence();
-			//match(";");
-			// break;
-			// case "mp_else":
-			// match("else");
-			// statement();
 			if (lookAhead.getIdentifier().equals("mp_else")) {
 				match("else");
 				statementSequence();
@@ -567,7 +563,7 @@ public class Parser {
 			match("while");
 			booleanExpression();
 			match("do");
-			statement();
+			statementSequence();
 			break;
 		default: // default case is an invalid lookAhead token in language
 			handleError(false, "While Statement");
