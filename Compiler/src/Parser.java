@@ -121,7 +121,7 @@ public class Parser {
 		case "mp_procedure":
 		case "mp_function":
 			procedureAndFunctionDeclarationPart();
-			break;
+			//break;
 		case "mp_begin":
 			statementPart();
 			break;
@@ -157,13 +157,13 @@ public class Parser {
 		// this will work
 		case "mp_function":
 			functionDeclaration();
-			//match(";");
-			//procedureAndFunctionDeclarationPart();
+			match(";");
+			procedureAndFunctionDeclarationPart();
 			break;
 		case "mp_procedure":
 			procedureDeclaration();
-			//match(";");
-			//procedureAndFunctionDeclarationPart();
+			match(";");
+			procedureAndFunctionDeclarationPart();
 			break;
 		default:
 			return;
@@ -370,11 +370,11 @@ public class Parser {
 
 	private void statement() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_begin": // statement -> compoundStatement
-		case "mp_for": // statement -> compoundStatement
-		case "mp_if": // statement -> compoundStatement
-		case "mp_repeat": // statement -> compoundStatement
-		case "mp_while": // statement -> compoundStatement
+		case "mp_begin": // statement -> structuredStatement
+		case "mp_for": // statement -> structuredStatement
+		case "mp_if": // statement -> structuredStatement
+		case "mp_repeat": // statement -> structuredStatement
+		case "mp_while": // statement -> structuredStatement
 			structuredStatement();
 			break;
 		case "mp_read": // statement -> simpleStatement
@@ -386,7 +386,7 @@ public class Parser {
 		case "mp_else":
 		case "mp_end":
 		case "mp_until":
-			break;  //this is end the statement calls without an error when reaching an else or end statement
+			break;  //this is end the statement calls without an error when reaching an else or until statement
 		default: // default case is an invalid lookAhead token in language
 			handleError(false, "Statement");
 		}
@@ -421,9 +421,9 @@ public class Parser {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_begin": // structuredStatement -> compoundStatement
 			compoundStatement();
-		case "mp_for": // structuredStatement -> compoundStatement
-		case "mp_repeat": // structuredStatement -> compoundStatement
-		case "mp_while": // structuredStatement -> compoundStatement
+		case "mp_for": // structuredStatement -> repetitiveStatement
+		case "mp_repeat": // structuredStatement -> repetitiveStatement
+		case "mp_while": // structuredStatement -> repetitiveStatement
 			repetitiveStatement();
 			break;
 		case "mp_if": // structuredStatement -> conditionalStatement
@@ -538,10 +538,11 @@ public class Parser {
 			match("if");
 			booleanExpression();
 			match("then");
-			statementSequence();
+			statement();
+			match(";");
 			if (lookAhead.getIdentifier().equals("mp_else")) {
 				match("else");
-				statementSequence();
+				statement();
 			}
 			break;
 		default: // default case is an invalid lookAhead token in language
@@ -556,7 +557,10 @@ public class Parser {
 		case "mp_repeat": // repeatStatement -> "repeat", statementSequence,
 							// "until", booleanExpression
 			match("repeat");
-			statementSequence();
+			statement();
+			if(lookAhead.getIdentifier().equals("mp_scolon")){
+				match(";");
+			}
 			match("until");
 			booleanExpression();
 			break;
@@ -572,7 +576,7 @@ public class Parser {
 			match("while");
 			booleanExpression();
 			match("do");
-			statementSequence();
+			statement();
 			break;
 		default: // default case is an invalid lookAhead token in language
 			handleError(false, "While Statement");
