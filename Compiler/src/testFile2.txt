@@ -5,8 +5,14 @@ program Tester;
  	{comment}
 
 function myFun1(j,k:float):integer;
+begin
+i:=i*9;
+end;
 procedure myProc1(l:integer);
-
+ begin
+ i:=i*9;
+ end;
+ 
   begin {tester}
     Write; Write;;
     Write('Please enter an integer value for I: ' );
@@ -17,15 +23,26 @@ procedure myProc1(l:integer);
     if (count < 10)
     then  if (count <> 5) 
     then write('WTF Man?');
-    else write('something');write;write('else', 'here');
+    else 
+    begin
+    	write('something');write;write('else', 'here');
+    end
     while (1)
-    do read(j);
-    k:=10;
+	do 
+	begin
+		read(j);
+    	k:=10;
+    end
     for j:=k-10 to k
-    do i:=i-1;write('Waaasuuuuup!?');
+    do begin
+    	 i:=i-1;write('Waaasuuuuup!?');
+    	end
     repeat
+    {begin
+    	write('What''s up pussy cat?');
+    	I := i * 0.5;
+    	k:=k div 2;
+    end}
     write('What''s up pussy cat?');
-    I := i * 0.5;
-    k:=kdiv2;
-    until (k=0)
+    until (k=0);
   end. {tester}
