@@ -25,7 +25,7 @@ public class Symbol {
 	}
 	
 	/**
-	 * Checks the name and token type to determine whether or not they were equivelent.
+	 * Checks the name and token type to determine whether or not they were equivalent.
 	 * 
 	 * @param x	The symbol to compare to
 	 * @return	Whether or not the symbols were equal
