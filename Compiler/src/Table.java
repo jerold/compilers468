@@ -3,7 +3,7 @@ import java.util.ArrayList;
 
 public class Table {
 
-	ArrayList symbols = new ArrayList<Symbol>();
+	private ArrayList symbols = new ArrayList<Symbol>();
 	Table parent = null;
 	
 	private Table(Table parent) {
