@@ -1,9 +1,9 @@
-import java.awt.List;
 import java.util.ArrayList;
+import java.util.ListIterator;
 
 public class Table {
 
-	private ArrayList symbols = new ArrayList<Symbol>();
+	private ArrayList<Symbol> symbols = new ArrayList<Symbol>();
 	Table parent = null;
 	
 	private Table(Table parent) {
@@ -64,6 +64,17 @@ public class Table {
 		symbols.add(new Symbol(name,token,type,attributes,symbols.size()));
 	}
 	
-	
+	/**
+	 *  print out the current table
+	 */
+	public void describe(){
+		ListIterator<Symbol> iter = symbols.listIterator();
+		while (iter.hasNext()){
+			Symbol row = iter.next();
+			System.out.println("----------------------------------");
+			row.describe();
+		}
+		System.out.println("----------------------------------");
+	}
 
 }

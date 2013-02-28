@@ -31,10 +31,16 @@ public class Symbol {
 	 * @return	Whether or not the symbols were equal
 	 */
 	public boolean equals(Symbol x) {
-		if (this.name == x.name && this.token == x.token)
+		if (this.name.equalsIgnoreCase(x.name) && this.token.equalsIgnoreCase(x.token))
 			return true;
 		else
 			return false;
 	}
 	
+	/**
+	 * prints out the name, token, type, attributes, and offset of a symbol
+	 */
+	public void describe(){
+		System.out.println(this.name + "   " + this.token + "   " + this.type + "   " + this.attributes + "   " + this.offset);
+	}
 }

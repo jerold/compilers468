@@ -1,11 +1,19 @@
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.ListIterator;
+
 public class Parser {
 
 	private Token lookAhead;
 	private Scanner scanner;
 	private boolean parseError = false;
-
+	private Table symbolTable;
+	private ArrayList<String> retValues;
+	
 	public Parser(Scanner scanner) {
 		this.scanner = scanner;
+		this.symbolTable = Table.rootInstance();
+		retValues = null;
 	}
 
 	public int run() {
@@ -185,9 +193,14 @@ public class Parser {
 	private void variableDeclaration() {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_identifier":
-			identifierList();
+			retValues = identifierList();
 			match(":");
-			type();
+			String type = type();
+			ListIterator<String> iter = retValues.listIterator();
+			while(iter.hasNext()){
+				symbolTable.insert(iter.next(),"var", type, "");
+			}
+			symbolTable.describe();
 			break;
 		default:
 			handleError(false, "Variable Declaration");
@@ -195,16 +208,17 @@ public class Parser {
 
 	}
 
-	private void type() {
+	private String type() {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_integer":
 			match("integer");
-			break;
+			return "integer";
 		case "mp_float":
 			match("float");
-			break;
+			return "float";
 		default:
 			handleError(false, "Type");
+			return null;
 		}
 
 	}
@@ -962,17 +976,22 @@ public class Parser {
 		}
 	}
 
-	private void identifierList() {
+	private ArrayList<String> identifierList() {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_identifier":
+			ArrayList<String> varLexemes = new ArrayList<String>();
+			varLexemes.add(lookAhead.getLexeme());
 			identifier();
 			while (lookAhead.getIdentifier().equals("mp_comma")) {
 				match(",");
+				varLexemes.add(lookAhead.getLexeme());
 				identifier();
 			}
-			break;
+			//break;
+			return varLexemes;
 		default:
 			handleError(false, "Identifier List");
+			return null;
 		}
 	}
 
