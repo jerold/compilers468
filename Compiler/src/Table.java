@@ -15,7 +15,9 @@ public class Table {
 	}
 	
 	public Table createScope() {
-		return new Table(this);
+		Table t = new Table(null);
+		t.parent = this;
+		return t;
 	}
 	
 	/**

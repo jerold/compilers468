@@ -276,7 +276,7 @@ public class Parser {
 				formalParameterList();
 			}
 			match(":");
-			type();
+			String type = type();
 			break;
 		default:
 			handleError(false, "Function Heading");
