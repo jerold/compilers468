@@ -5,19 +5,20 @@ public class Table {
 
 	private ArrayList<Symbol> symbols = new ArrayList<Symbol>();
 	Table parent = null;
+	Table child = null;
+	String title= null;
+	private static Table root = new Table(null);
 	
 	private Table(Table parent) {
 		this.parent = parent;
 	}
 	
 	public static Table rootInstance() {
-		return new Table(null);
+		return root;
 	}
 	
 	public Table createScope() {
-		Table t = new Table(null);
-		t.parent = this;
-		return t;
+		return new Table(this);
 	}
 	
 	/**
@@ -71,12 +72,21 @@ public class Table {
 	 */
 	public void describe(){
 		ListIterator<Symbol> iter = symbols.listIterator();
+		System.out.println();
+		System.out.println("Table " + title);
 		while (iter.hasNext()){
 			Symbol row = iter.next();
 			System.out.println("----------------------------------");
 			row.describe();
 		}
 		System.out.println("----------------------------------");
+	}
+	
+	/**
+	 * set the title of the table
+	 */
+	public void setTitle(String s){
+		this.title = s;
 	}
 
 }

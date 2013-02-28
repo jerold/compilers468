@@ -8,11 +8,12 @@ public class Parser {
 	private Scanner scanner;
 	private boolean parseError = false;
 	private Table symbolTable;
+	//private Table newScope;
 	private ArrayList<String> retValues;
 	
 	public Parser(Scanner scanner) {
 		this.scanner = scanner;
-		this.symbolTable = Table.rootInstance();
+		//this.symbolTable = Table.rootInstance();
 		retValues = null;
 	}
 
@@ -97,6 +98,7 @@ public class Parser {
 		// lookAhead.describe();
 		switch (lookAhead.getIdentifier()) {
 		case "mp_program":
+			symbolTable = Table.rootInstance();
 			programHeading();
 			match(";");
 			block();
@@ -112,6 +114,7 @@ public class Parser {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_program":
 			match("program");
+			symbolTable.setTitle(lookAhead.getLexeme());
 			identifier();
 			break;
 		default:
@@ -239,6 +242,7 @@ public class Parser {
 	private void functionDeclaration() {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_function":
+			symbolTable = symbolTable.createScope();
 			functionHeading();
 			match(";");
 			block();
@@ -269,7 +273,9 @@ public class Parser {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_function":
 			match("function");
+			symbolTable.setTitle(lookAhead.getLexeme());
 			identifier();
+			symbolTable.describe();
 			// This if should work assuming identifier is
 			// moving lookAhead.getIdentifier() forward
 			if (lookAhead.getIdentifier().equals("mp_lparen")) {
