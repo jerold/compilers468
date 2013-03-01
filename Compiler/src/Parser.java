@@ -216,7 +216,7 @@ public class Parser {
 			while(iter.hasNext()){
 				String name = iter.next();
 				if(!symbolTable.inTable(name, "var")){
-					symbolTable.insert(name,"var", type, "");
+					symbolTable.insert(name,"var", type, "no parameters");
 				}else {
 					invalidVariableName(name);
 				}
@@ -289,7 +289,7 @@ public class Parser {
 			if (lookAhead.getIdentifier().equals("mp_lparen")) {
 				formalParameterList();
 			}
-			symbolTable.getParent().insert(symbolTable.getTitle(), "procedure", type, getAttributes());
+			symbolTable.getParent().insert(symbolTable.getTitle(), "procedure", "no return", getAttributes());
 			break;
 		default:
 			handleError(false, "Procedure Heading");
@@ -311,7 +311,7 @@ public class Parser {
 			}
 			match(":");
 			type = type();
-			symbolTable.getParent().insert(symbolTable.getTitle(), "function", type, getAttributes());
+			symbolTable.getParent().insert(symbolTable.getTitle(), "function", "returns " + type, getAttributes());
 			break;
 		default:
 			handleError(false, "Function Heading");
@@ -357,7 +357,7 @@ public class Parser {
 			type =  type();
 			ListIterator<String> iter = retValues.listIterator();
 			while(iter.hasNext()){
-				symbolTable.insert(iter.next(),"value", type, "");
+				symbolTable.insert(iter.next(),"value", type, "no parameters");
 			}
 			//symbolTable.describe();
 			retValues.clear();  //clear retValues after it is used each time
@@ -377,7 +377,7 @@ public class Parser {
 			type = type();
 			ListIterator<String> iter = retValues.listIterator();
 			while(iter.hasNext()){
-				symbolTable.insert(iter.next(),"var", type, "");
+				symbolTable.insert(iter.next(),"var", type, "no parameters");
 			}
 			//symbolTable.describe();
 			retValues.clear();  //clear retValues after it is used each time
@@ -1158,8 +1158,13 @@ public class Parser {
 	}
 	
 	private String getAttributes(){
-		String temp = "params from table";
-		return temp; 
+		String params = "";
+		for(int i = 0; i<symbolTable.getSize(); i++){
+			Symbol s = symbolTable.getSymbol(i);
+			params = params + s.name + ":";
+			params = params + s.type + ", ";
+		}
+		return params.substring(0, params.length()-2); 
 	}
 
 }

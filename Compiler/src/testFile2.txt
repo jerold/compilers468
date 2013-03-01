@@ -41,6 +41,7 @@ procedure myProc1(l:integer);
     {begin
     	write('What''s up pussy cat?');
     	I := i * 0.5;
+    	
     	k:=k div 2;
     end}
     write('What''s up pussy cat?');

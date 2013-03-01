@@ -5,7 +5,7 @@ public class Table {
 
 	private ArrayList<Symbol> symbols = new ArrayList<Symbol>();
 	private Table parent = null;
-	//Table child = null;
+	private int size = 0;
 	private String title= null;
 	private static Table root = new Table(null);
 	
@@ -19,6 +19,19 @@ public class Table {
 	
 	public Table createScope() {
 		return new Table(this);
+	}
+	
+	/**
+	 * 
+	 * @param index		The index of the symbol to return
+	 * @return			The symbol that was found
+	 */
+	public Symbol getSymbol(int index) {
+		if(index > symbols.size()){
+			return null;
+		} else {
+			return symbols.get(index);
+		}
 	}
 	
 	/**
@@ -81,6 +94,7 @@ public class Table {
 	 */
 	private void insertSymbol(String name, String token, String type, String attributes) {
 		symbols.add(new Symbol(name,token,type,attributes,symbols.size()));
+		size ++;
 	}
 	
 	/**
@@ -117,6 +131,14 @@ public class Table {
 	 */
 	public Table getParent(){
 		return parent;
+	}
+	
+	/**
+	 * get the size of the table
+	 */
+	
+	public int getSize(){
+		return size;
 	}
 
 }
