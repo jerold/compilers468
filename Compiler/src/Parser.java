@@ -64,13 +64,29 @@ public class Parser {
 		}
 
 	}
+	
+	private void invalidVariableName(String var){
+		parseError = true;
+		System.out.println();
+		System.out.println("----------------");
+		System.out.println("Variable " + var + " has already been declared in this scope.");
+		System.out.println("----------------");
+	}
+	
+	private void undeclaredVariableError(String var){
+		parseError = true;
+		System.out.println();
+		System.out.println("----------------");
+		System.out.println("Variable " + var + " has not been declared in this scope.");
+		System.out.println("----------------");
+	}
 
 	private void match(String s) {
 //		if(lookAhead==null){
 //			return;
 //		} 
 		if (s.equals(lookAhead.getLexeme())) {
-			lookAhead.describe();
+			//lookAhead.describe();
 			lookAhead = scanner.getToken();
 			while (lookAhead == null) {
 				lookAhead = scanner.getToken();
@@ -196,7 +212,13 @@ public class Parser {
 			String type = type();
 			ListIterator<String> iter = retValues.listIterator();
 			while(iter.hasNext()){
-				symbolTable.insert(iter.next(),"var", type, "");
+				if(symbolTable.findSymbol(iter.next(), "var") == null){
+					iter.previous();
+					symbolTable.insert(iter.next(),"var", type, "");
+				}else {
+					iter.previous();
+					invalidVariableName(iter.next());
+				}
 			}
 			symbolTable.describe();
 			retValues.clear();  //clear retValues after it is used each time
@@ -261,6 +283,8 @@ public class Parser {
 				formalParameterList();
 			}
 			symbolTable.getParent().insert(symbolTable.getTitle(), "procedure", type, getAttributes());
+			symbolTable.getParent().describe();
+			symbolTable.describe();
 			break;
 		default:
 			handleError(false, "Procedure Heading");
@@ -392,6 +416,7 @@ public class Parser {
 		default: // default case is an invalid lookAhead token in language
 			handleError(false, "Statement Sequence");
 		}
+		//recursive here
 		while (lookAhead.getIdentifier().equals("mp_scolon")) {
 			match(";");
 			statement();
@@ -416,6 +441,7 @@ public class Parser {
 		case "mp_else":
 		case "mp_end":
 		case "mp_until":
+			//do nothing
 			break;  //this is end the statement calls without an error when reaching an else or until statement
 		default: // default case is an invalid lookAhead token in language
 			handleError(false, "Statement");
@@ -536,7 +562,11 @@ public class Parser {
 								// (Variable|FunctionIdentifier), ":=",
 								// expression
 			// on the next two lines
-			variable();
+			if(symbolTable.inTable(lookAhead.getLexeme(), "var")){
+				variable();
+			} else {
+				undeclaredVariableError(lookAhead.getLexeme());
+			}
 			//functionIdentifier();
 			match(":=");
 			expression();

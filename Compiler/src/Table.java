@@ -32,6 +32,22 @@ public class Table {
 		return findSymbol(x);
 	}
 	
+	/**
+	 * 
+	 * @param name		The name of the symbol to find
+	 * @param token		The token type of the symbol to find
+	 * @return			The symbol that was found
+	 */
+	public boolean inTable(String name, String token) {
+		Symbol x = new Symbol(name,token,null,null,0);
+		x = findSymbol(x);
+		if(x == null){
+			return false;
+		} else {
+			return true;
+		}
+	}
+	
 	public Symbol findSymbol(Symbol x) {
 		for (int i=0; i<symbols.size(); i++) {
 			if (symbols.get(i).equals(x))
