@@ -324,7 +324,7 @@ public class Parser {
 		case "mp_lparen":
 			match("(");
 			formalParameterSection();
-			while (lookAhead.getIdentifier().equals(";")) {
+			while (lookAhead.getIdentifier().equals("mp_scolon")) {
 				match(";");
 				formalParameterSection();
 			}
@@ -1162,6 +1162,7 @@ public class Parser {
 		for(int i = 0; i<symbolTable.getSize(); i++){
 			Symbol s = symbolTable.getSymbol(i);
 			params = params + s.name + ":";
+			params = params + s.token + ":";
 			params = params + s.type + ", ";
 		}
 		return params.substring(0, params.length()-2); 

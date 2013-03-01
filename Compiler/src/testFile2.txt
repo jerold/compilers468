@@ -4,7 +4,7 @@ program Tester;
  	count:integer;
  	{comment}
 
-function myFun1(j,k:float):integer;
+function myFun1(j,k:float; var s:integer):integer;
 begin
 i:=i*9;
 end;
