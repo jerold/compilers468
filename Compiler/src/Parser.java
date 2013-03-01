@@ -10,11 +10,13 @@ public class Parser {
 	private Table symbolTable;
 	//private Table newScope;
 	private ArrayList<String> retValues;
+	private String type;
 	
 	public Parser(Scanner scanner) {
 		this.scanner = scanner;
 		//this.symbolTable = Table.rootInstance();
 		retValues = null;
+		
 	}
 
 	public int run() {
@@ -123,7 +125,7 @@ public class Parser {
 
 	}
 
-	// I changed this David. We'll see if it works.
+	// I changed this David. We'll see if it works. //order might need changed here
 	private void block() {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_var":
@@ -141,17 +143,12 @@ public class Parser {
 		}
 	}
 
-	// I think this works now David. check it out and see what you think
 	private void variableDeclarationPart() {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_var":
 			match("var");
 			variableDeclaration();
 			match(";");
-			// break;
-			// not sure about this recursion...need to be able to hit
-			// variableDeclaration() multiple times...
-			// case "mp_identifier":
 			while (lookAhead.getIdentifier().equals("mp_identifier")) {
 				variableDeclaration();
 				 match(";");
@@ -164,8 +161,6 @@ public class Parser {
 
 	private void procedureAndFunctionDeclarationPart() {
 		switch (lookAhead.getIdentifier()) {
-		// must be able to repeat this || procedureDelcaration()....not sure if
-		// this will work
 		case "mp_function":
 			functionDeclaration();
 			match(";");
@@ -204,6 +199,7 @@ public class Parser {
 				symbolTable.insert(iter.next(),"var", type, "");
 			}
 			symbolTable.describe();
+			retValues.clear();  //clear retValues after it is used each time
 			break;
 		default:
 			handleError(false, "Variable Declaration");
@@ -229,6 +225,7 @@ public class Parser {
 	private void procedureDeclaration() {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_procedure":
+			symbolTable = symbolTable.createScope();
 			procedureHeading();
 			match(";");
 			block();
@@ -256,12 +253,14 @@ public class Parser {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_procedure":
 			match("procedure");
+			symbolTable.setTitle(lookAhead.getLexeme());
 			identifier();
 			// This if should work assuming identifier is
 			// moving lookAhead.getIdentifier() forward
 			if (lookAhead.getIdentifier().equals("mp_lparen")) {
 				formalParameterList();
 			}
+			symbolTable.getParent().insert(symbolTable.getTitle(), "procedure", type, getAttributes());
 			break;
 		default:
 			handleError(false, "Procedure Heading");
@@ -275,14 +274,17 @@ public class Parser {
 			match("function");
 			symbolTable.setTitle(lookAhead.getLexeme());
 			identifier();
-			symbolTable.describe();
+			//symbolTable.describe();
 			// This if should work assuming identifier is
 			// moving lookAhead.getIdentifier() forward
 			if (lookAhead.getIdentifier().equals("mp_lparen")) {
 				formalParameterList();
 			}
 			match(":");
-			String type = type();
+			type = type();
+			symbolTable.getParent().insert(symbolTable.getTitle(), "function", type, getAttributes());
+			symbolTable.getParent().describe();
+			symbolTable.describe();
 			break;
 		default:
 			handleError(false, "Function Heading");
@@ -302,33 +304,36 @@ public class Parser {
 			match(")");
 			break;
 		default:
-			return;
+			handleError(false, "Formal Parameter List");
 		}
 	}
 
 	private void formalParameterSection() {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_identifier":
-			valueParameterSection(); // check this one
+			valueParameterSection(); 
 			break;
-		// is this the correct match on var???
 		case "mp_var":
-			match("var");
 			variableParameterSection();
 			break;
 		default:
-			return;
+			handleError(false, "Formal Parameter Section");
 		}
 	}
 
 	// Clark's section
 	private void valueParameterSection() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_identifier": // valueParameterSection -> IdentifierList, ":",
-								// Type
-			identifierList();
+		case "mp_identifier": // valueParameterSection -> IdentifierList, ":", Type
+			retValues = identifierList();
 			match(":");
-			type();
+			type =  type();
+			ListIterator<String> iter = retValues.listIterator();
+			while(iter.hasNext()){
+				symbolTable.insert(iter.next(),"value", type, "");
+			}
+			symbolTable.describe();
+			retValues.clear();  //clear retValues after it is used each time
 			break;
 		default: // default case is an invalid lookAhead token in language
 			handleError(false, "Value Parameter Section");
@@ -340,9 +345,15 @@ public class Parser {
 		case "mp_var": // variableParameterSection -> "var" ,identifierList,
 						// ":", Type
 			match("var");
-			identifierList();
+			retValues = identifierList();
 			match(":");
-			type();
+			type = type();
+			ListIterator<String> iter = retValues.listIterator();
+			while(iter.hasNext()){
+				symbolTable.insert(iter.next(),"var", type, "");
+			}
+			symbolTable.describe();
+			retValues.clear();  //clear retValues after it is used each time
 			break;
 		default: // default case is an invalid lookAhead token in language
 			handleError(false, "Variable Parameter Section");
@@ -352,8 +363,7 @@ public class Parser {
 
 	private void compoundStatement() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_begin": // compoundStatement -> "begin", statementSequence,
-							// "end"
+		case "mp_begin": // compoundStatement -> "begin", statementSequence, "end"
 			match("begin");
 			statementSequence();
 			match("end");
@@ -1085,6 +1095,11 @@ public class Parser {
 		}
 		if (!found)
 			handleError(true, "digit");
+	}
+	
+	private String getAttributes(){
+		String temp = "params from table";
+		return temp; 
 	}
 
 }

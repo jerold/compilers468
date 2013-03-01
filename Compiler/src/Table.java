@@ -4,9 +4,9 @@ import java.util.ListIterator;
 public class Table {
 
 	private ArrayList<Symbol> symbols = new ArrayList<Symbol>();
-	Table parent = null;
-	Table child = null;
-	String title= null;
+	private Table parent = null;
+	//Table child = null;
+	private String title= null;
 	private static Table root = new Table(null);
 	
 	private Table(Table parent) {
@@ -87,6 +87,20 @@ public class Table {
 	 */
 	public void setTitle(String s){
 		this.title = s;
+	}
+	
+	/**
+	 * get the title of the table
+	 */
+	public String getTitle(){
+		return title;
+	}
+	
+	/**
+	 * get the parent of the table
+	 */
+	public Table getParent(){
+		return parent;
 	}
 
 }
