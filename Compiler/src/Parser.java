@@ -101,6 +101,7 @@ public class Parser {
 		case "mp_program":
 			program();
 			match("eof");
+			symbolTable.describe();
 			if(parseError){
 				return 0;
 			} else {
@@ -169,6 +170,7 @@ public class Parser {
 				variableDeclaration();
 				 match(";");
 			}
+			symbolTable.describe();
 			break;
 		default:
 			handleError(false, "Variable Declaration Part");
@@ -209,18 +211,17 @@ public class Parser {
 		case "mp_identifier":
 			retValues = identifierList();
 			match(":");
-			String type = type();
+			type = type();
 			ListIterator<String> iter = retValues.listIterator();
 			while(iter.hasNext()){
-				if(symbolTable.findSymbol(iter.next(), "var") == null){
-					iter.previous();
-					symbolTable.insert(iter.next(),"var", type, "");
+				String name = iter.next();
+				if(!symbolTable.inTable(name, "var")){
+					symbolTable.insert(name,"var", type, "");
 				}else {
-					iter.previous();
-					invalidVariableName(iter.next());
+					invalidVariableName(name);
 				}
 			}
-			symbolTable.describe();
+			//symbolTable.describe();
 			retValues.clear();  //clear retValues after it is used each time
 			break;
 		default:
@@ -251,6 +252,9 @@ public class Parser {
 			procedureHeading();
 			match(";");
 			block();
+			symbolTable.getParent().describe();
+			symbolTable.describe();
+			symbolTable = symbolTable.getParent();
 			break;
 		default:
 			handleError(false, "Procedure Declaration");
@@ -265,6 +269,9 @@ public class Parser {
 			functionHeading();
 			match(";");
 			block();
+			symbolTable.getParent().describe();
+			symbolTable.describe();
+			symbolTable = symbolTable.getParent();
 			break;
 		default:
 			handleError(false, "Function Declaration");
@@ -283,8 +290,6 @@ public class Parser {
 				formalParameterList();
 			}
 			symbolTable.getParent().insert(symbolTable.getTitle(), "procedure", type, getAttributes());
-			symbolTable.getParent().describe();
-			symbolTable.describe();
 			break;
 		default:
 			handleError(false, "Procedure Heading");
@@ -307,8 +312,6 @@ public class Parser {
 			match(":");
 			type = type();
 			symbolTable.getParent().insert(symbolTable.getTitle(), "function", type, getAttributes());
-			symbolTable.getParent().describe();
-			symbolTable.describe();
 			break;
 		default:
 			handleError(false, "Function Heading");
@@ -356,7 +359,7 @@ public class Parser {
 			while(iter.hasNext()){
 				symbolTable.insert(iter.next(),"value", type, "");
 			}
-			symbolTable.describe();
+			//symbolTable.describe();
 			retValues.clear();  //clear retValues after it is used each time
 			break;
 		default: // default case is an invalid lookAhead token in language
@@ -376,7 +379,7 @@ public class Parser {
 			while(iter.hasNext()){
 				symbolTable.insert(iter.next(),"var", type, "");
 			}
-			symbolTable.describe();
+			//symbolTable.describe();
 			retValues.clear();  //clear retValues after it is used each time
 			break;
 		default: // default case is an invalid lookAhead token in language
@@ -460,6 +463,7 @@ public class Parser {
 		// seems ambiguous here???
 		case "mp_identifier": // simpleStatement -> assignmentStatement and
 								// procedureStatement if lookAhead is identifier
+			
 			assignmentStatement();
 			//procedureStatement();  //we will fix this with symbol table
 			break;
@@ -564,10 +568,13 @@ public class Parser {
 			// on the next two lines
 			if(symbolTable.inTable(lookAhead.getLexeme(), "var")){
 				variable();
-			} else {
-				undeclaredVariableError(lookAhead.getLexeme());
+			} else if (symbolTable.inTable(lookAhead.getLexeme(), "function")){
+				functionIdentifier();
 			}
-			//functionIdentifier();
+			else {
+				undeclaredVariableError(lookAhead.getLexeme());
+				lookAhead = scanner.getToken();
+			}
 			match(":=");
 			expression();
 			break;
@@ -725,11 +732,17 @@ public class Parser {
 		case "mp_minus":
 			sign();
 			break;
-		default:
+		case "mp_identifier":
+		case "mp_float_lit":
+		case "mp_fixed_lit":
+		case "mp_integer_lit":
+		case "mp_string_lit":
+		case "mp_lparen":
 			term();
-			//handleError(false, "Factor");
+			break;
+		default:
+			handleError(false, "simple Expression");
 		}
-		//I think this should be an if, not a while. We will go over it.
 		while (lookAhead.getIdentifier().equals("mp_plus") | lookAhead.getIdentifier().equals("mp_minus") 
 				| lookAhead.getIdentifier().equals("mp_or")) {
 			addingOperator();
@@ -739,7 +752,18 @@ public class Parser {
 
 	private void term() {
 		// Not sure what mustaches mean, so I'll wait on this one.
-		factor();
+		switch (lookAhead.getIdentifier()) {
+		case "mp_identifier":
+		case "mp_float_lit":
+		case "mp_fixed_lit":
+		case "mp_integer_lit":
+		case "mp_string_lit":
+		case "mp_lparen":
+			factor();
+			break;
+		default:
+			handleError(false, "term");
+		}
 		while (lookAhead.getIdentifier().equals("mp_times") | lookAhead.getIdentifier().equals("mp_div") 
 				| lookAhead.getIdentifier().equals("mp_mod") | lookAhead.getIdentifier().equals("mp_and")) {
 			multiplyingOperator();
@@ -754,15 +778,17 @@ public class Parser {
 			unsignedInteger();
 			break;
 		case "mp_identifier":
-		case "mp_string_lit":
+			if(symbolTable.inTable(lookAhead.getLexeme(), "var")){
+				variable();
+			} else {
+				functionDesignator();
+			}
+			break;
 		case "mp_float_lit":
 		case "mp_fixed_lit":
-			variable();
+		case "mp_string_lit":
+			identifier();
 			break;
-		// something must go here later the EBNF is WRONG!
-		// case "mp_identifier":
-		// variable();
-		// break;
 		case "mp_lparen":
 			match("(");
 			expression();
@@ -770,7 +796,9 @@ public class Parser {
 			break;
 		case "mp_not":
 			// recurses!
+			match("not");
 			factor();
+			break;
 		default:
 			handleError(false, "Factor");
 		}
@@ -992,7 +1020,7 @@ public class Parser {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_identifier":
 		case "mp_string_lit":
-		case "mp_int_lit":
+		case "mp_integer_lit":
 		case "mp_fixed_lit":
 		case "mp_float_lit":
 			identifier();
@@ -1005,7 +1033,8 @@ public class Parser {
 	private void procedureIdentifier() {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_identifier":
-			identifier();
+			if(symbolTable.inTable(lookAhead.getLexeme(), "procedure"))
+				identifier();
 			break;
 		default:
 			handleError(false, "Procedure Identifier");
@@ -1015,7 +1044,8 @@ public class Parser {
 	private void functionIdentifier() {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_identifier":
-			identifier();
+			if(symbolTable.inTable(lookAhead.getLexeme(), "function"))
+				identifier();
 			break;
 		default:
 			handleError(false, "Function Identifier");
