@@ -28,6 +28,7 @@ public class Parser {
 			lookAhead = scanner.getToken();
 		}
 		i = start();
+		
 		if(i == 1){
 			System.out.println("File Parsed successfully!");
 		} else {
@@ -86,7 +87,7 @@ public class Parser {
 //			return;
 //		} 
 		if (s.equals(lookAhead.getLexeme())) {
-			//lookAhead.describe();
+			lookAhead.describe();
 			lookAhead = scanner.getToken();
 			while (lookAhead == null) {
 				lookAhead = scanner.getToken();
@@ -101,7 +102,7 @@ public class Parser {
 		case "mp_program":
 			program();
 			match("eof");
-			symbolTable.describe();
+			//symbolTable.describe();
 			if(parseError){
 				return 0;
 			} else {
@@ -162,18 +163,23 @@ public class Parser {
 
 	private void variableDeclarationPart() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_var":
-			match("var");
-			variableDeclaration();
-			match(";");
-			while (lookAhead.getIdentifier().equals("mp_identifier")) {
+			case "mp_var":
+				match("var");
 				variableDeclaration();
-				 match(";");
-			}
-			symbolTable.describe();
-			break;
-		default:
-			handleError(false, "Variable Declaration Part");
+				match(";");
+				while (lookAhead.getIdentifier().equals("mp_identifier")) {
+					variableDeclaration();
+					 match(";");
+				}
+				//symbolTable.describe();
+				break;
+			case "mp_procedure":
+			case "mp_function":
+			case "mp_begin":
+				procedureAndFunctionDeclarationPart();
+				break;
+			default:
+				handleError(false, "Variable Declaration Part");
 		}
 	}
 
@@ -189,6 +195,9 @@ public class Parser {
 			match(";");
 			procedureAndFunctionDeclarationPart();
 			break;
+		case "mp_begin":
+			statementPart();
+			break;
 		default:
 			return;
 		}
@@ -197,11 +206,11 @@ public class Parser {
 
 	private void statementPart() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_begin":
-			compoundStatement();
-			break;
-		default:
-			handleError(false, "Statement Part");
+			case "mp_begin":
+				compoundStatement();
+				break;
+			default:
+				handleError(false, "Statement Part");
 		}
 
 	}
@@ -232,32 +241,32 @@ public class Parser {
 
 	private String type() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_integer":
-			match("integer");
-			return "integer";
-		case "mp_float":
-			match("float");
-			return "float";
-		default:
-			handleError(false, "Type");
-			return null;
+			case "mp_integer":
+				match("integer");
+				return "integer";
+			case "mp_float":
+				match("float");
+				return "float";
+			default:
+				handleError(false, "Type");
+				return null;
 		}
 
 	}
 
 	private void procedureDeclaration() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_procedure":
-			symbolTable = symbolTable.createScope();
-			procedureHeading();
-			match(";");
-			block();
-			symbolTable.getParent().describe();
-			symbolTable.describe();
-			symbolTable = symbolTable.getParent();
-			break;
-		default:
-			handleError(false, "Procedure Declaration");
+			case "mp_procedure":
+				symbolTable = symbolTable.createScope();
+				procedureHeading();
+				match(";");
+				block();
+				//symbolTable.getParent().describe();
+				//symbolTable.describe();
+				symbolTable = symbolTable.getParent();
+				break;
+			default:
+				handleError(false, "Procedure Declaration");
 		}
 
 	}
@@ -269,8 +278,8 @@ public class Parser {
 			functionHeading();
 			match(";");
 			block();
-			symbolTable.getParent().describe();
-			symbolTable.describe();
+			//symbolTable.getParent().describe();
+			//symbolTable.describe();
 			symbolTable = symbolTable.getParent();
 			break;
 		default:
@@ -525,9 +534,7 @@ public class Parser {
 
 	private void emptyStatement() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_scolon": // not really sure what to do here.
-			//match(";"); // I'm assuming ;;;; would be empty statements
-			//just break if scolon is lookahead token. it will get matched from calling function
+		case "mp_scolon":
 			break;
 		default:
 			handleError(false, "Empty Statement");
@@ -699,110 +706,138 @@ public class Parser {
 		// }
 		
 		switch (lookAhead.getIdentifier()) {
-		case "mp_plus":
-		case "mp_minus":
-		case "mp_integer_lit":
-		case "mp_identifier":
-		case "mp_string_lit":
-		case "mp_lparen":
-		case "mp_not":
-			simpleExpression(); //still might have missed a few here
-			//not sure about this yet???
-			expression();
-			break;
-		case "mp_equal":
-		case "mp_lthan":
-		case "mp_gthan":
-		case "mp_lequal":
-		case "mp_gequal":
-		case "mp_nequal":
-			relationalOperator();
-			simpleExpression();
-			break;
-		default: // optional case statement proceed citizen...
-			break;
+			case "mp_plus":
+			case "mp_minus":
+			case "mp_integer_lit":
+			case "mp_identifier":
+			case "mp_string_lit":
+			case "mp_lparen":
+			case "mp_not":
+				simpleExpression(); //still might have missed a few here
+				//not sure about this yet???
+				expression();
+				break;
+			case "mp_equal":
+			case "mp_lthan":
+			case "mp_gthan":
+			case "mp_lequal":
+			case "mp_gequal":
+			case "mp_nequal":
+				relationalOperator();
+				simpleExpression();
+				break;
+			default: // optional case statement proceed citizen...
+				break;
 			
 		}
 	}
 
 	private void simpleExpression() {
-		// Not sure what mustaches mean, so I'll wait on this one.
 		switch (lookAhead.getIdentifier()) {
-		case "mp_plus":
-		case "mp_minus":
-			sign();
-			break;
-		case "mp_identifier":
-		case "mp_float_lit":
-		case "mp_fixed_lit":
-		case "mp_integer_lit":
-		case "mp_string_lit":
-		case "mp_lparen":
-			term();
-			break;
-		default:
-			handleError(false, "simple Expression");
+			case "mp_plus":
+			case "mp_minus":
+				sign();
+				break;
+			case "mp_identifier":
+			case "mp_float_lit":
+			case "mp_fixed_lit":
+			case "mp_integer_lit":
+			case "mp_string_lit":
+			case "mp_lparen":
+				term();
+				break;
+			default:
+				handleError(false, "simple Expression");
 		}
-		while (lookAhead.getIdentifier().equals("mp_plus") | lookAhead.getIdentifier().equals("mp_minus") 
-				| lookAhead.getIdentifier().equals("mp_or")) {
+		while (lookAhead.getIdentifier().equals("mp_plus") || lookAhead.getIdentifier().equals("mp_minus") 
+				|| lookAhead.getIdentifier().equals("mp_or")) {
 			addingOperator();
 			term();
 		}
 	}
 
 	private void term() {
-		// Not sure what mustaches mean, so I'll wait on this one.
 		switch (lookAhead.getIdentifier()) {
-		case "mp_identifier":
-		case "mp_float_lit":
-		case "mp_fixed_lit":
-		case "mp_integer_lit":
-		case "mp_string_lit":
-		case "mp_lparen":
-			factor();
-			break;
-		default:
-			handleError(false, "term");
+			case "mp_identifier":
+			case "mp_float_lit":
+			case "mp_fixed_lit":
+			case "mp_integer_lit":
+			case "mp_string_lit":
+			case "mp_lparen":
+				factor();
+				break;
+			default:
+				handleError(false, "term");
 		}
-		while (lookAhead.getIdentifier().equals("mp_times") | lookAhead.getIdentifier().equals("mp_div") 
-				| lookAhead.getIdentifier().equals("mp_mod") | lookAhead.getIdentifier().equals("mp_and")) {
+		while (lookAhead.getIdentifier().equals("mp_times") || lookAhead.getIdentifier().equals("mp_div") 
+				|| lookAhead.getIdentifier().equals("mp_mod") || lookAhead.getIdentifier().equals("mp_and")) {
 			multiplyingOperator();
 			factor();
+		}
+	}
+	
+	private void termTail() {
+		switch (lookAhead.getIdentifier()) {
+			case "mp_plus":
+			case "mp_minus":
+			case "mp_or":
+				addingOperator();
+				term();
+				termTail();
+				break;
+			default:
+				break;
 		}
 	}
 
 	// this is not LL1 for some reason??!!
 	private void factor() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_integer_lit":
-			unsignedInteger();
-			break;
-		case "mp_identifier":
-			if(symbolTable.inTable(lookAhead.getLexeme(), "var")){
-				variable();
-			} else {
-				functionDesignator();
-			}
-			break;
-		case "mp_float_lit":
-		case "mp_fixed_lit":
-		case "mp_string_lit":
-			identifier();
-			break;
-		case "mp_lparen":
-			match("(");
-			expression();
-			match(")");
-			break;
-		case "mp_not":
-			// recurses!
-			match("not");
-			factor();
-			break;
-		default:
-			handleError(false, "Factor");
+			case "mp_integer_lit":
+				unsignedInteger();
+				break;
+			case "mp_identifier":
+				if(symbolTable.inTable(lookAhead.getLexeme(), "var")){
+					variable();
+				} else {
+					functionDesignator();
+				}
+				break;
+			case "mp_float_lit":
+			case "mp_fixed_lit":
+			case "mp_string_lit":
+				identifier();
+				break;
+			case "mp_lparen":
+				match("(");
+				expression();
+				match(")");
+				break;
+			case "mp_not":
+				// recurses!
+				match("not");
+				factor();
+				break;
+			default:
+				handleError(false, "Factor");
 		}
 
+	}
+	
+	private void factorTail() {
+		switch (lookAhead.getIdentifier()) {
+			case "mp_times":
+			case "mp_divide":
+			case "mp_divide_float":
+			case "mp_mod":
+			case "mp_and":
+				multiplyingOperator();
+				factor();
+				factorTail();
+				break;
+			default:
+				break;
+		}
 	}
 
 	private void relationalOperator() {
@@ -838,7 +873,7 @@ public class Parser {
 		case "mp_minus":
 			match("-");
 			break;
-		case "mp_or": // How is this an adding operator?
+		case "mp_or": // How is this an adding operator? // Answer: i assume this is bitwise operations
 			match("or");
 			break;
 		default: // default case is an invalid lookAhead token in language
@@ -1018,15 +1053,15 @@ public class Parser {
 
 	private void variableIdentifier() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_identifier":
-		case "mp_string_lit":
-		case "mp_integer_lit":
-		case "mp_fixed_lit":
-		case "mp_float_lit":
-			identifier();
-			break;
-		default:
-			handleError(false, "Variable Identifier");
+			case "mp_identifier":
+			case "mp_string_lit":
+			case "mp_integer_lit":
+			case "mp_fixed_lit":
+			//case "mp_float_lit":
+				identifier();
+				break;
+			default:
+				handleError(false, "Variable Identifier");
 		}
 	}
 
@@ -1077,7 +1112,7 @@ public class Parser {
 		case "mp_string_lit":
 		case "mp_int_lit":
 		case "mp_fixed_lit":
-		case "mp_float_lit":
+		//case "mp_float_lit":
 			match(lookAhead.getLexeme());
 			break;
 		default:
@@ -1108,53 +1143,59 @@ public class Parser {
 		}
 	}
 
-	/* TODO: We have to take a look at this one */
 	private void under() {
 		match("_");
 	}
-
+	
 	private void digitSequence() {
-		//this isn't right...but
-		match(lookAhead.getLexeme());
-		//this  was not working
-//		switch (lookAhead.getIdentifier()) {
-//		case "mp_integer_lit":
-//			for (int i = 0; i < lookAhead.getIdentifier().length(); i++)
-//				digit();
-//			break;
-//		default:
-//			handleError(false, "Digit Sequence");
-//		}
+		switch (lookAhead.getIdentifier()) {
+			case "mp_integer_lit":
+				boolean fail = false;
+				for (int i = 0; i < lookAhead.getLexeme().length(); i++) {
+					if (!digit(lookAhead.getLexeme().charAt(i))) {
+						fail = true;
+						break;
+					}
+				}
+				if (!fail) {
+					match(lookAhead.getLexeme());
+				}
+				break;
+			default:
+				handleError(false, "Digit Sequence");
+		}
 	}
 
-	private void letter() {
+	private boolean letter(char letter) {
 		boolean found = false;
-		String letters[] = { "a", "b", "c", "d", "e", "f", "g", "h", "i", "j",
-				"k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v",
-				"w", "x", "y", "z", "A", "B", "C", "D", "E", "F", "G", "H",
-				"I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T",
-				"U", "V", "W", "X", "Y", "Z" };
-		for (int i = 0; i < letters.length; i++) {
-			if (lookAhead.getIdentifier().equals(letters[i])) {
+		char letters[] = { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
+				'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
+				'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
+				'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
+				'U', 'V', 'W', 'X', 'Y', 'Z' };
+		for (int j = 0; j < letters.length; j++) {
+			if (letter == letters[j]) {
+				found = true;
+				break;
+			}
+		}
+		if (!found)
+			handleError(true, "letter");
+		return found;
+	}
+
+	private boolean digit(char digit) {
+		boolean found = false;
+		char digits[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+		for (int j = 0; j < digits.length; j++) {
+			if (digit == digits[j]) {
 				found = true;
 				break;
 			}
 		}
 		if (!found)
 			handleError(true, "digit");
-	}
-
-	private void digit() {
-		boolean found = false;
-		String digits[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
-		for (int i = 0; i < digits.length; i++) {
-			if (lookAhead.getIdentifier().equals(digits[i])) {
-				found = true;
-				break;
-			}
-		}
-		if (!found)
-			handleError(true, "digit");
+		return found;
 	}
 	
 	private String getAttributes(){

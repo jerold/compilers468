@@ -9,7 +9,7 @@ public class Scanner {
 		// array containing the reserved words of the language
 		resWords = new String[] { "and", "begin", "div", "do", "downto",
 				"else", "end", "fixed", "float", "for", "function", "if",
-				"integer", "mod", "not", "or", "procedure", "procedure",
+				"integer", "mod", "not", "or", "procedure",
 				"program", "read", "repeat", "then", "to", "until", "var",
 				"while", "write", "writeln" };
 	}
@@ -120,6 +120,10 @@ public class Scanner {
 		case '}':
 			lexeme = "" + fp.getNext();
 			id = "mp_error";
+			break;
+		case '/':
+			lexeme = fetchLexemeSymbol();
+			id = "mp_divide_float";
 			break;
 		case '\'':
 			recCall = false;  //assume this will not be a recursive call
