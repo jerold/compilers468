@@ -34,6 +34,17 @@ public class Table {
 		}
 	}
 	
+	public Symbol findSymbol(Token lookAhead) {
+		Symbol s = findSymbol(lookAhead.getLexeme(), "procedure");
+		if (s==null)
+			s =  findSymbol(lookAhead.getLexeme(), "function");
+		if (s==null)
+			s =  findSymbol(lookAhead.getLexeme(), "var");
+		if (s==null)
+			s = findSymbol(lookAhead.getLexeme(), "value");
+		return s;
+	}
+	
 	/**
 	 * 
 	 * @param name		The name of the symbol to find
@@ -43,6 +54,17 @@ public class Table {
 	public Symbol findSymbol(String name, String token) {
 		Symbol x = new Symbol(name,token,null,null,0);
 		return findSymbol(x);
+	}
+	
+	public Symbol findSymbol(Symbol x) {
+		for (int i=0; i<symbols.size(); i++) {
+			if (symbols.get(i).equals(x))
+				return (Symbol)symbols.get(i);
+		}
+		if (parent!=null)
+			return parent.findSymbol(x);
+		else
+			return null;
 	}
 	
 	/**
@@ -59,17 +81,6 @@ public class Table {
 		} else {
 			return true;
 		}
-	}
-	
-	public Symbol findSymbol(Symbol x) {
-		for (int i=0; i<symbols.size(); i++) {
-			if (symbols.get(i).equals(x))
-				return (Symbol)symbols.get(i);
-		}
-		if (parent!=null)
-			return parent.findSymbol(x);
-		else
-			return null;
 	}
 	
 	/**

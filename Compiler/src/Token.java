@@ -11,7 +11,7 @@ public class Token {
 	public Token(String identifier, int lineNum, int colNum, String lexeme){
 		this.identifier = identifier;
 		// this.identifier = identifier + tokenIdIterator++; // For unique token id
-		this.lineNum = lineNum;
+		this.lineNum = lineNum+1;
 		this.colNum = colNum;
 		this.lexeme = lexeme;
 	}

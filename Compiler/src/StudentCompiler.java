@@ -14,7 +14,7 @@ public class StudentCompiler implements Compiler {
 	public StudentCompiler() {
 		label = 0;
 		root = "src/bin/";
-		output = root+"out.txt";
+		output = root+"uMachine_code.il";
 	}
 	
 	public void openFile(String output) {

@@ -31,6 +31,9 @@ public class Symbol {
 	 * @return	Whether or not the symbols were equal
 	 */
 	public boolean equals(Symbol x) {
+		if (x==null && this.type==null && this.attributes==null)
+			return false;
+		
 		if (this.name.equalsIgnoreCase(x.name) && this.token.equalsIgnoreCase(x.token))
 			return true;
 		else

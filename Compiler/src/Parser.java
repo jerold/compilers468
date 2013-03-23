@@ -61,6 +61,7 @@ public class Parser {
 				System.out.println("Expected syntax of type \"" + s
 						+ "\" on line " + lookAhead.getLineNum()
 						+ " in column " + lookAhead.getColNum() + ".");
+				System.out.println("  - Found "+lookAhead.getIdentifier());
 			}
 		}
 
@@ -83,11 +84,8 @@ public class Parser {
 	}
 
 	private void match(String s) {
-//		if(lookAhead==null){
-//			return;
-//		} 
 		if (s.equals(lookAhead.getLexeme())) {
-			lookAhead.describe();
+			//lookAhead.describe();
 			lookAhead = scanner.getToken();
 			while (lookAhead == null) {
 				lookAhead = scanner.getToken();
@@ -152,7 +150,7 @@ public class Parser {
 		case "mp_procedure":
 		case "mp_function":
 			procedureAndFunctionDeclarationPart();
-			//break;
+			break;
 		case "mp_begin":
 			statementPart();
 			break;
@@ -399,13 +397,13 @@ public class Parser {
 
 	private void compoundStatement() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_begin": // compoundStatement -> "begin", statementSequence, "end"
-			match("begin");
-			statementSequence();
-			match("end");
-			break;
-		default: // default case is an invalid lookAhead token in language
-			handleError(false, "Compound Statement");
+			case "mp_begin": // compoundStatement -> "begin", statementSequence, "end"
+				match("begin");
+				statementSequence();
+				match("end");
+				break;
+			default: // default case is an invalid lookAhead token in language
+				handleError(false, "Compound Statement");
 		}
 
 	}
@@ -413,20 +411,20 @@ public class Parser {
 	private void statementSequence() {
 
 		switch (lookAhead.getIdentifier()) {
-		case "mp_begin": // statementSequence -> statement
-		case "mp_for": // statementSequence -> statement
-		case "mp_if": // statementSequence -> statement
-		case "mp_read": // statementSequence -> statement
-		case "mp_repeat": // statementSequence -> statement
-		case "mp_while": // statementSequence -> statement
-		case "mp_write": // statementSequence -> statement
-		case "mp_identifier": // statementSequence -> statement
-		case "mp_scolon": // statementSequence -> statement
-			statement();
-			//match(";");
-			break;
-		default: // default case is an invalid lookAhead token in language
-			handleError(false, "Statement Sequence");
+			case "mp_begin": // statementSequence -> statement
+			case "mp_for": // statementSequence -> statement
+			case "mp_if": // statementSequence -> statement
+			case "mp_read": // statementSequence -> statement
+			case "mp_repeat": // statementSequence -> statement
+			case "mp_while": // statementSequence -> statement
+			case "mp_write": // statementSequence -> statement
+			case "mp_identifier": // statementSequence -> statement
+			case "mp_scolon": // statementSequence -> statement
+				statement();
+				//match(";");
+				break;
+			default: // default case is an invalid lookAhead token in language
+				handleError(false, "Statement Sequence");
 		}
 		//recursive here
 		while (lookAhead.getIdentifier().equals("mp_scolon")) {
@@ -435,6 +433,9 @@ public class Parser {
 		}
 	}
 
+	/*
+	 * Should be able to begin and end structured statements and keep going
+	 */
 	private void statement() {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_begin": // statement -> structuredStatement
@@ -463,54 +464,57 @@ public class Parser {
 
 	private void simpleStatement() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_read": // simpleStatement -> readStatement
-			readStatement();
-			break;
-		case "mp_write": // simpleStatement -> writeStatement
-			writeStatement();
-			break;
-		// seems ambiguous here???
-		case "mp_identifier": // simpleStatement -> assignmentStatement and
-								// procedureStatement if lookAhead is identifier
-			
-			assignmentStatement();
-			//procedureStatement();  //we will fix this with symbol table
-			break;
-		case "mp_scolon": // simpleStatement -> emptyStatement-- not really sure what
-					// epsilon is yet?!
-			emptyStatement();
-			break;
-		default: // default case is an invalid lookAhead token in language
-			handleError(false, "Simple Statement");
+			case "mp_read": // simpleStatement -> readStatement
+				readStatement();
+				break;
+			case "mp_write": // simpleStatement -> writeStatement
+				writeStatement();
+				break;
+			// seems ambiguous here???
+			case "mp_identifier": // simpleStatement -> assignmentStatement and
+									// procedureStatement if lookAhead is identifier
+				Symbol s = symbolTable.findSymbol(lookAhead);
+				if (s.token=="procedure")
+					procedureStatement();
+				else
+					assignmentStatement();
+				break;
+			case "mp_scolon": // simpleStatement -> emptyStatement-- not really sure what
+						// epsilon is yet?!
+				emptyStatement();
+				break;
+			default: // default case is an invalid lookAhead token in language
+				handleError(false, "Simple Statement");
 		}
 
 	}
 
 	private void structuredStatement() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_begin": // structuredStatement -> compoundStatement
-			compoundStatement();
-		case "mp_for": // structuredStatement -> repetitiveStatement
-		case "mp_repeat": // structuredStatement -> repetitiveStatement
-		case "mp_while": // structuredStatement -> repetitiveStatement
-			repetitiveStatement();
-			break;
-		case "mp_if": // structuredStatement -> conditionalStatement
-			conditionalStatement();
-			break;
-		
-		default: // default case is an invalid lookAhead token in language
-			handleError(false, "Structured Statement");
+			case "mp_begin": // structuredStatement -> compoundStatement
+				compoundStatement();
+				break;
+			case "mp_for": // structuredStatement -> repetitiveStatement
+			case "mp_repeat": // structuredStatement -> repetitiveStatement
+			case "mp_while": // structuredStatement -> repetitiveStatement
+				repetitiveStatement();
+				break;
+			case "mp_if": // structuredStatement -> conditionalStatement
+				conditionalStatement();
+				break;
+			
+			default: // default case is an invalid lookAhead token in language
+				handleError(false, "Structured Statement");
 		}
 	}
 
 	private void conditionalStatement() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_if": // conditionalStatement -> ifStatement
-			ifStatement();
-			break;
-		default: // default case is an invalid lookAhead token in language
-			handleError(false, "Conditional Statement");
+			case "mp_if": // conditionalStatement -> ifStatement
+				ifStatement();
+				break;
+			default: // default case is an invalid lookAhead token in language
+				handleError(false, "Conditional Statement");
 		}
 
 	}
@@ -534,34 +538,34 @@ public class Parser {
 
 	private void emptyStatement() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_scolon":
-			break;
-		default:
-			handleError(false, "Empty Statement");
+			case "mp_scolon":
+				break;
+			default:
+				handleError(false, "Empty Statement");
 		}
 
 	}
 
 	private void readStatement() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_read": // readStatement -> "read", readParameterList
-			match("read");
-			readParameterList();
-			break;
-		default: // default case is an invalid lookAhead token in language
-			handleError(false, "Read Statement");
+			case "mp_read": // readStatement -> "read", readParameterList
+				match("read");
+				readParameterList();
+				break;
+			default: // default case is an invalid lookAhead token in language
+				handleError(false, "Read Statement");
 		}
 
 	}
 
 	private void writeStatement() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_write": // writeStatement -> "write", writeParameterList
-			match("write");
-			writeParameterList();
-			break;
-		default: // default case is an invalid lookAhead token in language
-			handleError(false, "Write Statement");
+			case "mp_write": // writeStatement -> "write", writeParameterList
+				match("write");
+				writeParameterList();
+				break;
+			default: // default case is an invalid lookAhead token in language
+				handleError(false, "Write Statement");
 		}
 
 	}
@@ -569,58 +573,58 @@ public class Parser {
 	// this seems ambiguous also??
 	private void assignmentStatement() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_identifier": // assignmentStatement ->
-								// (Variable|FunctionIdentifier), ":=",
-								// expression
-			// on the next two lines
-			if(symbolTable.inTable(lookAhead.getLexeme(), "var")){
-				variable();
-			} else if (symbolTable.inTable(lookAhead.getLexeme(), "function")){
-				functionIdentifier();
-			}
-			else {
-				undeclaredVariableError(lookAhead.getLexeme());
-				lookAhead = scanner.getToken();
-			}
-			match(":=");
-			expression();
-			break;
-		default: // default case is an invalid lookAhead token in language
-			handleError(false, "Assignment Statement");
+			case "mp_identifier": // assignmentStatement ->
+									// (Variable|FunctionIdentifier), ":=",
+									// expression
+				// on the next two lines
+				if(symbolTable.inTable(lookAhead.getLexeme(), "var")){
+					variable();
+				} else if (symbolTable.inTable(lookAhead.getLexeme(), "function")){
+					functionIdentifier();
+				}
+				else {
+					undeclaredVariableError(lookAhead.getLexeme());
+					lookAhead = scanner.getToken();
+				}
+				match(":=");
+				expression();
+				break;
+			default: // default case is an invalid lookAhead token in language
+				handleError(false, "Assignment Statement");
 		}
 
 	}
 
 	private void procedureStatement() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_identifier": // procedureStatement -> procedureIdentifier,
-								// [actualParameterList]
-			procedureIdentifier();
-			break;	
-		default: // default case is an invalid lookAhead token in language
-			handleError(false, "Procedure Statement");
-		}
-		if (lookAhead.getIdentifier().equals("mp_lparen")) {
-			actualParameterList();
+			case "mp_identifier": // procedureStatement -> procedureIdentifier,
+									// [actualParameterList]
+				procedureIdentifier();
+				break;	
+			default: // default case is an invalid lookAhead token in language
+				handleError(false, "Procedure Statement");
+			}
+			if (lookAhead.getIdentifier().equals("mp_lparen")) {
+				actualParameterList();
 		}
 	}
 
+	// TODO: This if statement is consuming a semicolon and breaking the parse
 	private void ifStatement() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_if": // ifStatement -> "if", booleanExpression, "then",
-						// statement, ["else", statement]
-			match("if");
-			booleanExpression();
-			match("then");
-			statement();
-			match(";");
-			if (lookAhead.getIdentifier().equals("mp_else")) {
-				match("else");
+			case "mp_if": // ifStatement -> "if", booleanExpression, "then", statement, ["else", statement]
+				match("if");
+				booleanExpression();
+				match("then");
 				statement();
-			}
-			break;
-		default: // default case is an invalid lookAhead token in language
-			handleError(false, "If Statement");
+				match(";"); // should not be done for structured statements
+				if (lookAhead.getIdentifier().equals("mp_else")) {
+					match("else");
+					statement();
+				}
+				break;
+			default: // default case is an invalid lookAhead token in language
+				handleError(false, "If Statement");
 		}
 
 	}
@@ -646,7 +650,6 @@ public class Parser {
 	private void whileStatement() {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_while": // whileStatement -> "while", booleanExpression, "do"
-							// statement
 			match("while");
 			booleanExpression();
 			match("do");
