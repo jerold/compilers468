@@ -7,7 +7,8 @@ public interface Compiler {
 	// Back-end functions
 	
 	void openFile(String output);
-	void write(String code);
+	void writeCommand(String code);
+	void writeFile();
 	
 	// Halt Instruction
 	
@@ -21,17 +22,17 @@ public interface Compiler {
 	/**
 	 * Read an integer value into dst from STDIN
 	 */
-	void readInt();
+	void readInt(String dst);
 	
 	/**
 	 * Read a float value into dst from STDIN
 	 */
-	void readFloat();
+	void readFloat(String dst);
 	
 	/**
 	 * Write the value in src to STDOUT
 	 */
-	void write();
+	void write(String src);
 	
 	/**
 	 * Performs POP A WRT A
@@ -41,7 +42,7 @@ public interface Compiler {
 	/**
 	 * Write the value in src followed by a newline to STDOUT
 	 */
-	void writeLine();
+	void writeLine(String src);
 	
 	/**
 	 * Performs POP A WRTLN A
@@ -131,12 +132,12 @@ public interface Compiler {
 	/**
 	 * Push src on top of the stack
 	 */
-	void push();
+	void push(String src);
 	
 	/**
 	 * Pop the top of the stack into dst 
 	 */
-	void pop();
+	void pop(String dst);
 	
 	//  - INTEGER
 	
@@ -214,7 +215,7 @@ public interface Compiler {
 	/**
 	 * Drop label n at current position
 	 */
-	void label();
+	String label();
 	
 	// LOGICAL OPERATOR instructions - defined for Booleans
 	
@@ -314,9 +315,9 @@ public interface Compiler {
 	// BRANCH instructions - defined for Integers and Floats
 	
 	/**
-	 * Branch to label n
+	 * Branch to label l
 	 */
-	void branch(int n);
+	void branch(String l);
 			
 	//  - INTEGER
 	

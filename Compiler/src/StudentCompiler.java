@@ -1,6 +1,8 @@
+import java.util.List;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 
 
 public class StudentCompiler implements Compiler {
@@ -10,6 +12,7 @@ public class StudentCompiler implements Compiler {
 	private int label;		// Incrementor for label
 	FileWriter fstream;
 	BufferedWriter out;
+	private List<String> code = new ArrayList<String>();
 	
 	public StudentCompiler() {
 		label = 0;
@@ -27,9 +30,16 @@ public class StudentCompiler implements Compiler {
 		out = new BufferedWriter(fstream);
 	}
 	
-	public void write(String code) {
+	public void writeCommand(String command) {
+		System.out.println(command);
+		code.add(command);
+	}
+	
+	
+	public void writeFile() {
 		try {
-			out.write(code);
+			for (String command : code)
+				out.write(command);
 		} catch (IOException e) {
 			System.out.println("Unable to write to the output file");
 		}
@@ -40,185 +50,187 @@ public class StudentCompiler implements Compiler {
 	// HALT instruction
 	
 	public void halt() {
-		write("HLT");
+		writeCommand("HLT");
 	}
 	
 	// I/O instructions
 	
-	public void readInt() {
-		write("RD dst");
+	public void readInt(String dst) {
+		writeCommand("RD "+dst);
 	}
 	
-	public void readFloat() {
-		write("RDF dst");
+	public void readFloat(String dst) {
+		writeCommand("RDF "+dst);
 	}
 	
-	public void write() {
-		write("WRT src");
+	public void write(String src) {
+		writeCommand("WRT "+src);
 	}
 	
 	public void writeStack() {
-		write("WRTS");
+		writeCommand("WRTS");
 	}
 	
-	public void writeLine() {
-		write("WRTLN src");
+	public void writeLine(String src) {
+		writeCommand("WRTLN "+src);
 	}
 	
 	public void writeLineStack() {
-		write("WRTLNS");
+		writeCommand("WRTLNS");
 	}
 	
 	// MEMORY instructions
 	
 	public void move() {
-		write("MOV src dst");
+		writeCommand("MOV src dst");
 	}
 	
 	//  - INTEGER
 	
 	public void negate() {
-		write("NEG src dst");
+		writeCommand("NEG src dst");
 	}
 	
 	public void add() {
-		write("ADD src1 src2 dst");
+		writeCommand("ADD src1 src2 dst");
 	}
 	
 	public void subtract() {
-		write("SUB src1 src2 dst");
+		writeCommand("SUB src1 src2 dst");
 	}
 	
 	public void multiply() {
-		write("MUL src1 src2 dst");
+		writeCommand("MUL src1 src2 dst");
 	}
 	
 	public void divide() {
-		write("DIV src1 src2 dst");
+		writeCommand("DIV src1 src2 dst");
 	}
 	
 	public void modulus() {
-		write("MOD src1 src2 dst");
+		writeCommand("MOD src1 src2 dst");
 	}
 	
 	//  - FLOAT
 	
 	public void negateFloat() {
-		write("NEGF src dst");
+		writeCommand("NEGF src dst");
 	}
 	
 	public void addFloat() {
-		write("ADDF src1 src2 dst");
+		writeCommand("ADDF src1 src2 dst");
 	}
 	
 	public void subtractFloat() {
-		write("SUBF src1 src2 dst");
+		writeCommand("SUBF src1 src2 dst");
 	}
 	
 	public void multiplyFloat() {
-		write("MULF src1 src2 dst");
+		writeCommand("MULF src1 src2 dst");
 	}
 	
 	public void divideFloat() {
-		write("DIVF src1 src2 dst");
+		writeCommand("DIVF src1 src2 dst");
 	}
 	
 	//  - CASTING
 	
 	public void castInteger() {
-		write("CASTI src dst");
+		writeCommand("CASTI src dst");
 	}
 	
 	public void castFloat() {
-		write("CASTF src dst");
+		writeCommand("CASTF src dst");
 	}
 	
 	// STACK instructions
 	
-	public void push() {
-		write("PUSH src");
+	public void push(String src) {
+		writeCommand("PUSH "+src);
 	}
 	
-	public void pop() {
-		write("POP dst");
+	public void pop(String dst) {
+		writeCommand("POP "+dst);
 	}
 	
 	//  - INTEGER
 	
 	public void negateStack() {
-		write("NEGS");
+		writeCommand("NEGS");
 	}
 	
 	public void addStack() {
-		write("ADDS");
+		writeCommand("ADDS");
 	}
 	
 	public void subtractStack() {
-		write("SUBS");
+		writeCommand("SUBS");
 	}
 	
 	public void multiplyStack() {
-		write("MULS");
+		writeCommand("MULS");
 	}
 	
 	public void divideStack() {
-		write("DIVS");
+		writeCommand("DIVS");
 	}
 	
 	public void modulusStack() {
-		write("MODS");
+		writeCommand("MODS");
 	}
 	
 	//  - FLOAT
 	
 	public void negateStackFloat() {
-		write("NEGSF");
+		writeCommand("NEGSF");
 	}
 	
 	public void addStackFloat() {
-		write("ADDSF");
+		writeCommand("ADDSF");
 	}
 	
 	public void subtractStackFloat() {
-		write("SUBSF");
+		writeCommand("SUBSF");
 	}
 	
 	public void multiplyStackFloat() {
-		write("MULSF");
+		writeCommand("MULSF");
 	}
 	
 	public void divideStackFloat() {
-		write("DIVSF");
+		writeCommand("DIVSF");
 	}
 	
 	//  - CASTING
 	
 	public void castStackInteger() {
-		write("CASTSI");
+		writeCommand("CASTSI");
 	}
 	
 	public void castStackFloat() {
-		write("CASTSF");
+		writeCommand("CASTSF");
 	}
 	
 	// LABEL instructions
 	
-	public void label() {
-		write("L"+label++);
+	public String label() {
+		String l = "L"+label++;
+		writeCommand(l+":");
+		return l;
 	}
 	
 	// LOGICAL OPERATOR instructions - defined for Booleans
 	
 	public void andStack() {
-		write("ANDS");
+		writeCommand("ANDS");
 	}
 	
 	public void orStack() {
-		write("ORS");
+		writeCommand("ORS");
 	}
 	
 	public void notStack() {
-		write("NOTS");
+		writeCommand("NOTS");
 	}
 	
 	// COMPARE instructions - defined for Integers and Floats
@@ -226,131 +238,131 @@ public class StudentCompiler implements Compiler {
 	//  - INTEGER
 	
 	public void compareEqualStack() {
-		write("CMPEQS");
+		writeCommand("CMPEQS");
 	}
 	
 	public void compareGreaterEqualStack() {
-		write("CMPGES");
+		writeCommand("CMPGES");
 	}
 	
 	public void compareGreaterStack() {
-		write("CMPGTS");
+		writeCommand("CMPGTS");
 	}
 	
 	public void compareLessEqualStack() {
-		write("CMPLES");
+		writeCommand("CMPLES");
 	}
 	
 	public void compareLessStack() {
-		write("CMPLTS");
+		writeCommand("CMPLTS");
 	}
 	
 	public void compareNotEqualStack() {
-		write("CMPNES");
+		writeCommand("CMPNES");
 	}
 	 
 	//  - INTEGER
 		
 	public void compareEqualStackFloat() {
-		write("CMPEQSF");
+		writeCommand("CMPEQSF");
 	}
 	
 	public void compareGreaterEqualStackFloat() {
-		write("CMPGESF");
+		writeCommand("CMPGESF");
 	}
 	
 	public void compareGreaterStackFloat() {
-		write("CMPGTSF");
+		writeCommand("CMPGTSF");
 	}
 	
 	public void compareLessEqualStackFloat() {
-		write("CMPLESF");
+		writeCommand("CMPLESF");
 	}
 	
 	public void compareLessStackFloat() {
-		write("CMPLTSF");
+		writeCommand("CMPLTSF");
 	}
 	
 	public void compareNotEqualStackFloat() {
-		write("CMPNESF");
+		writeCommand("CMPNESF");
 	}
 	
 	// STACK BRANCH instructions - defined for Booleans
 	
 	public void branchTrueStack(int n) {
-		write("BRTS L"+n);
+		writeCommand("BRTS L"+n);
 	}
 	
 	public void branchFalseStack(int n) {
-		write("BRFS L"+n);
+		writeCommand("BRFS L"+n);
 	}
 			
 	// BRANCH instructions - defined for Integers and Floats
 	
-	public void branch(int n) {
-		write("BR L"+n);
+	public void branch(String l) {
+		writeCommand("BR "+l);
 	}
 			
 	//  - INTEGER
 	
 	public void branchEqual(int n) {
-		write("BEQ src1 src2 L"+n);
+		writeCommand("BEQ src1 src2 L"+n);
 	}
 	
 	public void branchGreaterEqual(int n) {
-		write("BGE src1 src2 L"+n);
+		writeCommand("BGE src1 src2 L"+n);
 	}
 	
 	public void branchGreater(int n) {
-		write("BGT src1 src2 L"+n);
+		writeCommand("BGT src1 src2 L"+n);
 	}
 	
 	public void branchLessEqual(int n) {
-		write("BLE src1 src2 L"+n);
+		writeCommand("BLE src1 src2 L"+n);
 	}
 	
 	public void branchLess(int n) {
-		write("BLT src1 src2 L"+n);
+		writeCommand("BLT src1 src2 L"+n);
 	}
 	
 	public void branchNotEqual(int n) {
-		write("BNE src1 src2 L"+n);
+		writeCommand("BNE src1 src2 L"+n);
 	}
 
 	//  - FLOAT
 	
 	public void branchEqualFloat(int n) {
-		write("BEQF src1 src2 L"+n);
+		writeCommand("BEQF src1 src2 L"+n);
 	}
 	
 	public void branchGreaterEqualFloat(int n) {
-		write("BGEF src1 src2 L"+n);
+		writeCommand("BGEF src1 src2 L"+n);
 	}
 	
 	public void branchGreaterFloat(int n) {
-		write("BGTF src1 src2 L"+n);
+		writeCommand("BGTF src1 src2 L"+n);
 	}
 	
 	public void branchLessEqualFloat(int n) {
-		write("BLEF src1 src2 L"+n);
+		writeCommand("BLEF src1 src2 L"+n);
 	}
 	
 	public void branchLessFloat(int n) {
-		write("BLTF src1 src2 L"+n);
+		writeCommand("BLTF src1 src2 L"+n);
 	}
 	
 	public void branchNotEqualFloat(int n) {
-		write("BNEF src1 src2 L"+n);
+		writeCommand("BNEF src1 src2 L"+n);
 	}
 	
 	// SUBROUTINE instructions
 	
 	public void call(int n) {
-		write("CALL L"+n);
+		writeCommand("CALL L"+n);
 	}
 	
 	public void returnCall() {
-		write("RET");
+		writeCommand("RET");
 	}
 
 }

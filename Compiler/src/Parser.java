@@ -11,9 +11,11 @@ public class Parser {
 	//private Table newScope;
 	private ArrayList<String> retValues;
 	private String type;
+	private Compiler compiler;
 	
-	public Parser(Scanner scanner) {
+	public Parser(Scanner scanner, Compiler compiler) {
 		this.scanner = scanner;
+		this.compiler = compiler;
 		//this.symbolTable = Table.rootInstance();
 		retValues = null;
 		
@@ -183,21 +185,21 @@ public class Parser {
 
 	private void procedureAndFunctionDeclarationPart() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_function":
-			functionDeclaration();
-			match(";");
-			procedureAndFunctionDeclarationPart();
-			break;
-		case "mp_procedure":
-			procedureDeclaration();
-			match(";");
-			procedureAndFunctionDeclarationPart();
-			break;
-		case "mp_begin":
-			statementPart();
-			break;
-		default:
-			return;
+			case "mp_function":
+				functionDeclaration();
+				match(";");
+				procedureAndFunctionDeclarationPart();
+				break;
+			case "mp_procedure":
+				procedureDeclaration();
+				match(";");
+				procedureAndFunctionDeclarationPart();
+				break;
+			case "mp_begin":
+				statementPart();
+				break;
+			default:
+				return;
 		}
 
 	}
@@ -259,8 +261,7 @@ public class Parser {
 				procedureHeading();
 				match(";");
 				block();
-				//symbolTable.getParent().describe();
-				//symbolTable.describe();
+				compiler.returnCall();
 				symbolTable = symbolTable.getParent();
 				break;
 			default:
@@ -271,32 +272,33 @@ public class Parser {
 
 	private void functionDeclaration() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_function":
-			symbolTable = symbolTable.createScope();
-			functionHeading();
-			match(";");
-			block();
-			//symbolTable.getParent().describe();
-			//symbolTable.describe();
-			symbolTable = symbolTable.getParent();
-			break;
-		default:
-			handleError(false, "Function Declaration");
+			case "mp_function":
+				symbolTable = symbolTable.createScope();
+				functionHeading();
+				match(";");
+				block();
+				compiler.returnCall();
+				//symbolTable.getParent().describe();
+				//symbolTable.describe();
+				symbolTable = symbolTable.getParent();
+				break;
+			default:
+				handleError(false, "Function Declaration");
 		}
 	}
 
 	private void procedureHeading() {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_procedure":
+			String label = compiler.label();
 			match("procedure");
 			symbolTable.setTitle(lookAhead.getLexeme());
 			identifier();
-			// This if should work assuming identifier is
-			// moving lookAhead.getIdentifier() forward
 			if (lookAhead.getIdentifier().equals("mp_lparen")) {
 				formalParameterList();
 			}
-			symbolTable.getParent().insert(symbolTable.getTitle(), "procedure", "no return", getAttributes());
+			Symbol s = symbolTable.getParent().insert(symbolTable.getTitle(), "procedure", "no return", getAttributes());
+			s.label = label;
 			break;
 		default:
 			handleError(false, "Procedure Heading");
@@ -307,6 +309,7 @@ public class Parser {
 	private void functionHeading() {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_function":
+			String label = compiler.label();
 			match("function");
 			symbolTable.setTitle(lookAhead.getLexeme());
 			identifier();
@@ -318,7 +321,8 @@ public class Parser {
 			}
 			match(":");
 			type = type();
-			symbolTable.getParent().insert(symbolTable.getTitle(), "function", "returns " + type, getAttributes());
+			Symbol s = symbolTable.getParent().insert(symbolTable.getTitle(), "function", "returns " + type, getAttributes());
+			s.label = label;
 			break;
 		default:
 			handleError(false, "Function Heading");
@@ -577,17 +581,20 @@ public class Parser {
 									// (Variable|FunctionIdentifier), ":=",
 									// expression
 				// on the next two lines
+				Symbol symbol = null;
 				if(symbolTable.inTable(lookAhead.getLexeme(), "var")){
+					symbol = symbolTable.findSymbol(lookAhead.getLexeme(), "var");
 					variable();
 				} else if (symbolTable.inTable(lookAhead.getLexeme(), "function")){
+					symbol = symbolTable.findSymbol(lookAhead.getLexeme(), "function");
 					functionIdentifier();
-				}
-				else {
+				} else {
 					undeclaredVariableError(lookAhead.getLexeme());
 					lookAhead = scanner.getToken();
 				}
 				match(":=");
 				expression();
+				if(symbol!=null) compiler.pop(symbol.getAddress());
 				break;
 			default: // default case is an invalid lookAhead token in language
 				handleError(false, "Assignment Statement");
@@ -698,17 +705,9 @@ public class Parser {
 	}
 
 	private void expression() {
-		// I should be switching on all Factor token id's and sign id's I
-		// think...
-		// switch (lookAhead.getIdentifier()) {
-		// case "mp_equal":
-		// simpleExpression();
-		// break;
-		// default: // optional case statement proceed citizen...
-		// break;
-		// }
 		
 		switch (lookAhead.getIdentifier()) {
+		
 			case "mp_plus":
 			case "mp_minus":
 			case "mp_integer_lit":
@@ -716,8 +715,7 @@ public class Parser {
 			case "mp_string_lit":
 			case "mp_lparen":
 			case "mp_not":
-				simpleExpression(); //still might have missed a few here
-				//not sure about this yet???
+				simpleExpression();
 				expression();
 				break;
 			case "mp_equal":
@@ -733,6 +731,7 @@ public class Parser {
 				break;
 			
 		}
+		
 	}
 
 	private void simpleExpression() {
@@ -742,7 +741,6 @@ public class Parser {
 				sign();
 				break;
 			case "mp_identifier":
-			case "mp_float_lit":
 			case "mp_fixed_lit":
 			case "mp_integer_lit":
 			case "mp_string_lit":
@@ -752,17 +750,29 @@ public class Parser {
 			default:
 				handleError(false, "simple Expression");
 		}
-		while (lookAhead.getIdentifier().equals("mp_plus") || lookAhead.getIdentifier().equals("mp_minus") 
-				|| lookAhead.getIdentifier().equals("mp_or")) {
-			addingOperator();
-			term();
+		while (lookAhead.getIdentifier().equals("mp_plus") || lookAhead.getIdentifier().equals("mp_minus") || lookAhead.getIdentifier().equals("mp_or")) {
+			if (lookAhead.getIdentifier().equals("mp_plus")) {
+				addingOperator();
+				term();
+				compiler.addStack();
+			} else if (lookAhead.getIdentifier().equals("mp_minus")) {
+				addingOperator();
+				term();
+				compiler.subtractStack();
+			} else {
+				addingOperator();
+				term();
+			}
 		}
 	}
 
 	private void term() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_identifier":
-			case "mp_float_lit":
+				compiler.push(symbolTable.findSymbol(lookAhead.getLexeme(),"var").getAddress());
+				factor();
+				break;
+			//case "mp_float_lit":
 			case "mp_fixed_lit":
 			case "mp_integer_lit":
 			case "mp_string_lit":
@@ -772,10 +782,23 @@ public class Parser {
 			default:
 				handleError(false, "term");
 		}
-		while (lookAhead.getIdentifier().equals("mp_times") || lookAhead.getIdentifier().equals("mp_div") 
-				|| lookAhead.getIdentifier().equals("mp_mod") || lookAhead.getIdentifier().equals("mp_and")) {
-			multiplyingOperator();
-			factor();
+		while (lookAhead.getIdentifier().equals("mp_times") || lookAhead.getIdentifier().equals("mp_div") || lookAhead.getIdentifier().equals("mp_mod") || lookAhead.getIdentifier().equals("mp_and")) {
+			if (lookAhead.getIdentifier().equals("mp_times")) {
+				multiplyingOperator();
+				factor();
+				compiler.multiplyStack();
+			} else if (lookAhead.getIdentifier().equals("mp_div")) {
+				multiplyingOperator();
+				factor();
+				compiler.divideStack();
+			} else if (lookAhead.getIdentifier().equals("mp_mod")) {
+				multiplyingOperator();
+				factor();
+				compiler.modulusStack();
+			} else {
+				multiplyingOperator();
+				factor();
+			}
 		}
 	}
 	
@@ -797,6 +820,7 @@ public class Parser {
 	private void factor() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_integer_lit":
+				compiler.push("#"+lookAhead.getLexeme());
 				unsignedInteger();
 				break;
 			case "mp_identifier":
@@ -806,9 +830,13 @@ public class Parser {
 					functionDesignator();
 				}
 				break;
-			case "mp_float_lit":
+			//case "mp_float_lit":
 			case "mp_fixed_lit":
+				compiler.push("#"+lookAhead.getLexeme());
+				identifier();
+				break;
 			case "mp_string_lit":
+				compiler.push("#\""+lookAhead.getLexeme()+"\"");
 				identifier();
 				break;
 			case "mp_lparen":
@@ -980,17 +1008,23 @@ public class Parser {
 
 	private void readParameter() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_identifier":
-			variable();
-			break;
-		default:
-			handleError(false, "Read Parameter");
+			case "mp_identifier":
+				Symbol s = symbolTable.findSymbol(lookAhead.getLexeme(),"var");
+				if (s.type=="integer")
+					compiler.readInt(s.getAddress());
+				else if (s.type=="float")
+					compiler.readFloat(s.getAddress());
+				variable();
+				break;
+			default:
+				handleError(false, "Read Parameter");
 		}
 	}
 
 	private void writeParameterList() {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_scolon":
+			compiler.writeLine("");
 			break;
 		case "mp_lparen":
 			match("(");
@@ -1008,19 +1042,21 @@ public class Parser {
 	}
 
 	private void writeParameter() {
+		// I'm thinking this can all be done with a write stack at the end, since expression will put the correct element on top
 		switch (lookAhead.getIdentifier()) {
-		case "not":
-		case "mp_identifier":
-		case "mp_integer_lit":
-		case "mp_lparen":
-		case "mp_plus":
-		case "mp_minus":
-		case "mp_float_lit": 
-		case "mp_string_lit":
-			expression();
-			break;
-		default:
-			handleError(false, "Write");
+			case "mp_identifier":
+			case "mp_integer_lit":
+			case "mp_float_lit": 
+			case "mp_string_lit":
+			case "not":
+			case "mp_lparen":
+			case "mp_plus":
+			case "mp_minus":
+				expression();
+				compiler.writeStack();
+				break;
+			default:
+				handleError(false, "Write");
 		}
 	}
 
@@ -1071,8 +1107,12 @@ public class Parser {
 	private void procedureIdentifier() {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_identifier":
-			if(symbolTable.inTable(lookAhead.getLexeme(), "procedure"))
+			if(symbolTable.inTable(lookAhead.getLexeme(), "procedure")) {
+				Symbol s = symbolTable.findSymbol(lookAhead.getLexeme(), "procedure");
 				identifier();
+				// i'm not sure, but i think this should be looking for the parameters afterward? maybe pushing them onto the stack?
+				compiler.branch(s.label);
+			}	
 			break;
 		default:
 			handleError(false, "Procedure Identifier");
@@ -1111,15 +1151,15 @@ public class Parser {
 
 	private void identifier() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_identifier":
-		case "mp_string_lit":
-		case "mp_int_lit":
-		case "mp_fixed_lit":
-		//case "mp_float_lit":
-			match(lookAhead.getLexeme());
-			break;
-		default:
-			handleError(false, "Identifier");
+			case "mp_identifier":
+			case "mp_string_lit":
+			case "mp_int_lit":
+			case "mp_fixed_lit":
+				match(lookAhead.getLexeme());
+				break;
+			//case "mp_float_lit":
+			default:
+				handleError(false, "Identifier");
 		}
 	}
 

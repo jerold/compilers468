@@ -8,6 +8,7 @@ public class Table {
 	private int size = 0;
 	private String title= null;
 	private static Table root = new Table(null);
+	private int level = 0;
 	
 	private Table(Table parent) {
 		this.parent = parent;
@@ -18,7 +19,13 @@ public class Table {
 	}
 	
 	public Table createScope() {
-		return new Table(this);
+		Table table = new Table(this);
+		table.level = this.level++;
+		return table;
+	}
+	
+	public int getLevel() {
+		return this.level;
 	}
 	
 	/**
@@ -52,7 +59,7 @@ public class Table {
 	 * @return			The symbol that was found
 	 */
 	public Symbol findSymbol(String name, String token) {
-		Symbol x = new Symbol(name,token,null,null,0);
+		Symbol x = new Symbol(this,name,token,null,null,0);
 		return findSymbol(x);
 	}
 	
@@ -74,7 +81,7 @@ public class Table {
 	 * @return			The symbol that was found
 	 */
 	public boolean inTable(String name, String token) {
-		Symbol x = new Symbol(name,token,null,null,0);
+		Symbol x = new Symbol(this,name,token,null,null,0);
 		x = findSymbol(x);
 		if(x == null){
 			return false;
@@ -91,8 +98,8 @@ public class Table {
 	 * @param type			The type of token (int, float)
 	 * @param attributes	Any attributes that may be passed
 	 */
-	public void insert(String name, String token, String type, String attributes) {
-		insertSymbol(name,token,type,attributes);
+	public Symbol insert(String name, String token, String type, String attributes) {
+		return insertSymbol(name,token,type,attributes);
 	}
 	
 	/**
@@ -103,9 +110,11 @@ public class Table {
 	 * @param type			The type of token (int, float)
 	 * @param attributes	Any attributes that may be passed
 	 */
-	private void insertSymbol(String name, String token, String type, String attributes) {
-		symbols.add(new Symbol(name,token,type,attributes,symbols.size()));
+	private Symbol insertSymbol(String name, String token, String type, String attributes) {
+		Symbol s = new Symbol(this,name,token,type,attributes,symbols.size());
+		symbols.add(s);
 		size ++;
+		return s;
 	}
 	
 	/**

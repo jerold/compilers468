@@ -6,6 +6,8 @@ public class Symbol {
 	String type;		// change to enum? rename?
 	String attributes;
 	int offset;
+	String label;
+	Table parent;
 	
 	/**
 	 * Creates a row representing a symbol within a table.
@@ -16,12 +18,18 @@ public class Symbol {
 	 * @param attributes	Any attributes that may be passed
 	 * @param offset		The offset within the scope
 	 */
-	public Symbol(String name, String token, String type, String attributes, int offset) {
+	public Symbol(Table parent, String name, String token, String type, String attributes, int offset) {
+		this.parent = parent;
 		this.name = name;
 		this.token = token;
 		this.type = type;
 		this.offset = offset;
 		this.attributes = attributes;
+		this.label = null;
+	}
+	
+	public String getAddress() {
+		return offset+"(D"+parent.getLevel()+")";
 	}
 	
 	/**
@@ -44,6 +52,6 @@ public class Symbol {
 	 * prints out the name, token, type, attributes, and offset of a symbol
 	 */
 	public void describe(){
-		System.out.println(this.name + "   " + this.token + "   " + this.type + "   " + this.attributes + "   " + this.offset);
+		System.out.println(this.name + "   " + this.token + "   " + this.type + "   " + this.attributes + "   " + this.offset + "   " + this.label);
 	}
 }
