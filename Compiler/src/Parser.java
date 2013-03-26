@@ -756,16 +756,38 @@ public class Parser {
 				match(":=");
 				initialValue();
 				compiler.pop(s.getAddress());
+				boolean add = true;
 				if (lookAhead.getIdentifier().equals("mp_to")) {
 					match("to");
 				} else if (lookAhead.getIdentifier().equals("mp_downto")) {
 					match("downto");
+					add = false;
 				} else {
 					handleError(false, "For Statement Argument");
 				}
+				String finalvalue = lookAhead.getLexeme();
 				finalValue();
 				match("do");
+				String startlabel = compiler.label();
 				statement();
+				compiler.push(s.getAddress());
+				compiler.push("#1");
+				if (add) {
+					compiler.addStack();
+				} else {
+					compiler.subtractStack();
+				}
+				compiler.pop(s.getAddress());
+				compiler.push(s.getAddress());
+				compiler.push("#"+finalvalue);
+				if (add) {
+					compiler.compareLessEqualStack();
+					compiler.branchTrueStack(startlabel);
+				} else {
+					compiler.compareGreaterEqualStack();
+					compiler.branchTrueStack(startlabel);
+				}
+				// TODO: decrement SP here so the final value is removed
 				break;
 			default: // default case is an invalid lookAhead token in language
 				handleError(false, "For Statement");

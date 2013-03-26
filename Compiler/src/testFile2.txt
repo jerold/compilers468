@@ -8,10 +8,10 @@ function myFun1(j,k:float; var s:integer):integer; begin
 	j:=2*9;
 end;
 
-procedure myProc1(var i:integer); begin
-  Write('myProc1(',i,') = ');
-  i:=i*9;
-  Writeln(i);
+procedure myProc1(var t:integer); begin
+  Write('myProc1(',t,') = ');
+  t:=t*9;
+  Writeln(t);
 end;
  
 begin {tester}
@@ -19,17 +19,14 @@ begin {tester}
 	Write; Write;;
     Write('Please enter an integer value for I: ' );
     Read(I);
-    I := I + 1;
-    Write('The current value of I is ' , I-2);
-    Write; Write;
+    Writeln('The current value of I is ' , I);
+    Write;
     
-    myProc1(5);
-    Writeln('DONE!!!');
+    {myProc1(5);}
     
-    if (23>21) then writeln('TRUE IF'); else writeln('FALSE IF');
-    
-    if (19>21) then writeln('TRUE IF 2'); else writeln('FALSE IF 2');
-    
-    Writeln('Done with program');
+    for i:=30 downto 17 do
+	begin
+		Writeln(I);
+	end;
     	
 end. {tester}
