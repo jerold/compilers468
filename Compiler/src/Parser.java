@@ -13,13 +13,15 @@ public class Parser {
 	private String type;
 	private Compiler compiler;
 	private Symbol passSymbol;
+	private int ramSize;
+	private int memorySize;
 	
 	public Parser(Scanner scanner, Compiler compiler) {
 		this.scanner = scanner;
 		this.compiler = compiler;
 		//this.symbolTable = Table.rootInstance();
 		retValues = null;
-		
+		ramSize = 100;
 	}
 
 	public int run() {
@@ -42,6 +44,7 @@ public class Parser {
 	}
 
 	private void handleError(boolean matchError, String s) {
+		compiler.turnOff();
 		if (matchError) {
 			parseError = true;
 			String errorToken = lookAhead.getLexeme();
@@ -71,6 +74,17 @@ public class Parser {
 
 	}
 	
+	private void handleErrorUndefined() {
+		compiler.turnOff();
+		System.out.println("Error: Unedefined variable \""+lookAhead.getLexeme()+"\" on line "+lookAhead.getLineNum()+" in column "+lookAhead.getColNum()+".");
+	}
+	
+	private void handleErrorExpected(String expected, String found) {
+		compiler.turnOff();
+		System.out.println("Error: Variable \""+lookAhead.getLexeme()+"\" of incorrect type on line "+lookAhead.getLineNum()+" in column "+lookAhead.getColNum()+".");
+		System.out.println("   Expected type \""+expected+"\" but found type \""+found+"\"");
+	}
+	
 	private void invalidVariableName(String var){
 		parseError = true;
 		System.out.println();
@@ -98,13 +112,26 @@ public class Parser {
 			handleError(true, s);
 		}
 	}
+	
+	private void computeMemorySize(Table outerTable) {
+		int newsize = symbolTable.getOffset()+symbolTable.getSize();
+		if (newsize > memorySize)
+			memorySize = newsize;
+	}
+	
+	public void setRamSize(int ramSize) {
+		this.ramSize = ramSize;
+	}
 
 	private int start() {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_program":
 			program();
 			match("eof");
-			//symbolTable.describe();
+			// start register D0 at the end of RAM
+			compiler.move("#"+(ramSize-memorySize), "D0");
+			compiler.injectLast(0);
+			compiler.halt();
 			if(parseError){
 				return 0;
 			} else {
@@ -117,7 +144,6 @@ public class Parser {
 
 	// David's Section
 	private void program() {
-		// lookAhead.describe();
 		switch (lookAhead.getIdentifier()) {
 		case "mp_program":
 			symbolTable = Table.rootInstance();
@@ -136,7 +162,8 @@ public class Parser {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_program":
 			match("program");
-			compiler.move("#100", "D0");
+			//this is done at the end now
+			//compiler.move("#100", "D0");
 			symbolTable.setTitle(lookAhead.getLexeme());
 			identifier();
 			break;
@@ -146,7 +173,6 @@ public class Parser {
 
 	}
 
-	// I changed this David. We'll see if it works. //order might need changed here
 	private void block() {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_var":
@@ -235,7 +261,6 @@ public class Parser {
 					invalidVariableName(name);
 				}
 			}
-			//symbolTable.describe();
 			retValues.clear();  //clear retValues after it is used each time
 			break;
 		default:
@@ -269,6 +294,7 @@ public class Parser {
 				block();
 				compiler.returnCall();
 				compiler.label();
+				computeMemorySize(symbolTable);
 				symbolTable = symbolTable.getParent();
 				break;
 			default:
@@ -281,14 +307,17 @@ public class Parser {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_function":
 				symbolTable = symbolTable.createScope();
-				compiler.branch(compiler.getLabel(1));
+				String endlabel = compiler.skipLabel();
+				compiler.branch(endlabel);
 				functionHeading();
 				match(";");
 				block();
+				// put the return value on the top of the stack
+				Symbol f = symbolTable.findSymbol(symbolTable.getTitle(),"var");
+				compiler.push(f.getAddress());
 				compiler.returnCall();
-				compiler.label();
-				//symbolTable.getParent().describe();
-				//symbolTable.describe();
+				compiler.label(endlabel);
+				computeMemorySize(symbolTable);
 				symbolTable = symbolTable.getParent();
 				break;
 			default:
@@ -323,9 +352,6 @@ public class Parser {
 			match("function");
 			symbolTable.setTitle(lookAhead.getLexeme());
 			identifier();
-			//symbolTable.describe();
-			// This if should work assuming identifier is
-			// moving lookAhead.getIdentifier() forward
 			if (lookAhead.getIdentifier().equals("mp_lparen")) {
 				formalParameterList();
 			}
@@ -334,6 +360,7 @@ public class Parser {
 			Symbol s = symbolTable.getParent().insert(symbolTable.getTitle(), "function", "returns " + type, getAttributes());
 			s.label = label;
 			s.level = symbolTable.getLevel();
+			symbolTable.insert(symbolTable.getTitle(), "var", type, null);
 			break;
 		default:
 			handleError(false, "Function Heading");
@@ -647,10 +674,7 @@ public class Parser {
 				if(symbolTable.inTable(lookAhead.getLexeme(), "var")){
 					symbol = symbolTable.findSymbol(lookAhead.getLexeme(), "var");
 					variable();
-				} else if (symbolTable.inTable(lookAhead.getLexeme(), "function")){
-					symbol = symbolTable.findSymbol(lookAhead.getLexeme(), "function");
-					functionIdentifier();
-				} else {
+				} if (symbolTable.inTable(lookAhead.getLexeme(), "function")) {
 					undeclaredVariableError(lookAhead.getLexeme());
 					lookAhead = scanner.getToken();
 				}
@@ -896,7 +920,19 @@ public class Parser {
 	private void term() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_identifier":
-				compiler.push(symbolTable.findSymbol(lookAhead.getLexeme(),"var").getAddress());
+				Symbol s = symbolTable.findSymbol(lookAhead.getLexeme(),"var");
+				if (s==null) {
+					s = symbolTable.findSymbol(lookAhead.getLexeme(),"value");
+				}
+				if (s==null) {
+					s = symbolTable.findSymbol(lookAhead.getLexeme(),"function");
+				}
+				if (s!=null) {
+					compiler.push(s.getAddress());
+				} else {
+					symbolTable.describe();
+					handleErrorUndefined();
+				}
 				factor();
 				break;
 			//case "mp_float_lit":
@@ -951,7 +987,10 @@ public class Parser {
 				unsignedInteger();
 				break;
 			case "mp_identifier":
+				// TODO: I didn't know what to do for value types, so I just made it go to variable() as well
 				if(symbolTable.inTable(lookAhead.getLexeme(), "var")){
+					variable();
+				} else if (symbolTable.inTable(lookAhead.getLexeme(), "value")) {
 					variable();
 				} else {
 					functionDesignator();
@@ -1061,7 +1100,7 @@ public class Parser {
 	private void functionDesignator() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_identifier":
-				passSymbol = symbolTable.findSymbol(lookAhead.getLexeme(), "procedure");
+				passSymbol = symbolTable.findSymbol(lookAhead.getLexeme(), "function");
 				functionIdentifier();
 				if (lookAhead.getIdentifier().equals("mp_lparen")) {
 					actualParameterList();
@@ -1263,12 +1302,12 @@ public class Parser {
 
 	private void functionIdentifier() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_identifier":
-			if(symbolTable.inTable(lookAhead.getLexeme(), "function"))
-				identifier();
-			break;
-		default:
-			handleError(false, "Function Identifier");
+			case "mp_identifier":
+				if(symbolTable.inTable(lookAhead.getLexeme(), "function"))
+					identifier();
+				break;
+			default:
+				handleError(false, "Function Identifier");
 		}
 	}
 

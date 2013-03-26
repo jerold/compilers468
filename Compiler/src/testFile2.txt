@@ -4,8 +4,20 @@ program Tester;
  	count:integer;
  	{comment}
 
-function myFun1(j,k:float; var s:integer):integer; begin
-	j:=2*9;
+{
+function fact( n: integer ): integer;
+  begin
+    writeln(n);
+    if ( n <= 1 ) then
+      fact := 1;
+    else
+      fact := n * fact( n-1 );
+  end;
+  }
+  
+function fact( n: integer ): integer;
+begin
+	fact := 2+n;
 end;
 
 procedure myProc1(var t:integer); begin
@@ -22,7 +34,10 @@ begin {tester}
     Writeln('The current value of I is ' , I);
     Write;
     
-    {myProc1(5);}
+    myProc1(5);
+    
+    i := fact(10);
+    Writeln('fact(10) = ',i);
     
     for i:=30 downto 17 do
 	begin
