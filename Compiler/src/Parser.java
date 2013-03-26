@@ -544,8 +544,7 @@ public class Parser {
 					assignmentStatement();
 				}
 				break;
-			case "mp_scolon": // simpleStatement -> emptyStatement-- not really sure what
-						// epsilon is yet?!
+			case "mp_scolon": // simpleStatement -> emptyStatement-- not really sure what  epsilon is yet?!
 				emptyStatement();
 				break;
 			default: // default case is an invalid lookAhead token in language
@@ -643,10 +642,7 @@ public class Parser {
 	// this seems ambiguous also??
 	private void assignmentStatement() {
 		switch (lookAhead.getIdentifier()) {
-			case "mp_identifier": // assignmentStatement ->
-									// (Variable|FunctionIdentifier), ":=",
-									// expression
-				// on the next two lines
+			case "mp_identifier": // assignmentStatement -> (Variable|FunctionIdentifier), ":=", expression
 				Symbol symbol = null;
 				if(symbolTable.inTable(lookAhead.getLexeme(), "var")){
 					symbol = symbolTable.findSymbol(lookAhead.getLexeme(), "var");
@@ -660,7 +656,9 @@ public class Parser {
 				}
 				match(":=");
 				expression();
-				if(symbol!=null) compiler.pop(symbol.getAddress());
+				if(symbol!=null) {
+					compiler.pop(symbol.getAddress());
+				}
 				break;
 			default: // default case is an invalid lookAhead token in language
 				handleError(false, "Assignment Statement");
@@ -689,13 +687,21 @@ public class Parser {
 			case "mp_if": // ifStatement -> "if", booleanExpression, "then", statement, ["else", statement]
 				match("if");
 				booleanExpression();
+				String elselabel = compiler.skipLabel();
+				compiler.branchFalseStack(elselabel);
 				match("then");
-				statementSequence();
-				//match(";"); // should not be done for structured statements
+				// this is a hack to consume ; if it's a single statement
+				boolean checkSequence = (lookAhead.getIdentifier().equals("mp_begin"));
+				statement();
+				if (!checkSequence) match(";");
+				String endlabel = compiler.skipLabel();
+				compiler.branch(endlabel);
+				compiler.label(elselabel);
 				if (lookAhead.getIdentifier().equals("mp_else")) {
 					match("else");
-					statementSequence();
+					statement();
 				}
+				compiler.label(endlabel);
 				break;
 			default: // default case is an invalid lookAhead token in language
 				handleError(false, "If Statement");
@@ -723,14 +729,19 @@ public class Parser {
 
 	private void whileStatement() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_while": // whileStatement -> "while", booleanExpression, "do"
-			match("while");
-			booleanExpression();
-			match("do");
-			statement();
-			break;
-		default: // default case is an invalid lookAhead token in language
-			handleError(false, "While Statement");
+			case "mp_while": // whileStatement -> "while", booleanExpression, "do"
+				match("while");
+				String startlabel = compiler.label();
+				booleanExpression();
+				String endlabel = compiler.skipLabel();
+				compiler.branchFalseStack(endlabel);
+				match("do");
+				statement();
+				compiler.branch(startlabel);
+				compiler.label(endlabel);
+				break;
+			default: // default case is an invalid lookAhead token in language
+				handleError(false, "While Statement");
 		}
 	}
 
@@ -781,18 +792,43 @@ public class Parser {
 			case "mp_identifier":
 			case "mp_string_lit":
 			case "mp_lparen":
-			case "mp_not":
 				simpleExpression();
 				expression();
 				break;
+			case "mp_not":
+				simpleExpression();
+				expression();
+				compiler.compareNotEqualStack();
+				break;
 			case "mp_equal":
+				relationalOperator();
+				simpleExpression();
+				compiler.compareEqualStack();
+				break;
 			case "mp_lthan":
+				relationalOperator();
+				simpleExpression();
+				compiler.compareLessStack();
+				break;
 			case "mp_gthan":
+				relationalOperator();
+				simpleExpression();
+				compiler.compareGreaterStack();
+				break;
 			case "mp_lequal":
+				relationalOperator();
+				simpleExpression();
+				compiler.compareLessEqualStack();
+				break;
 			case "mp_gequal":
+				relationalOperator();
+				simpleExpression();
+				compiler.compareGreaterEqualStack();
+				break;
 			case "mp_nequal":
 				relationalOperator();
 				simpleExpression();
+				compiler.compareNotEqualStack();
 				break;
 			default: // optional case statement proceed citizen...
 				break;
@@ -837,7 +873,6 @@ public class Parser {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_identifier":
 				compiler.push(symbolTable.findSymbol(lookAhead.getLexeme(),"var").getAddress());
-				//symbolTable.findSymbol(lookAhead.getLexeme(),"var").parent.describe();
 				factor();
 				break;
 			//case "mp_float_lit":
@@ -1038,7 +1073,6 @@ public class Parser {
 				int count = 0;
 				actualParameter();
 				compiler.pop(passSymbol.getAttributeAddress(count));
-				compiler.writeLine(passSymbol.getAttributeAddress(count));
 				while (lookAhead.getIdentifier().equals(",")) {
 					count++;
 					match(",");
@@ -1149,31 +1183,31 @@ public class Parser {
 
 	private void booleanExpression() {
 		switch (lookAhead.getIdentifier()) {
-		case "not":
-		case "mp_identifier":
-		case "mp_integer_lit":
-		case "mp_lparen":
-		case "mp_plus":
-		case "mp_minus":
-			ordinalExpression();
-			break;
-		default:
-			handleError(false, "Boolean Expression");
+			case "not":
+			case "mp_identifier":
+			case "mp_integer_lit":
+			case "mp_lparen":
+			case "mp_plus":
+			case "mp_minus":
+				ordinalExpression();
+				break;
+			default:
+				handleError(false, "Boolean Expression");
 		}
 	}
 
 	private void ordinalExpression() {
 		switch (lookAhead.getIdentifier()) {
-		case "not":
-		case "mp_identifier":
-		case "mp_integer_lit":
-		case "mp_lparen":
-		case "mp_plus":
-		case "mp_minus":
-			expression();
-			break;
-		default:
-			handleError(false, "Ordinal Expression");
+			case "not":
+			case "mp_identifier":
+			case "mp_integer_lit":
+			case "mp_lparen":
+			case "mp_plus":
+			case "mp_minus":
+				expression();
+				break;
+			default:
+				handleError(false, "Ordinal Expression");
 		}
 	}
 
