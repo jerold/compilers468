@@ -4,20 +4,10 @@ program Tester;
  	count:integer;
  	{comment}
 
-{
-function fact( n: integer ): integer;
-  begin
-    writeln(n);
-    if ( n <= 1 ) then
-      fact := 1;
-    else
-      fact := n * fact( n-1 );
-  end;
-  }
-  
 function fact( n: integer ): integer;
 begin
 	fact := 2+n;
+	writeln('return from fact here');
 end;
 
 procedure myProc1(var t:integer); begin
@@ -34,10 +24,11 @@ begin {tester}
     Writeln('The current value of I is ' , I);
     Write;
     
-    myProc1(5);
-    
-    i := fact(10);
+    myProc1(i);
+    writeln('in between...');
+    i := fact(i);
     Writeln('fact(10) = ',i);
+    writeln('SUCCESS!');
     
     for i:=30 downto 17 do
 	begin

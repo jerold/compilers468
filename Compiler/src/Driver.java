@@ -18,6 +18,7 @@ public class Driver {
 		}
 		// print out all the tokens while there are tokens to fetch
 		Parser parser = new Parser(scanner,compiler);
+		parser.setRamSize(1000);
 		parser.run();
 		
 		System.exit(0);

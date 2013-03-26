@@ -7,8 +7,8 @@ public interface Compiler {
 	// Back-end functions
 	
 	void openFile(String output);
-	void writeCommand(String code);
 	void writeFile();
+	void turnOff();
 	
 	// Halt Instruction
 	
@@ -54,7 +54,7 @@ public interface Compiler {
 	/**
 	 * Performs dst <-- src
 	 */
-	void move();
+	void move(String src, String dst);
 	
 	//  - INTEGER
 	
@@ -214,8 +214,32 @@ public interface Compiler {
 	
 	/**
 	 * Drop label n at current position
+	 * 
+	 * @return	The label that was generated.
 	 */
 	String label();
+	
+	/**
+	 * Manually drop label
+	 * 
+	 * @param label	The label that should be entered.
+	 */
+	void label(String l);
+	
+	/**
+	 * Skip label for later use.
+	 * 
+	 * @return	The label that was skipped.
+	 */
+	String skipLabel();
+	
+	/**
+	 * Get the string that will be injected when the label() function is called.
+	 * 
+	 * @param index	The number of times in the future label will be called.
+	 * @return		The label that will be produced by the label calls.
+	 */
+	String getLabel(int index);
 	
 	// LOGICAL OPERATOR instructions - defined for Booleans
 	
@@ -305,12 +329,12 @@ public interface Compiler {
 	/**
 	 * Performs POP A BEQ A #1 Ln
 	 */
-	void branchTrueStack(int n);
+	void branchTrueStack(String l);
 	
 	/**
 	 * Performs POP A BEQ A #0 Ln
 	 */
-	void branchFalseStack(int n);
+	void branchFalseStack(String l);
 			
 	// BRANCH instructions - defined for Integers and Floats
 	
@@ -388,11 +412,35 @@ public interface Compiler {
 	/**
 	 * Performs PUSH PC BR Ln
 	 */
-	void call(int n);
+	void call(String l);
 	
 	/**
 	 * Performs POP PC
 	 */
 	void returnCall();
+	
+	/**
+	 * Prints out stack addresses and values – Doesn’t affect state of machine.
+	 */
+	void printStack();
+	
+	/**
+	 * Prints out registers – Doesn’t affect state of machine.
+	 */
+	void printRegisters();
+	
+	/**
+	 * Retrieves the line of assembly the compiler is on.
+	 * 
+	 * @return	The last line to be printed
+	 */
+	int getLine();
+	
+	/**
+	 * Injects the last line of assembly written into another line
+	 * 
+	 * @param line	The line that the code should be relocated to (must be less than the current)
+	 */
+	void injectLast(int line);
 
 }

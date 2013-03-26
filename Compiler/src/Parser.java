@@ -129,8 +129,8 @@ public class Parser {
 			program();
 			match("eof");
 			// start register D0 at the end of RAM
-			compiler.move("#"+(ramSize-memorySize), "D0");
-			compiler.injectLast(0);
+			//compiler.move("#"+(ramSize-memorySize), "D0");
+			//compiler.injectLast(0);
 			compiler.halt();
 			if(parseError){
 				return 0;
@@ -163,7 +163,7 @@ public class Parser {
 		case "mp_program":
 			match("program");
 			//this is done at the end now
-			//compiler.move("#100", "D0");
+			compiler.move("#100", "D0");
 			symbolTable.setTitle(lookAhead.getLexeme());
 			identifier();
 			break;
@@ -202,7 +202,6 @@ public class Parser {
 					variableDeclaration();
 					 match(";");
 				}
-				//symbolTable.describe();
 				break;
 			case "mp_procedure":
 			case "mp_function":
@@ -314,7 +313,9 @@ public class Parser {
 				block();
 				// put the return value on the top of the stack
 				Symbol f = symbolTable.findSymbol(symbolTable.getTitle(),"var");
-				compiler.push(f.getAddress());
+				//compiler.push(f.getAddress());
+				Symbol p = symbolTable.getParent().findSymbol(symbolTable.getTitle(),"function");
+				compiler.move(f.getAddress(),p.getAddress());
 				compiler.returnCall();
 				compiler.label(endlabel);
 				computeMemorySize(symbolTable);
@@ -1106,6 +1107,7 @@ public class Parser {
 					actualParameterList();
 				}
 				compiler.call(passSymbol.label);
+				compiler.push(passSymbol.getAddress());
 				break;
 			default: // default case is an invalid lookAhead token in language
 				handleError(false, "Function Designator");

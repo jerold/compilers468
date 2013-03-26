@@ -7,6 +7,7 @@ import java.util.ArrayList;
 
 public class StudentCompiler implements Compiler {
 
+	private boolean compileFlag;
 	private String root;	// the root directory to compile to
 	private String output;  // filename to output to
 	private int label;		// Incrementor for label
@@ -15,37 +16,59 @@ public class StudentCompiler implements Compiler {
 	private List<String> code = new ArrayList<String>();
 	
 	public StudentCompiler() {
+		compileFlag = true;
 		label = 0;
-		root = "src/bin/";
-		output = root+"uMachine_code.il";
+		root = "target/";
+		output = "uMachine_code.il";
+	}
+	
+	public void openFile() {
+		openFile(output);
 	}
 	
 	public void openFile(String output) {
-		this.output = root+output;
 		try {
-			fstream = new FileWriter(output);
+			fstream = new FileWriter(root+output);
+			out = new BufferedWriter(fstream);
 		} catch (IOException e) {
-			System.out.println("Unable to open output file");
+			System.out.println("Unable to open output file: "+output);
 		}
-		out = new BufferedWriter(fstream);
+		
 	}
 	
-	public void writeCommand(String command) {
-		System.out.println(command);
-		code.add(command);
+	public void closeFile() {
+		try{
+			out.close();
+		}catch (Exception e){//Catch exception if any
+			System.err.println("Error: Could not close file.");
+		}
 	}
 	
+	private void writeCommand(String command) {
+		if (compileFlag) {
+			System.out.println(command);
+			code.add(command);
+		}
+	}
 	
 	public void writeFile() {
-		try {
-			for (String command : code)
-				out.write(command);
-		} catch (IOException e) {
-			System.out.println("Unable to write to the output file");
+		if (compileFlag) {
+			try {
+				openFile();
+				for (String command : code) {
+					//System.out.println(command);
+					out.write(command+"\n");
+				}
+				closeFile();
+			} catch (IOException e) {
+				System.out.println("Unable to write to the output file");
+			}
 		}
 	}
 	
-	// TODO: move this down below to where it belongs
+	public void turnOff() {
+		compileFlag = false;
+	}
 	
 	// HALT instruction
 	
@@ -81,8 +104,8 @@ public class StudentCompiler implements Compiler {
 	
 	// MEMORY instructions
 	
-	public void move() {
-		writeCommand("MOV src dst");
+	public void move(String src, String dst) {
+		writeCommand("MOV "+src+" "+dst);
 	}
 	
 	//  - INTEGER
@@ -215,8 +238,20 @@ public class StudentCompiler implements Compiler {
 	
 	public String label() {
 		String l = "L"+label++;
-		writeCommand(l+":");
+		label(l);
 		return l;
+	}
+	
+	public void label(String l) {
+		writeCommand(l+":");
+	}
+	
+	public String skipLabel() {
+		return "L"+label++;
+	}
+	
+	public String getLabel(int index) {
+		return "L"+(label+index);
 	}
 	
 	// LOGICAL OPERATOR instructions - defined for Booleans
@@ -289,12 +324,12 @@ public class StudentCompiler implements Compiler {
 	
 	// STACK BRANCH instructions - defined for Booleans
 	
-	public void branchTrueStack(int n) {
-		writeCommand("BRTS L"+n);
+	public void branchTrueStack(String l) {
+		writeCommand("BRTS "+l);
 	}
 	
-	public void branchFalseStack(int n) {
-		writeCommand("BRFS L"+n);
+	public void branchFalseStack(String l) {
+		writeCommand("BRFS "+l);
 	}
 			
 	// BRANCH instructions - defined for Integers and Floats
@@ -357,12 +392,33 @@ public class StudentCompiler implements Compiler {
 	
 	// SUBROUTINE instructions
 	
-	public void call(int n) {
-		writeCommand("CALL L"+n);
+	public void call(String l) {
+		writeCommand("CALL "+l);
 	}
 	
 	public void returnCall() {
 		writeCommand("RET");
+	}
+	
+	public void printStack() {
+		writeCommand("PRTS");
+	}
+	
+	public void printRegisters() {
+		writeCommand("PRTR");
+	}
+	
+	public int getLine() {
+		return code.size();
+	}
+	
+	public void injectLast(int linenumber) {
+		if (linenumber<code.size()-1 && linenumber>=0) {
+			String lastline = code.remove(code.size()-1);
+			code.add(linenumber, lastline);
+		} else {
+			System.out.println("Error: Cannot inject line at this location.");
+		}
 	}
 
 }

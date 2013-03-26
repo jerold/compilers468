@@ -20,7 +20,7 @@ public class Table {
 	
 	public Table createScope() {
 		Table table = new Table(this);
-		table.level = this.level++;
+		table.level = (this.level+1);
 		return table;
 	}
 	
@@ -65,8 +65,9 @@ public class Table {
 	
 	public Symbol findSymbol(Symbol x) {
 		for (int i=0; i<symbols.size(); i++) {
-			if (symbols.get(i).equals(x))
+			if (symbols.get(i).equals(x)) {
 				return (Symbol)symbols.get(i);
+			}
 		}
 		if (parent!=null)
 			return parent.findSymbol(x);
@@ -98,7 +99,7 @@ public class Table {
 	 * @param type			The type of token (int, float)
 	 * @param attributes	Any attributes that may be passed
 	 */
-	public Symbol insert(String name, String token, String type, String attributes) {
+	public Symbol insert(String name, String token, String type, String[][] attributes) {
 		return insertSymbol(name,token,type,attributes);
 	}
 	
@@ -110,7 +111,7 @@ public class Table {
 	 * @param type			The type of token (int, float)
 	 * @param attributes	Any attributes that may be passed
 	 */
-	private Symbol insertSymbol(String name, String token, String type, String attributes) {
+	private Symbol insertSymbol(String name, String token, String type, String[][] attributes) {
 		Symbol s = new Symbol(this,name,token,type,attributes,symbols.size());
 		symbols.add(s);
 		size ++;
@@ -123,7 +124,7 @@ public class Table {
 	public void describe(){
 		ListIterator<Symbol> iter = symbols.listIterator();
 		System.out.println();
-		System.out.println("Table " + title);
+		System.out.println("Table " + title + " (Level "+level+")");
 		while (iter.hasNext()){
 			Symbol row = iter.next();
 			System.out.println("----------------------------------");
@@ -154,11 +155,19 @@ public class Table {
 	}
 	
 	/**
-	 * get the size of the table
+	 * get the size of the table (number of elements, not size of elements)
 	 */
-	
 	public int getSize(){
-		return size;
+		//return size;
+		return symbols.size();
+	}
+	
+	public int getOffset() {
+		if (parent==null) {
+			return 0;
+		} else {
+			return parent.getSize()+parent.getOffset();
+		}
 	}
 
 }

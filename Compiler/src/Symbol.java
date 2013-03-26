@@ -1,12 +1,17 @@
+import java.util.ArrayList;
+
 
 public class Symbol {
 
 	String name;
 	String token;		// change to enum?
 	String type;		// change to enum? rename?
-	String attributes;
+	//String attributes;
+	String[][] attributes;
+	//ArrayList<String> attributes = new ArrayList<String>();
 	int offset;
 	String label;
+	int level;
 	Table parent;
 	
 	/**
@@ -18,7 +23,7 @@ public class Symbol {
 	 * @param attributes	Any attributes that may be passed
 	 * @param offset		The offset within the scope
 	 */
-	public Symbol(Table parent, String name, String token, String type, String attributes, int offset) {
+	public Symbol(Table parent, String name, String token, String type, String[][] attributes, int offset) {
 		this.parent = parent;
 		this.name = name;
 		this.token = token;
@@ -30,6 +35,14 @@ public class Symbol {
 	
 	public String getAddress() {
 		return offset+"(D"+parent.getLevel()+")";
+	}
+	
+	public String[] getAttribute(int index) {
+		return attributes[index];
+	}
+	
+	public String getAttributeAddress(int index) {
+		return index+"(D"+level+")";
 	}
 	
 	/**
@@ -52,6 +65,20 @@ public class Symbol {
 	 * prints out the name, token, type, attributes, and offset of a symbol
 	 */
 	public void describe(){
-		System.out.println(this.name + "   " + this.token + "   " + this.type + "   " + this.attributes + "   " + this.offset + "   " + this.label);
+		System.out.print(this.name + "   " + this.token + "   " + this.type + "   ");
+		if (this.attributes==null) {
+			System.out.print("no attributes");
+		} else {
+			for (int i=0; i<this.attributes.length; i++) {
+				if (i>0) System.out.print(", ");
+				System.out.print(this.attributes[i][0]+":"+this.attributes[i][1]);
+			}
+		}
+		System.out.print("   " + this.offset);
+		if (this.label!=null) 
+			System.out.print("   " + this.label);
+		if (this.level>0)
+			System.out.print("   level:" + this.level);
+		System.out.println("");
 	}
 }
