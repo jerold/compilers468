@@ -136,7 +136,7 @@ public class Parser {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_program":
 			match("program");
-			compiler.move("#0", "D0");
+			compiler.move("#100", "D0");
 			symbolTable.setTitle(lookAhead.getLexeme());
 			identifier();
 			break;
@@ -715,12 +715,14 @@ public class Parser {
 		case "mp_repeat": // repeatStatement -> "repeat", statementSequence,
 							// "until", booleanExpression
 			match("repeat");
+			String startlabel = compiler.label();
 			statement();
 			if(lookAhead.getIdentifier().equals("mp_scolon")){
 				match(";");
 			}
 			match("until");
 			booleanExpression();
+			compiler.branchFalseStack(startlabel);
 			break;
 		default: // default case is an invalid lookAhead token in language
 			handleError(false, "Repeat Statement");
@@ -747,26 +749,26 @@ public class Parser {
 
 	private void forStatement() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_for": // forStatement -> "for", controlVariable, ":=",
-						// initialValue, ("to"|"downto"), finalVariable, "do",
-						// statement
-			match("for");
-			controlVariable();
-			match(":=");
-			initialValue();
-			if (lookAhead.getIdentifier().equals("mp_to")) {
-				match("to");
-			} else if (lookAhead.getIdentifier().equals("mp_downto")) {
-				match("downto");
-			} else {
-				handleError(false, "For Statement Argument");
-			}
-			finalValue();
-			match("do");
-			statement();
-			break;
-		default: // default case is an invalid lookAhead token in language
-			handleError(false, "For Statement");
+			case "mp_for": // forStatement -> "for", controlVariable, ":=", initialValue, ("to"|"downto"), finalVariable, "do", statement
+				match("for");
+				Symbol s = symbolTable.findSymbol(lookAhead.getLexeme(),"var");
+				controlVariable();
+				match(":=");
+				initialValue();
+				compiler.pop(s.getAddress());
+				if (lookAhead.getIdentifier().equals("mp_to")) {
+					match("to");
+				} else if (lookAhead.getIdentifier().equals("mp_downto")) {
+					match("downto");
+				} else {
+					handleError(false, "For Statement Argument");
+				}
+				finalValue();
+				match("do");
+				statement();
+				break;
+			default: // default case is an invalid lookAhead token in language
+				handleError(false, "For Statement");
 		}
 	}
 
