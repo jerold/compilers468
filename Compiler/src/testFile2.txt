@@ -5,11 +5,13 @@ program Tester;
  	{comment}
 
 function myFun1(j,k:float; var s:integer):integer; begin
-	i:=i*9;
+	j:=2*9;
 end;
 
-procedure myProc1(l:integer); begin
+procedure myProc1(var i:integer); begin
+  Write('myProc1(',i,') = ');
   i:=i*9;
+  Writeln(i);
 end;
  
 begin {tester}
@@ -18,29 +20,16 @@ begin {tester}
     Write('Please enter an integer value for I: ' );
     Read(I);
     I := I + 1;
-    Write('The current value of I is ' , I-1);
+    Write('The current value of I is ' , I-2);
     Write; Write;
     
     myProc1(5);
+    Writeln('DONE!!!');
     
-    Write('one','two');
+    if (23>21) then writeln('TRUE IF'); else writeln('FALSE IF');
     
-    {
-    if (count < 10) then begin
-    	if (count <> 5) then 
-    		write('WTF Man?');
-		else begin
-    			write('something');write;write('else', 'here');
-    	end;
-		while (1) do begin
-			read(j);
-			k:=10;
-		end;
-	end;
-	}
-	
-	for j:=k-10 to k do begin
- 		i:=i-1;write('Waaasuuuuup!?');
-	end
+    if (19>21) then writeln('TRUE IF 2'); else writeln('FALSE IF 2');
+    
+    Writeln('Done with program');
     	
 end. {tester}
