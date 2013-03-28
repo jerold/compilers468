@@ -4,28 +4,54 @@ program Tester;
  	count:integer;
  	{comment}
 
-function myFun1(j,k:float):integer;
-procedure myProc1(l:integer);
+function fact( n: integer ): integer;
+begin
+	fact := 2+n;
+	writeln('return from fact here');
+end;
 
-  begin {tester}
-    Write; Write;;
+procedure myProc1(var t:integer); begin
+  Write('myProc1(',t,') = ');
+  t:=t*9;
+  Writeln(t);
+end;
+ 
+begin {tester}
+	
+	{
+	Write; Write;;
     Write('Please enter an integer value for I: ' );
     Read(I);
-    I := I + 1;
-    Write('The current value of I is ' , I-1);
-    Write; Write;
-    if (count < 10)
-    then  if (count <> 5) 
-    then write('WTF Man?');
-    else write('something');write;write('else', 'here');
-    while (1)
-    do read(j);
-    k:=10;
-    for j:=k-10 to k
-    do i:=i-1;write('Waaasuuuuup!?');
-    repeat
-    write('What''s up pussy cat?');
-    I := i * 0.5;
-    k:=kdiv2;
-    until (k=0)
-  end. {tester}
+    Writeln('The current value of I is ' , I);
+    Write;
+    
+    myProc1(i);
+    writeln('in between...');
+    i := fact(i);
+    Writeln('fact(10) = ',i);
+    writeln('SUCCESS!');
+    
+    for i:=30 downto 17 do
+	begin
+		Writeln(I);
+	end;
+	}
+	
+	if (true) then begin Writeln('THIS SHOULD PRINT!'); end; else begin Writeln('YOU DONT SEE THIS!'); end;
+	if (true) then begin Writeln('TRUE!'); end; else Writeln('NOT TRUE!');
+	if (false) then Writeln('FALSE!'); else begin Writeln('NOT FALSE!'); end;
+	
+	Write; Write;
+	
+	
+	i := 0;
+	x := 49;
+	Repeat
+		begin
+	 	 Writeln(x);
+	 	 i := i+1;
+	 	 x := x+1;
+	 	end;
+	Until (x>50) and (i>10);
+    	
+end. {tester}

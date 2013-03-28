@@ -488,12 +488,16 @@ public class Parser {
 				statement();
 				statementTail();
 				break;
+			default:
+				break;
+			/*
 			case "mp_else":
 			case "mp_until":
 			case "mp_end":
 				break;
 			default:
 				handleError(false, "Statement Tail");
+			*/
 		}
 	}
 	
@@ -505,6 +509,7 @@ public class Parser {
 			case "mp_repeat": // statement -> structuredStatement
 			case "mp_while": // statement -> structuredStatement
 				structuredStatement();
+				statement();
 				break;
 			case "mp_read": // statement -> simpleStatement
 			case "mp_write": // statement -> simpleStatement
@@ -521,38 +526,6 @@ public class Parser {
 				handleError(false, "Statement");
 		}
 	}
-
-	/*
-	 * Should be able to begin and end structured statements and keep going
-	 */
-	/*
-	private void statement() {
-		switch (lookAhead.getIdentifier()) {
-		case "mp_begin": // statement -> structuredStatement
-		case "mp_for": // statement -> structuredStatement
-		case "mp_if": // statement -> structuredStatement
-		case "mp_repeat": // statement -> structuredStatement
-		case "mp_while": // statement -> structuredStatement
-			structuredStatement();
-			break;
-		case "mp_read": // statement -> simpleStatement
-		case "mp_write": // statement -> simpleStatement
-		case "mp_identifier": // statement -> simpleStatement
-		case "mp_scolon":    // statement -> simpleStatement
-			simpleStatement();
-			//match(";");
-			break;
-		case "mp_else":
-		case "mp_end":
-		case "mp_until":
-			//do nothing
-			break;  //this is end the statement calls without an error when reaching an else or until statement
-		default: // default case is an invalid lookAhead token in language
-			handleError(false, "Statement");
-		}
-
-	}
-	*/
 
 	private void simpleStatement() {
 		switch (lookAhead.getIdentifier()) {
@@ -706,7 +679,6 @@ public class Parser {
 		compiler.call(passSymbol.label);
 	}
 
-	// TODO: This if statement is consuming a semicolon and breaking the parse
 	private void ifStatement() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_if": // ifStatement -> "if", booleanExpression, "then", statement, ["else", statement]
@@ -715,16 +687,15 @@ public class Parser {
 				String elselabel = compiler.skipLabel();
 				compiler.branchFalseStack(elselabel);
 				match("then");
-				// this is a hack to consume ; if it's a single statement
-				boolean checkSequence = (lookAhead.getIdentifier().equals("mp_begin"));
 				statement();
-				if (!checkSequence) match(";");
+				match(";");
 				String endlabel = compiler.skipLabel();
 				compiler.branch(endlabel);
 				compiler.label(elselabel);
 				if (lookAhead.getIdentifier().equals("mp_else")) {
 					match("else");
 					statement();
+					match(";");
 				}
 				compiler.label(endlabel);
 				break;
@@ -737,8 +708,7 @@ public class Parser {
 	// Jerold's section
 	private void repeatStatement() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_repeat": // repeatStatement -> "repeat", statementSequence,
-							// "until", booleanExpression
+		case "mp_repeat": // repeatStatement -> "repeat", statementSequence, "until", booleanExpression
 			match("repeat");
 			String startlabel = compiler.label();
 			statement();
@@ -772,6 +742,7 @@ public class Parser {
 		}
 	}
 
+	// TODO: should not execute if condition is false (now it executes one time for sure like a repeat)
 	private void forStatement() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_for": // forStatement -> "for", controlVariable, ":=", initialValue, ("to"|"downto"), finalVariable, "do", statement
@@ -879,25 +850,54 @@ public class Parser {
 				simpleExpression();
 				compiler.compareNotEqualStack();
 				break;
+			case "mp_true":
+			case "mp_false":
+				booleanTerm();
+				break;
 			default: // optional case statement proceed citizen...
 				break;
 			
 		}
 		
 	}
+	
+	private void booleanTerm() {
+		switch (lookAhead.getIdentifier()) {
+			case "mp_true":
+				match("true");
+				compiler.push("#1");
+				break;
+			case "mp_false":
+				match("false");
+				compiler.push("#0");
+				break;
+			default:
+				handleError(false, "term");
+		}
+	}
 
 	private void simpleExpression() {
+		//optional sign
+		boolean sign = false;
+		if (lookAhead.getIdentifier()=="mp_plus" || lookAhead.getIdentifier()=="mp_minus") {
+			sign();
+			sign = true;
+		}
 		switch (lookAhead.getIdentifier()) {
+			/*
 			case "mp_plus":
 			case "mp_minus":
 				sign();
-				break;
+			*/
 			case "mp_identifier":
 			case "mp_fixed_lit":
 			case "mp_integer_lit":
 			case "mp_string_lit":
 			case "mp_lparen":
 				term();
+				if (sign) {
+					compiler.multiplyStack();
+				}
 				break;
 			default:
 				handleError(false, "simple Expression");
@@ -911,9 +911,10 @@ public class Parser {
 				addingOperator();
 				term();
 				compiler.subtractStack();
-			} else {
+			} else if (lookAhead.getIdentifier().equals("mp_or")) {
 				addingOperator();
 				term();
+				compiler.orStack();
 			}
 		}
 	}
@@ -959,7 +960,11 @@ public class Parser {
 				multiplyingOperator();
 				factor();
 				compiler.modulusStack();
-			} else {
+			} else if (lookAhead.getIdentifier().equals("mp_and")) {
+				multiplyingOperator();
+				factor();
+				compiler.andStack();
+		    } else {
 				multiplyingOperator();
 				factor();
 			}
@@ -1065,17 +1070,17 @@ public class Parser {
 
 	private void addingOperator() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_plus":
-			match("+");
-			break;
-		case "mp_minus":
-			match("-");
-			break;
-		case "mp_or": // How is this an adding operator? // Answer: i assume this is bitwise operations
-			match("or");
-			break;
-		default: // default case is an invalid lookAhead token in language
-			handleError(false, "Adding Operator");
+			case "mp_plus":
+				match("+");
+				break;
+			case "mp_minus":
+				match("-");
+				break;
+			case "mp_or": // How is this an adding operator? // Answer: i assume this is bitwise operations
+				match("or");
+				break;
+			default: // default case is an invalid lookAhead token in language
+				handleError(false, "Adding Operator");
 		}
 	}
 
@@ -1358,14 +1363,15 @@ public class Parser {
 
 	private void sign() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_plus":
-			match("+");
-			break;
-		case "mp_minus":
-			match("-");
-			break;
-		default:
-			handleError(false, "Sign");
+			case "mp_plus":
+				match("+");
+				break;
+			case "mp_minus":
+				match("-");
+				compiler.push("#-1");
+				break;
+			default:
+				handleError(false, "Sign");
 		}
 	}
 

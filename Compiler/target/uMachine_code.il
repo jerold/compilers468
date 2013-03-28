@@ -1,0 +1,81 @@
+MOV #100 D0
+BR L0
+L1:
+PUSH #2
+PUSH 0(D1)
+ADDS
+POP 1(D1)
+WRT #"return from fact here"
+WRT #"\n"
+MOV 1(D1) 5(D0)
+RET
+L0:
+BR L3
+L2:
+WRT #"myProc1("
+PUSH 0(D1)
+WRTS
+WRT #") = "
+PUSH 0(D1)
+PUSH #9
+MULS
+POP 0(D1)
+PUSH 0(D1)
+WRTS
+WRT #"\n"
+RET
+L3:
+PUSH #1
+BRFS L4
+WRT #"THIS SHOULD PRINT!"
+WRT #"\n"
+BR L5
+L4:
+WRT #"YOU DONT SEE THIS!"
+WRT #"\n"
+L5:
+PUSH #1
+BRFS L6
+WRT #"TRUE!"
+WRT #"\n"
+BR L7
+L6:
+WRT #"NOT TRUE!"
+WRT #"\n"
+L7:
+PUSH #0
+BRFS L8
+WRT #"FALSE!"
+WRT #"\n"
+BR L9
+L8:
+WRT #"NOT FALSE!"
+WRT #"\n"
+L9:
+WRT #"\n"
+WRT #"\n"
+PUSH #0
+POP 0(D0)
+PUSH #49
+POP 3(D0)
+L10:
+PUSH 3(D0)
+WRTS
+WRT #"\n"
+PUSH 0(D0)
+PUSH #1
+ADDS
+POP 0(D0)
+PUSH 3(D0)
+PUSH #1
+ADDS
+POP 3(D0)
+PUSH 3(D0)
+PUSH #50
+CMPGTS
+PUSH 0(D0)
+PUSH #10
+CMPGTS
+ANDS
+BRFS L10
+HLT

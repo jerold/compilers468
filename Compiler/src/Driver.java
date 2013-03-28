@@ -4,6 +4,9 @@
  */
 
 public class Driver {
+	
+	// TODO: Test if statements (nested, with elses, etc)
+	// TODO: Type checking
 
 	/**
 	 * @param args Input file to scan

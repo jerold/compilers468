@@ -11,7 +11,7 @@ public class Scanner {
 				"else", "end", "fixed", "float", "for", "function", "if",
 				"integer", "mod", "not", "or", "procedure",
 				"program", "read", "repeat", "then", "to", "until", "var",
-				"while", "write", "writeln" };
+				"while", "write", "writeln", "true", "false" };
 	}
 
 	public void openFile(String fileIn) {
@@ -360,7 +360,6 @@ public class Scanner {
 		return lex;
 	}
 
-	// I am a god. mp_float_lit in the bag
 	public String fetchLexemeFloatLit(String leftSide) {
 		String lex = "" + fp.getNext();
 		char newChar = fp.peekNext();
@@ -370,30 +369,25 @@ public class Scanner {
 			lex = lex + newChar;
 			newChar = fp.peekNext();
 		}
-			// A digit must follow after the [e|E][-|+]
-			if (!"0123456789".contains("" + newChar)) {
-				fp.backUp(lex.length());
-				return leftSide;
-			} else {
+		// A digit must follow after the [e|E][-|+]
+		if (!"0123456789".contains("" + newChar)) {
+			fp.backUp(lex.length());
+			return leftSide;
+		} else {
+			newChar = fp.getNext();
+			lex = lex + newChar;
+		}
+		boolean sameToken = true;
+		while (sameToken) {
+			newChar = fp.peekNext();
+			if ("0123456789".contains("" + newChar)) {
 				newChar = fp.getNext();
 				lex = lex + newChar;
+			} else {
+				fp.setPeekToBufferColumn();
+				sameToken = false;
 			}
-			boolean sameToken = true;
-			while (sameToken) {
-				newChar = fp.peekNext();
-				if ("0123456789".contains("" + newChar)) {
-					newChar = fp.getNext();
-					lex = lex + newChar;
-				} else {
-					fp.setPeekToBufferColumn();
-					sameToken = false;
-				}
-			}
-//		} else {
-//			fp.backUp(lex.length());
-//			return leftSide;
-//		}
-		// System.out.print("fetchLexemeFloatLit:  ");
+		}
 		return leftSide + lex;
 	}
 
