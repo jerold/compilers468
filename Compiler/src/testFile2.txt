@@ -18,6 +18,7 @@ end;
  
 begin {tester}
 	
+	{
 	Write; Write;;
     Write('Please enter an integer value for I: ' );
     Read(I);
@@ -34,5 +35,23 @@ begin {tester}
 	begin
 		Writeln(I);
 	end;
+	}
+	
+	if (true) then begin Writeln('THIS SHOULD PRINT!'); end; else begin Writeln('YOU DONT SEE THIS!'); end;
+	if (true) then begin Writeln('TRUE!'); end; else Writeln('NOT TRUE!');
+	if (false) then Writeln('FALSE!'); else begin Writeln('NOT FALSE!'); end;
+	
+	Write; Write;
+	
+	
+	i := 0;
+	x := 49;
+	Repeat
+		begin
+	 	 Writeln(x);
+	 	 i := i+1;
+	 	 x := x+1;
+	 	end;
+	Until (x>50) and (i>10);
     	
 end. {tester}
