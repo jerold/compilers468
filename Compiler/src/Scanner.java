@@ -41,198 +41,198 @@ public class Scanner {
 		// Single char length symbols can all be matched
 		// with fetchLexemeSymbol()
 		switch (nextChar) {
-		case '.':
-			lexeme = fetchLexemeSymbol();
-			id = "mp_period";
-			break;
-		case ',':
-			lexeme = fetchLexemeSymbol();
-			id = "mp_comma";
-			break;
-		case '(':
-			lexeme = fetchLexemeSymbol();
-			id = "mp_lparen";
-			break;
-		case ')':
-			lexeme = fetchLexemeSymbol();
-			id = "mp_rparen";
-			break;
-		case ';':
-			lexeme = fetchLexemeSymbol();
-			id = "mp_scolon";
-			break;
-		case '=':
-			lexeme = fetchLexemeSymbol();
-			id = "mp_equal";
-			break;
-		case '+':
-			lexeme = fetchLexemeSymbol();
-			id = "mp_plus";
-			break;
-		case '-':
-			lexeme = fetchLexemeSymbol();
-			id = "mp_minus";
-			break;
-		case '*':
-			lexeme = fetchLexemeSymbol();
-			id = "mp_times";
-			break;
-		case ':':
-			lexeme = fetchLexemeColon();
-			if (lexeme.length() == 1) {
-				id = "mp_colon";
-			} else {
-				id = "mp_assign";
-			}
-			break;
-		case '>':
-			lexeme = fetchLexemeCloseCarrot();
-			if (lexeme.length() == 1) {
-				id = "mp_gthan";
-			} else {
-				id = "mp_gequal";
-			}
-			break;
-		case '<':
-			lexeme = fetchLexemeOpenCarrot();
-			if (lexeme.length() == 1) {
-				id = "mp_lthan";
-			} else if (lexeme.endsWith("=")) {
-				id = "mp_lequal";
-			} else if (lexeme.endsWith(">")) {
-				id = "mp_nequal";
-			}
-			break;
-		// handles a comment
-		case '{':
-			// nextChar = fp.getNext();
-			lexeme = fetchLexemeComment();
-			// should return a warning vs an error in the future, now just an error
-			if (error) {
-				id = "mp_run_comment";
-			}
-			//now handle this in the fetchLexemeComment() function to print the error directly
-			//} else if (warning) {
-			//	id = "mp_run_comment";
-				
-			//}
-			break;
-		case '}':
-			lexeme = "" + fp.getNext();
-			id = "mp_error";
-			break;
-		case '/':
-			lexeme = fetchLexemeSymbol();
-			id = "mp_divide_float";
-			break;
-		case '\'':
-			recCall = false;  //assume this will not be a recursive call
-			lexeme = fetchLexemeString();
-			id = "mp_string_lit";
-			if (error){
-				id = "mp_run_string";
-			}
-			if(recCall){
-				lexeme = lexeme.substring(1, lexeme.length() - 1);
-			}
-			break;
-		case '\u0000':
-			lexeme = "eof";
-			id = "mp_eof";
-			break;
-		case 'a':
-		case 'b': 
-		case 'c':
-		case 'd':
-		case 'e':
-		case 'f':
-		case 'g':
-		case 'h':
-		case 'i':
-		case 'j':
-		case 'k':
-		case 'l':
-		case 'm':
-		case 'n':
-		case 'o':
-		case 'p':
-		case 'q':
-		case 'r':
-		case 's':
-		case 't':
-		case 'u':
-		case 'v':
-		case 'w':
-		case 'x':
-		case 'y':
-		case 'z':
-		case 'A':
-		case 'B':
-		case 'C':
-		case 'D':
-		case 'E':
-		case 'F':
-		case 'G':
-		case 'H':
-		case 'I':
-		case 'J':
-		case 'K':
-		case 'L':
-		case 'M':
-		case 'N':
-		case 'O':
-		case 'P':
-		case 'Q':
-		case 'R':
-		case 'S':
-		case 'T':
-		case 'U':
-		case 'V':
-		case 'W':
-		case 'X':
-		case 'Y':
-		case 'Z':
-		case '_':
-			lexeme = fetchLexemeIdentifier();
-            if(identifyResWord(lexeme) >= 0){
-                id = "mp_" + lexeme;
-            } else{
-                id = "mp_identifier";
-            }
-            if (error){
+			case '.':
+				lexeme = fetchLexemeSymbol();
+				id = "mp_period";
+				break;
+			case ',':
+				lexeme = fetchLexemeSymbol();
+				id = "mp_comma";
+				break;
+			case '(':
+				lexeme = fetchLexemeSymbol();
+				id = "mp_lparen";
+				break;
+			case ')':
+				lexeme = fetchLexemeSymbol();
+				id = "mp_rparen";
+				break;
+			case ';':
+				lexeme = fetchLexemeSymbol();
+				id = "mp_scolon";
+				break;
+			case '=':
+				lexeme = fetchLexemeSymbol();
+				id = "mp_equal";
+				break;
+			case '+':
+				lexeme = fetchLexemeSymbol();
+				id = "mp_plus";
+				break;
+			case '-':
+				lexeme = fetchLexemeSymbol();
+				id = "mp_minus";
+				break;
+			case '*':
+				lexeme = fetchLexemeSymbol();
+				id = "mp_times";
+				break;
+			case ':':
+				lexeme = fetchLexemeColon();
+				if (lexeme.length() == 1) {
+					id = "mp_colon";
+				} else {
+					id = "mp_assign";
+				}
+				break;
+			case '>':
+				lexeme = fetchLexemeCloseCarrot();
+				if (lexeme.length() == 1) {
+					id = "mp_gthan";
+				} else {
+					id = "mp_gequal";
+				}
+				break;
+			case '<':
+				lexeme = fetchLexemeOpenCarrot();
+				if (lexeme.length() == 1) {
+					id = "mp_lthan";
+				} else if (lexeme.endsWith("=")) {
+					id = "mp_lequal";
+				} else if (lexeme.endsWith(">")) {
+					id = "mp_nequal";
+				}
+				break;
+			// handles a comment
+			case '{':
+				// nextChar = fp.getNext();
+				lexeme = fetchLexemeComment();
+				// should return a warning vs an error in the future, now just an error
+				if (error) {
+					id = "mp_run_comment";
+				}
+				//now handle this in the fetchLexemeComment() function to print the error directly
+				//} else if (warning) {
+				//	id = "mp_run_comment";
+					
+				//}
+				break;
+			case '}':
+				lexeme = "" + fp.getNext();
 				id = "mp_error";
-			}
-            break;
-		case '0':
-		case '1':
-		case '2':
-		case '3':
-		case '4':
-		case '5':
-		case '6':
-		case '7':
-		case '8':
-		case '9':
-			lexeme = fetchLexemeNumber();
-			if (lexeme.contains(".")) {
-				id = "mp_fixed_lit";
-				if (lexeme.contains("E") || lexeme.contains("e")) {
-					id = "mp_float_lit";
+				break;
+			case '/':
+				lexeme = fetchLexemeSymbol();
+				id = "mp_divide_float";
+				break;
+			case '\'':
+				recCall = false;  //assume this will not be a recursive call
+				lexeme = fetchLexemeString();
+				id = "mp_string_lit";
+				if (error){
+					id = "mp_run_string";
 				}
-			} else {
-				id = "mp_integer_lit";
-				if (lexeme.contains("E") || lexeme.contains("e")) {
-					id = "mp_float_lit";
+				if(recCall){
+					lexeme = lexeme.substring(1, lexeme.length() - 1);
 				}
-			}
-			break;
-		default:
-			// This is very strange...
-			//package the next char(not valid in the language) as an error token and 
-			//pass it to the parser
-			lexeme = "" + fp.getNext();
-			id = "mp_error";
-			break;
+				break;
+			case '\u0000':
+				lexeme = "eof";
+				id = "mp_eof";
+				break;
+			case 'a':
+			case 'b': 
+			case 'c':
+			case 'd':
+			case 'e':
+			case 'f':
+			case 'g':
+			case 'h':
+			case 'i':
+			case 'j':
+			case 'k':
+			case 'l':
+			case 'm':
+			case 'n':
+			case 'o':
+			case 'p':
+			case 'q':
+			case 'r':
+			case 's':
+			case 't':
+			case 'u':
+			case 'v':
+			case 'w':
+			case 'x':
+			case 'y':
+			case 'z':
+			case 'A':
+			case 'B':
+			case 'C':
+			case 'D':
+			case 'E':
+			case 'F':
+			case 'G':
+			case 'H':
+			case 'I':
+			case 'J':
+			case 'K':
+			case 'L':
+			case 'M':
+			case 'N':
+			case 'O':
+			case 'P':
+			case 'Q':
+			case 'R':
+			case 'S':
+			case 'T':
+			case 'U':
+			case 'V':
+			case 'W':
+			case 'X':
+			case 'Y':
+			case 'Z':
+			case '_':
+				lexeme = fetchLexemeIdentifier();
+	            if(identifyResWord(lexeme) >= 0){
+	                id = "mp_" + lexeme;
+	            } else{
+	                id = "mp_identifier";
+	            }
+	            if (error){
+					id = "mp_error";
+				}
+	            break;
+			case '0':
+			case '1':
+			case '2':
+			case '3':
+			case '4':
+			case '5':
+			case '6':
+			case '7':
+			case '8':
+			case '9':
+				lexeme = fetchLexemeNumber();
+				if (lexeme.contains(".")) {
+					id = "mp_fixed_lit";
+					if (lexeme.contains("E") || lexeme.contains("e")) {
+						id = "mp_float_lit";
+					}
+				} else {
+					id = "mp_integer_lit";
+					if (lexeme.contains("E") || lexeme.contains("e")) {
+						id = "mp_float_lit";
+					}
+				}
+				break;
+			default:
+				// This is very strange...
+				//package the next char(not valid in the language) as an error token and 
+				//pass it to the parser
+				lexeme = "" + fp.getNext();
+				id = "mp_error";
+				break;
 		}
 
 		// clear whitespace after token (covers us in the event a

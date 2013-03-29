@@ -5,8 +5,7 @@
 
 public class Driver {
 	
-	// TODO: Test if statements (nested, with elses, etc)
-	// TODO: Type checking
+	// TODO: Type checking (maybe we should keep an internal representation of what the stack looks like? (float, float, int, float, etc).
 
 	/**
 	 * @param args Input file to scan

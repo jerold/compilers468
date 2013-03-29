@@ -120,12 +120,12 @@ public interface Compiler {
 	/**
 	 * Performs dst <-- (int)src
 	 */
-	void castInteger();
+	void castInteger(String src, String dst);
 	
 	/**
 	 * Performs dst <-- (float)src
 	 */
-	void castFloat(); 
+	void castFloat(String src, String dst); 
 	
 	// STACK instructions
 	

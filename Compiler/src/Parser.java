@@ -656,6 +656,8 @@ public class Parser {
 				expression();
 				if(symbol!=null) {
 					compiler.pop(symbol.getAddress());
+				} else {
+					handleError(false, "Variable not found");
 				}
 				break;
 			default: // default case is an invalid lookAhead token in language
@@ -812,13 +814,14 @@ public class Parser {
 			case "mp_identifier":
 			case "mp_string_lit":
 			case "mp_lparen":
+			case "mp_true":
+			case "mp_false":
 				simpleExpression();
 				expression();
 				break;
 			case "mp_not":
 				simpleExpression();
 				expression();
-				compiler.compareNotEqualStack();
 				break;
 			case "mp_equal":
 				relationalOperator();
@@ -850,30 +853,17 @@ public class Parser {
 				simpleExpression();
 				compiler.compareNotEqualStack();
 				break;
+			/*
 			case "mp_true":
 			case "mp_false":
 				booleanTerm();
 				break;
+			*/
 			default: // optional case statement proceed citizen...
 				break;
 			
 		}
 		
-	}
-	
-	private void booleanTerm() {
-		switch (lookAhead.getIdentifier()) {
-			case "mp_true":
-				match("true");
-				compiler.push("#1");
-				break;
-			case "mp_false":
-				match("false");
-				compiler.push("#0");
-				break;
-			default:
-				handleError(false, "term");
-		}
 	}
 
 	private void simpleExpression() {
@@ -884,16 +874,24 @@ public class Parser {
 			sign = true;
 		}
 		switch (lookAhead.getIdentifier()) {
-			/*
-			case "mp_plus":
-			case "mp_minus":
-				sign();
-			*/
-			case "mp_identifier":
-			case "mp_fixed_lit":
-			case "mp_integer_lit":
 			case "mp_string_lit":
 			case "mp_lparen":
+			case "mp_not":
+			case "mp_true":
+			case "mp_false":
+			case "mp_identifier":
+				term();
+				break;
+			case "mp_fixed_lit":
+				if (sign) {
+					compiler.castStackFloat();
+				}
+				term();
+				if (sign) {
+					compiler.multiplyStackFloat();
+				}
+				break;
+			case "mp_integer_lit":
 				term();
 				if (sign) {
 					compiler.multiplyStack();
@@ -942,6 +940,9 @@ public class Parser {
 			case "mp_integer_lit":
 			case "mp_string_lit":
 			case "mp_lparen":
+			case "mp_true":
+			case "mp_false":
+			case "mp_not":
 				factor();
 				break;
 			default:
@@ -1008,7 +1009,6 @@ public class Parser {
 				identifier();
 				break;
 			case "mp_string_lit":
-				//compiler.push("#\""+lookAhead.getLexeme()+"\"");
 				identifier();
 				break;
 			case "mp_lparen":
@@ -1017,9 +1017,27 @@ public class Parser {
 				match(")");
 				break;
 			case "mp_not":
-				// recurses!
 				match("not");
 				factor();
+				// TODO: check if there is a nand op for this not. Otherwise this sucks. maybe I'm just not thinking about it right.
+				String toZero = compiler.skipLabel();
+				String flipDone = compiler.skipLabel();
+				compiler.push("#0");
+				compiler.compareGreaterStack();
+				compiler.branchTrueStack(toZero);
+				compiler.push("#1");
+				compiler.branch(flipDone);
+				compiler.label(toZero);
+				compiler.push("#0");
+				compiler.label(flipDone);
+				break;
+			case "mp_true":
+				match("true");
+				compiler.push("#1");
+				break;
+			case "mp_false":
+				match("false");
+				compiler.push("#0");
 				break;
 			default:
 				handleError(false, "Factor");
@@ -1191,10 +1209,11 @@ public class Parser {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_identifier":
 				Symbol s = symbolTable.findSymbol(lookAhead.getLexeme(),"var");
-				if (s.type=="integer")
+				if (s.type=="integer") {
 					compiler.readInt(s.getAddress());
-				else if (s.type=="float")
+				} else if (s.type=="float") {
 					compiler.readFloat(s.getAddress());
+				}
 				variable();
 				break;
 			default:

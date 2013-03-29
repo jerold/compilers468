@@ -158,12 +158,12 @@ public class StudentCompiler implements Compiler {
 	
 	//  - CASTING
 	
-	public void castInteger() {
-		writeCommand("CASTI src dst");
+	public void castInteger(String src, String dst) {
+		writeCommand("CASTI "+src+" "+dst);
 	}
 	
-	public void castFloat() {
-		writeCommand("CASTF src dst");
+	public void castFloat(String src, String dst) {
+		writeCommand("CASTF "+src+" "+dst);
 	}
 	
 	// STACK instructions
