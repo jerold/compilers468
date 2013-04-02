@@ -33,6 +33,10 @@ public class Symbol {
 		this.label = null;
 	}
 	
+	public String getToken() {
+		return this.token;
+	}
+	
 	public String getAddress() {
 		return offset+"(D"+parent.getLevel()+")";
 	}
@@ -55,7 +59,9 @@ public class Symbol {
 		if (x==null && this.type==null && this.attributes==null)
 			return false;
 		
-		if (this.name.equalsIgnoreCase(x.name) && this.token.equalsIgnoreCase(x.token))
+		if (this.name.equalsIgnoreCase(x.name) && x.token==null)
+			return true;
+		else if (this.name.equalsIgnoreCase(x.name) && this.token.equalsIgnoreCase(x.token))
 			return true;
 		else
 			return false;
@@ -80,5 +86,27 @@ public class Symbol {
 		if (this.level>0)
 			System.out.print("   level:" + this.level);
 		System.out.println("");
+	}
+	
+	public String getTypeString() {
+		return type;
+	}
+	
+	public SR getType() {
+		SR sr = null;
+		switch(type) {
+			case "integer":
+				sr = SR.intlit();
+				break;
+			case "float":
+				sr = SR.fixedlit();
+				break;
+			case "none":
+				sr = null;
+				break;
+			default:
+				System.out.println("ERROR: resolving type from \""+type+"\"");
+		}
+		return sr;
 	}
 }

@@ -42,13 +42,13 @@ public class Table {
 	}
 	
 	public Symbol findSymbol(Token lookAhead) {
-		Symbol s = findSymbol(lookAhead.getLexeme(), "procedure");
+		Symbol s = findSymbol(lookAhead.getLexeme(), "var");
 		if (s==null)
-			s =  findSymbol(lookAhead.getLexeme(), "function");
+			s =  findSymbol(lookAhead.getLexeme(), "value");
 		if (s==null)
-			s =  findSymbol(lookAhead.getLexeme(), "var");
+			s =  findSymbol(lookAhead.getLexeme(), "procedure");
 		if (s==null)
-			s = findSymbol(lookAhead.getLexeme(), "value");
+			s = findSymbol(lookAhead.getLexeme(), "function");
 		return s;
 	}
 	
@@ -64,12 +64,16 @@ public class Table {
 	}
 	
 	public Symbol findSymbol(Symbol x) {
+		return findSymbol(x,false);
+	}
+	
+	public Symbol findSymbol(Symbol x, boolean inScope) {
 		for (int i=0; i<symbols.size(); i++) {
 			if (symbols.get(i).equals(x)) {
 				return (Symbol)symbols.get(i);
 			}
 		}
-		if (parent!=null)
+		if (parent!=null && !inScope)
 			return parent.findSymbol(x);
 		else
 			return null;
@@ -84,6 +88,25 @@ public class Table {
 	public boolean inTable(String name, String token) {
 		Symbol x = new Symbol(this,name,token,null,null,0);
 		x = findSymbol(x);
+		if(x == null){
+			return false;
+		} else {
+			return true;
+		}
+	}
+	
+	/**
+	 * 
+	 * @param name		The name of the symbol to find
+	 * @return			The symbol that was found
+	 */
+	public boolean inTable(String name) {
+		return inTable(name,false);
+	}
+	
+	public boolean inTable(String name, boolean inScope) {
+		Symbol x = new Symbol(this,name,null,null,null,0);
+		x = findSymbol(x,inScope);
 		if(x == null){
 			return false;
 		} else {
@@ -112,10 +135,14 @@ public class Table {
 	 * @param attributes	Any attributes that may be passed
 	 */
 	private Symbol insertSymbol(String name, String token, String type, String[][] attributes) {
-		Symbol s = new Symbol(this,name,token,type,attributes,symbols.size());
-		symbols.add(s);
-		size ++;
-		return s;
+		if (inTable(name,true)) {
+			return null;
+		} else {
+			Symbol s = new Symbol(this,name,token,type,attributes,symbols.size());
+			symbols.add(s);
+			size ++;
+			return s;
+		}
 	}
 	
 	/**

@@ -5,6 +5,10 @@
 
 public class Driver {
 	
+	public enum SymType {
+	    intlit, fixedlit, stringlit, bool 
+	}
+	
 	// TODO: Type checking (maybe we should keep an internal representation of what the stack looks like? (float, float, int, float, etc).
 
 	/**

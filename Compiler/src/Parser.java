@@ -15,6 +15,7 @@ public class Parser {
 	private Symbol passSymbol;
 	private int ramSize;
 	private int memorySize;
+	private SR sr;
 	
 	public Parser(Scanner scanner, Compiler compiler) {
 		this.scanner = scanner;
@@ -25,7 +26,6 @@ public class Parser {
 	}
 
 	public int run() {
-		// while (!scanner.endOfFile()) {
 		lookAhead = scanner.getToken();
 		int i = 0;
 		// lookAhead would be null if comment opens the program
@@ -38,6 +38,11 @@ public class Parser {
 			System.out.println("File Parsed successfully!");
 		} else {
 			System.out.println("File Did Not Parse successfully!");
+		}
+		if (compiler.checkOK()) {
+			System.out.println("File Compiled successfully!");
+		} else {
+			System.out.println("File Did Not Compile successfully...");
 		}
 		compiler.writeFile();
 		return i;
@@ -85,25 +90,33 @@ public class Parser {
 		System.out.println("   Expected type \""+expected+"\" but found type \""+found+"\"");
 	}
 	
-	private void invalidVariableName(String var){
+	private void handleErrorGeneral(String description) {
+		compiler.turnOff();
+		System.out.println("Error on line "+lookAhead.getLineNum()+" in column "+lookAhead.getColNum()+": "+description);
+	}
+	
+	private void invalidVariableName(String var) {
+		compiler.turnOff();
 		parseError = true;
 		System.out.println();
 		System.out.println("----------------");
-		System.out.println("Variable " + var + " has already been declared in this scope.");
+		System.out.print("Error on line "+lookAhead.getLineNum()+" in column "+lookAhead.getColNum()+":");
+		System.out.println("   Variable " + var + " has an invalid name.");
 		System.out.println("----------------");
 	}
 	
-	private void undeclaredVariableError(String var){
+	private void undeclaredVariableError(String var) {
+		compiler.turnOff();
 		parseError = true;
 		System.out.println();
 		System.out.println("----------------");
-		System.out.println("Variable " + var + " has not been declared in this scope.");
+		System.out.print("Error on line "+lookAhead.getLineNum()+" in column "+lookAhead.getColNum()+":");
+		System.out.println("   Variable " + var + " has not been declared in this scope.");
 		System.out.println("----------------");
 	}
 
 	private void match(String s) {
 		if (s.equals(lookAhead.getLexeme())) {
-			//lookAhead.describe();
 			lookAhead = scanner.getToken();
 			while (lookAhead == null) {
 				lookAhead = scanner.getToken();
@@ -145,15 +158,15 @@ public class Parser {
 	// David's Section
 	private void program() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_program":
-			symbolTable = Table.rootInstance();
-			programHeading();
-			match(";");
-			block();
-			match(".");
-			break;
-		default:
-			handleError(false, "Program");
+			case "mp_program":
+				symbolTable = Table.rootInstance();
+				programHeading();
+				match(";");
+				block();
+				match(".");
+				break;
+			default:
+				handleError(false, "Program");
 		}
 
 	}
@@ -165,7 +178,7 @@ public class Parser {
 			//this is done at the end now
 			compiler.move("#100", "D0");
 			symbolTable.setTitle(lookAhead.getLexeme());
-			identifier();
+			sr = identifier();
 			break;
 		default:
 			handleError(false, "Program Heading");
@@ -254,7 +267,7 @@ public class Parser {
 			ListIterator<String> iter = retValues.listIterator();
 			while(iter.hasNext()){
 				String name = iter.next();
-				if(!symbolTable.inTable(name, "var")){
+				if(!symbolTable.inTable(name)){
 					symbolTable.insert(name,"var", type, null);
 				}else {
 					invalidVariableName(name);
@@ -311,15 +324,20 @@ public class Parser {
 				functionHeading();
 				match(";");
 				block();
+				//symbolTable.insert(symbolTable.getTitle(), "value", symbolTable.getParent().findSymbol(symbolTable.getTitle(),"function").getTypeString(), null);
 				// put the return value on the top of the stack
 				Symbol f = symbolTable.findSymbol(symbolTable.getTitle(),"var");
 				//compiler.push(f.getAddress());
 				Symbol p = symbolTable.getParent().findSymbol(symbolTable.getTitle(),"function");
-				compiler.move(f.getAddress(),p.getAddress());
-				compiler.returnCall();
-				compiler.label(endlabel);
-				computeMemorySize(symbolTable);
-				symbolTable = symbolTable.getParent();
+				if (f==null || p==null) {
+					handleErrorGeneral("Function not declared in this scope");
+				} else {
+					compiler.move(f.getAddress(),p.getAddress());
+					compiler.returnCall();
+					compiler.label(endlabel);
+					computeMemorySize(symbolTable);
+					symbolTable = symbolTable.getParent();
+				}
 				break;
 			default:
 				handleError(false, "Function Declaration");
@@ -332,11 +350,11 @@ public class Parser {
 				String label = compiler.label();
 				match("procedure");
 				symbolTable.setTitle(lookAhead.getLexeme());
-				identifier();
+				sr = identifier();
 				if (lookAhead.getIdentifier().equals("mp_lparen")) {
 					formalParameterList();
 				}
-				Symbol s = symbolTable.getParent().insert(symbolTable.getTitle(), "procedure", "no return", getAttributes());
+				Symbol s = symbolTable.getParent().insert(symbolTable.getTitle(), "procedure", "none", getAttributes());
 				s.label = label;
 				s.level = symbolTable.getLevel();
 				break;
@@ -348,23 +366,27 @@ public class Parser {
 
 	private void functionHeading() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_function":
-			String label = compiler.label();
-			match("function");
-			symbolTable.setTitle(lookAhead.getLexeme());
-			identifier();
-			if (lookAhead.getIdentifier().equals("mp_lparen")) {
-				formalParameterList();
-			}
-			match(":");
-			type = type();
-			Symbol s = symbolTable.getParent().insert(symbolTable.getTitle(), "function", "returns " + type, getAttributes());
-			s.label = label;
-			s.level = symbolTable.getLevel();
-			symbolTable.insert(symbolTable.getTitle(), "var", type, null);
-			break;
-		default:
-			handleError(false, "Function Heading");
+			case "mp_function":
+				String label = compiler.label();
+				match("function");
+				symbolTable.setTitle(lookAhead.getLexeme());
+				sr = identifier();
+				if (lookAhead.getIdentifier().equals("mp_lparen")) {
+					formalParameterList();
+				}
+				match(":");
+				type = type();
+				Symbol s = symbolTable.getParent().insert(symbolTable.getTitle(), "function", type, getAttributes());
+				if (s==null) {
+					handleErrorGeneral("Variable already defined");
+				} else {
+					s.label = label;
+					s.level = symbolTable.getLevel();
+					symbolTable.insert(symbolTable.getTitle(), "var", type, null);
+				}
+				break;
+			default:
+				handleError(false, "Function Heading");
 		}
 
 	}
@@ -409,7 +431,6 @@ public class Parser {
 			while(iter.hasNext()){
 				symbolTable.insert(iter.next(),"value", type, null);
 			}
-			//symbolTable.describe();
 			retValues.clear();  //clear retValues after it is used each time
 			break;
 		default: // default case is an invalid lookAhead token in language
@@ -429,7 +450,6 @@ public class Parser {
 			while(iter.hasNext()){
 				symbolTable.insert(iter.next(),"var", type, null);
 			}
-			//symbolTable.describe();
 			retValues.clear();  //clear retValues after it is used each time
 			break;
 		default: // default case is an invalid lookAhead token in language
@@ -541,6 +561,8 @@ public class Parser {
 				Symbol s = symbolTable.findSymbol(lookAhead);
 				if (s.token=="procedure") {
 					procedureStatement();
+				} else if (s.token=="function") {
+					functionDesignator();
 				} else {
 					assignmentStatement();
 				}
@@ -640,25 +662,56 @@ public class Parser {
 
 	}
 
-	// this seems ambiguous also??
 	private void assignmentStatement() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_identifier": // assignmentStatement -> (Variable|FunctionIdentifier), ":=", expression
-				Symbol symbol = null;
-				if(symbolTable.inTable(lookAhead.getLexeme(), "var")){
-					symbol = symbolTable.findSymbol(lookAhead.getLexeme(), "var");
+				Symbol symbol = symbolTable.findSymbol(lookAhead);
+				
+				if (symbol==null) {
+					handleError(false, "Variable not found");
+					break;
+				}
+				
+				if (symbol.getToken()=="var" || symbol.getToken()=="value") {
 					variable();
-				} if (symbolTable.inTable(lookAhead.getLexeme(), "function")) {
+				} else {
 					undeclaredVariableError(lookAhead.getLexeme());
 					lookAhead = scanner.getToken();
 				}
+				
 				match(":=");
-				expression();
-				if(symbol!=null) {
-					compiler.pop(symbol.getAddress());
+				sr = expression();
+				SR src = sr;
+				SR dst = symbol.getType();
+				
+				if (src.checkIntlit()) {
+					if (dst.checkIntlit()) {
+						// int := int
+						compiler.pop(symbol.getAddress());
+					} else if (dst.checkFixedlit()) {
+						// float := int
+						compiler.castStackFloat();
+						compiler.pop(symbol.getAddress());
+					} else {
+						// int := bool || string (don't allow)
+						handleErrorGeneral("Invalid type cast to int");
+					}
+				} else if (src.checkFixedlit()) {
+					if (dst.checkIntlit()) {
+						// int := float
+						handleErrorGeneral("Cannot cast type float to type int");
+					} else if (dst.checkFixedlit()) {
+						// float := float
+						compiler.pop(symbol.getAddress());
+					} else {
+						// int := bool || string (don't allow)
+						handleErrorGeneral("Invalid type cast to float");
+					}
 				} else {
-					handleError(false, "Variable not found");
+					// currently no boolean or string keywords
+					handleErrorGeneral("Cannot assign type boolean");
 				}
+				
 				break;
 			default: // default case is an invalid lookAhead token in language
 				handleError(false, "Assignment Statement");
@@ -804,74 +857,280 @@ public class Parser {
 		ordinalExpression();
 	}
 
-	private void expression() {
+	private SR expression() {
+		
+		SR sr1, sr2;
+		boolean error;
 		
 		switch (lookAhead.getIdentifier()) {
 		
 			case "mp_plus":
 			case "mp_minus":
 			case "mp_integer_lit":
+			case "mp_fixed_lit":
 			case "mp_identifier":
 			case "mp_string_lit":
 			case "mp_lparen":
 			case "mp_true":
 			case "mp_false":
-				simpleExpression();
-				expression();
+				sr = simpleExpression();
+				sr = expression();
 				break;
 			case "mp_not":
-				simpleExpression();
-				expression();
+				sr = simpleExpression();
+				sr = expression();
 				break;
 			case "mp_equal":
 				relationalOperator();
-				simpleExpression();
-				compiler.compareEqualStack();
+				sr1 = sr;
+				sr2 = simpleExpression();
+				error = false;
+				if (sr1.checkIntlit()) {
+					if (sr2.checkIntlit()) {
+						// int = int
+						compiler.compareEqualStack();
+					} else if (sr2.checkFixedlit()) {
+						// int = float
+						compiler.subtract("SP", "#1", "SP");
+						compiler.castStackFloat();
+						compiler.add("SP", "#1", "SP");
+						compiler.compareEqualStackFloat();
+					} else {
+						error = true;
+					}
+				} else if (sr1.checkFixedlit()) {
+					if (sr2.checkIntlit()) {
+						// float = int
+						compiler.castStackFloat();
+						compiler.compareEqualStackFloat();
+					} else if (sr2.checkFixedlit()) {
+						// float = float
+						compiler.compareEqualStackFloat();
+					} else {
+						error = true;
+					}
+				} else if (sr1.checkBool()) {
+					if (sr2.checkBool()) {
+						compiler.compareEqualStack();
+					} else {
+						error = true;
+					}
+				} else {
+					error = true;
+				}
+				if (error) {
+					this.handleErrorGeneral("Cannot perform equals comparison on non-numeric or boolean values");
+				}
+				sr = SR.bool();
 				break;
 			case "mp_lthan":
 				relationalOperator();
-				simpleExpression();
-				compiler.compareLessStack();
+				sr1 = sr;
+				sr2 = simpleExpression();
+				error = false;
+				if (sr1.checkIntlit()) {
+					if (sr2.checkIntlit()) {
+						// int < int
+						compiler.compareLessStack();
+					} else if (sr2.checkFixedlit()) {
+						// int < float
+						compiler.subtract("SP", "#1", "SP");
+						compiler.castStackFloat();
+						compiler.add("SP", "#1", "SP");
+						compiler.compareLessStackFloat();
+					} else {
+						error = true;
+					}
+				} else if (sr1.checkFixedlit()) {
+					if (sr2.checkIntlit()) {
+						// float < int
+						compiler.castStackFloat();
+						compiler.compareLessStackFloat();
+					} else if (sr2.checkFixedlit()) {
+						// float < float
+						compiler.compareLessStackFloat();
+					} else {
+						error = true;
+					}
+				} else {
+					error = true;
+				}
+				if (error) {
+					this.handleErrorGeneral("Cannot perform less-than comparison on non-numeric values");
+				}
+				sr = SR.bool();
 				break;
 			case "mp_gthan":
 				relationalOperator();
-				simpleExpression();
-				compiler.compareGreaterStack();
+				sr1 = sr;
+				sr2 = simpleExpression();
+				error = false;
+				if (sr1.checkIntlit()) {
+					if (sr2.checkIntlit()) {
+						// int > int
+						compiler.compareGreaterStack();
+					} else if (sr2.checkFixedlit()) {
+						// int > float
+						compiler.subtract("SP", "#1", "SP");
+						compiler.castStackFloat();
+						compiler.add("SP", "#1", "SP");
+						compiler.compareGreaterStackFloat();
+					} else {
+						error = true;
+					}
+				} else if (sr1.checkFixedlit()) {
+					if (sr2.checkIntlit()) {
+						// float > int
+						compiler.castStackFloat();
+						compiler.compareLessStackFloat();
+					} else if (sr2.checkFixedlit()) {
+						// float > float
+						compiler.compareGreaterStackFloat();
+					} else {
+						error = true;
+					}
+				} else {
+					error = true;
+				}
+				if (error) {
+					this.handleErrorGeneral("Cannot perform greater-than comparison on non-numeric values");
+				}
+				sr = SR.bool();
 				break;
 			case "mp_lequal":
 				relationalOperator();
-				simpleExpression();
-				compiler.compareLessEqualStack();
+				sr1 = sr;
+				sr2 = simpleExpression();
+				error = false;
+				if (sr1.checkIntlit()) {
+					if (sr2.checkIntlit()) {
+						// int <= int
+						compiler.compareLessEqualStack();
+					} else if (sr2.checkFixedlit()) {
+						// int <= float
+						compiler.subtract("SP", "#1", "SP");
+						compiler.castStackFloat();
+						compiler.add("SP", "#1", "SP");
+						compiler.compareLessEqualStackFloat();
+					} else {
+						error = true;
+					}
+				} else if (sr1.checkFixedlit()) {
+					if (sr2.checkIntlit()) {
+						// float <= int
+						compiler.castStackFloat();
+						compiler.compareLessEqualStackFloat();
+					} else if (sr2.checkFixedlit()) {
+						// float <= float
+						compiler.compareLessEqualStackFloat();
+					} else {
+						error = true;
+					}
+				} else {
+					error = true;
+				}
+				if (error) {
+					this.handleErrorGeneral("Cannot perform less-than-or-equal-to comparison on non-numeric values");
+				}
+				sr = SR.bool();
 				break;
 			case "mp_gequal":
 				relationalOperator();
-				simpleExpression();
-				compiler.compareGreaterEqualStack();
+				sr1 = sr;
+				sr2 = simpleExpression();
+				error = false;
+				if (sr1.checkIntlit()) {
+					if (sr2.checkIntlit()) {
+						// int <= int
+						compiler.compareGreaterEqualStack();
+					} else if (sr2.checkFixedlit()) {
+						// int <= float
+						compiler.subtract("SP", "#1", "SP");
+						compiler.castStackFloat();
+						compiler.add("SP", "#1", "SP");
+						compiler.compareGreaterEqualStackFloat();
+					} else {
+						error = true;
+					}
+				} else if (sr1.checkFixedlit()) {
+					if (sr2.checkIntlit()) {
+						// float <= int
+						compiler.castStackFloat();
+						compiler.compareGreaterEqualStackFloat();
+					} else if (sr2.checkFixedlit()) {
+						// float <= float
+						compiler.compareGreaterEqualStackFloat();
+					} else {
+						error = true;
+					}
+				} else {
+					error = true;
+				}
+				if (error) {
+					this.handleErrorGeneral("Cannot perform greater-than-or-equal-to comparison on non-numeric values");
+				}
+				sr = SR.bool();
 				break;
 			case "mp_nequal":
 				relationalOperator();
-				simpleExpression();
-				compiler.compareNotEqualStack();
+				sr1 = sr;
+				sr2 = simpleExpression();
+				error = false;
+				if (sr1.checkIntlit()) {
+					if (sr2.checkIntlit()) {
+						// int <> int
+						compiler.compareNotEqualStack();
+					} else if (sr2.checkFixedlit()) {
+						// int <> float
+						compiler.subtract("SP", "#1", "SP");
+						compiler.castStackFloat();
+						compiler.add("SP", "#1", "SP");
+						compiler.compareNotEqualStackFloat();
+					} else {
+						error = true;
+					}
+				} else if (sr1.checkFixedlit()) {
+					if (sr2.checkIntlit()) {
+						// float <> int
+						compiler.castStackFloat();
+						compiler.compareNotEqualStackFloat();
+					} else if (sr2.checkFixedlit()) {
+						// float <> float
+						compiler.compareNotEqualStackFloat();
+					} else {
+						error = true;
+					}
+				} else if (sr1.checkBool()) {
+					if (sr2.checkBool()) {
+						compiler.compareNotEqualStack();
+					} else {
+						error = true;
+					}
+				} else {
+					error = true;
+				}
+				if (error) {
+					this.handleErrorGeneral("Cannot perform not-equal comparison on non-numeric values");
+				}
+				sr = SR.bool();
 				break;
-			/*
-			case "mp_true":
-			case "mp_false":
-				booleanTerm();
-				break;
-			*/
 			default: // optional case statement proceed citizen...
 				break;
 			
 		}
 		
+		return sr;
+		
 	}
 
-	private void simpleExpression() {
+	private SR simpleExpression() {
 		//optional sign
-		boolean sign = false;
+		boolean negative = false;
 		if (lookAhead.getIdentifier()=="mp_plus" || lookAhead.getIdentifier()=="mp_minus") {
 			sign();
-			sign = true;
+			if (lookAhead.getIdentifier()=="mp_minus") {
+				negative = true;
+			}
 		}
 		switch (lookAhead.getIdentifier()) {
 			case "mp_string_lit":
@@ -880,44 +1139,124 @@ public class Parser {
 			case "mp_true":
 			case "mp_false":
 			case "mp_identifier":
-				term();
-				break;
 			case "mp_fixed_lit":
-				if (sign) {
-					compiler.castStackFloat();
-				}
-				term();
-				if (sign) {
-					compiler.multiplyStackFloat();
-				}
-				break;
 			case "mp_integer_lit":
-				term();
-				if (sign) {
-					compiler.multiplyStack();
-				}
+				sr = term();
 				break;
 			default:
 				handleError(false, "simple Expression");
 		}
+		if (negative) {
+			if (sr.checkIntlit()) {
+				compiler.negateStack();
+			} else if (sr.checkFixedlit()) {
+				compiler.negateStackFloat();
+			}
+		}
 		while (lookAhead.getIdentifier().equals("mp_plus") || lookAhead.getIdentifier().equals("mp_minus") || lookAhead.getIdentifier().equals("mp_or")) {
 			if (lookAhead.getIdentifier().equals("mp_plus")) {
 				addingOperator();
-				term();
-				compiler.addStack();
+				SR sr1 = sr;
+				SR sr2 = term();
+				boolean error = false;
+				// by default, set result to float
+				sr = SR.fixedlit();
+				if (sr1.checkIntlit()) {
+					if (sr2.checkIntlit()) {
+						// int + int
+						compiler.addStack();
+						sr = SR.intlit();
+					} else if (sr2.checkFixedlit()) {
+						// int + float
+						compiler.subtract("SP", "#1", "SP");
+						compiler.castStackFloat();
+						compiler.add("SP", "#1", "SP");
+						compiler.addStackFloat();
+					} else {
+						error = true;
+					}
+				} else if (sr1.checkFixedlit()) {
+					if (sr2.checkIntlit()) {
+						// float + int
+						compiler.castStackFloat();
+						compiler.addStackFloat();
+					} else if (sr2.checkFixedlit()) {
+						// float + float
+						compiler.addStackFloat();
+					} else {
+						error = true;
+					}
+				} else {
+					error = true;
+				}
+				if (error) {
+					this.handleErrorGeneral("Cannot perform addition on non-numeric values");
+				}
 			} else if (lookAhead.getIdentifier().equals("mp_minus")) {
 				addingOperator();
-				term();
-				compiler.subtractStack();
+				SR sr1 = sr;
+				SR sr2 = term();
+				boolean error = false;
+				// by default, set result to float
+				sr = SR.fixedlit();
+				if (sr1.checkIntlit()) {
+					if (sr2.checkIntlit()) {
+						// int + int
+						compiler.subtractStack();
+						sr = SR.intlit();
+					} else if (sr2.checkFixedlit()) {
+						// int + float
+						compiler.subtract("SP", "#1", "SP");
+						compiler.castStackFloat();
+						compiler.add("SP", "#1", "SP");
+						compiler.subtractStackFloat();
+					} else {
+						error = true;
+					}
+				} else if (sr1.checkFixedlit()) {
+					if (sr2.checkIntlit()) {
+						// float + int
+						compiler.castStackFloat();
+						compiler.subtractStackFloat();
+					} else if (sr2.checkFixedlit()) {
+						// float + float
+						compiler.subtractStackFloat();
+					} else {
+						error = true;
+					}
+				} else {
+					error = true;
+				}
+				if (error) {
+					this.handleErrorGeneral("Cannot perform subtraction on non-numeric values");
+				}
 			} else if (lookAhead.getIdentifier().equals("mp_or")) {
 				addingOperator();
-				term();
-				compiler.orStack();
+				SR sr1 = sr;
+				SR sr2 = term();
+				boolean error = false;
+				// result is boolean
+				sr = SR.bool();
+				if (sr1.checkBool()) {
+					if (sr2.checkBool()) {
+						// bool or bool
+						compiler.orStack();
+					} else {
+						error = true;
+					}
+				} else {
+					error = true;
+				}
+				if (error) {
+					this.handleErrorGeneral("Cannot perform or operator on non-boolean values");
+				}
 			}
 		}
+		
+		return sr;
 	}
 
-	private void term() {
+	private SR term() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_identifier":
 				Symbol s = symbolTable.findSymbol(lookAhead.getLexeme(),"var");
@@ -930,10 +1269,9 @@ public class Parser {
 				if (s!=null) {
 					compiler.push(s.getAddress());
 				} else {
-					symbolTable.describe();
 					handleErrorUndefined();
 				}
-				factor();
+				sr = factor();
 				break;
 			//case "mp_float_lit":
 			case "mp_fixed_lit":
@@ -943,7 +1281,7 @@ public class Parser {
 			case "mp_true":
 			case "mp_false":
 			case "mp_not":
-				factor();
+				sr = factor();
 				break;
 			default:
 				handleError(false, "term");
@@ -951,25 +1289,133 @@ public class Parser {
 		while (lookAhead.getIdentifier().equals("mp_times") || lookAhead.getIdentifier().equals("mp_div") || lookAhead.getIdentifier().equals("mp_mod") || lookAhead.getIdentifier().equals("mp_and")) {
 			if (lookAhead.getIdentifier().equals("mp_times")) {
 				multiplyingOperator();
-				factor();
-				compiler.multiplyStack();
+				SR sr1 = sr;
+				SR sr2 = factor();
+				boolean error = false;
+				// by default, set result to float
+				sr = SR.fixedlit();
+				if (sr1.checkIntlit()) {
+					if (sr2.checkIntlit()) {
+						// int * int
+						compiler.multiplyStack();
+						// set result to int
+						sr = SR.intlit();
+					} else if (sr2.checkFixedlit()) {
+						// int * float
+						compiler.subtract("SP", "#1", "SP");
+						compiler.castStackFloat();
+						compiler.add("SP", "#1", "SP");
+						compiler.multiplyStackFloat();
+					} else {
+						error = true;
+					}
+				} else if (sr1.checkFixedlit()) {
+					if (sr2.checkIntlit()) {
+						// float * int
+						compiler.castStackFloat();
+						compiler.multiplyStackFloat();
+					} else if (sr2.checkFixedlit()) {
+						// float * float
+						compiler.multiplyStackFloat();
+					} else {
+						error = true;
+					}
+				} else {
+					error = true;
+				}
+				if (error) {
+					this.handleErrorGeneral("Cannot perform multiplication on non-numeric values");
+				}
 			} else if (lookAhead.getIdentifier().equals("mp_div")) {
+				// TODO: see if we can't check for division by zero here
 				multiplyingOperator();
-				factor();
-				compiler.divideStack();
+				SR sr1 = sr;
+				SR sr2 = factor();
+				boolean error = false;
+				// all results are floats
+				sr = SR.fixedlit();
+				if (sr1.checkIntlit()) {
+					if (sr2.checkIntlit()) {
+						// int / int
+						compiler.divideStack();
+						// set result to int
+						sr = SR.intlit();
+					} else if (sr2.checkFixedlit()) {
+						// int / float
+						compiler.subtract("SP", "#1", "SP");
+						compiler.castStackFloat();
+						compiler.add("SP", "#1", "SP");
+						compiler.divideStackFloat();
+					} else {
+						error = true;
+					}
+				} else if (sr1.checkFixedlit()) {
+					if (sr2.checkIntlit()) {
+						// float / int
+						compiler.castStackFloat();
+						compiler.divideStackFloat();
+					} else if (sr2.checkFixedlit()) {
+						// float / float
+						compiler.divideStackFloat();
+					} else {
+						error = true;
+					}
+				} else {
+					error = true;
+				}
+				if (error) {
+					this.handleErrorGeneral("Cannot perform division on non-numeric values");
+				}
+				//compiler.divideStack();
 			} else if (lookAhead.getIdentifier().equals("mp_mod")) {
 				multiplyingOperator();
-				factor();
+				SR sr1 = sr;
+				SR sr2 = factor();
+				boolean error = false;
+				// only allows integers
+				sr = SR.intlit();
+				if (sr1.checkIntlit()) {
+					if (sr2.checkIntlit()) {
+						// int % int
+						compiler.modulusStack();
+					} else {
+						error = true;
+					}
+				} else {
+					error = true;
+				}
+				if (error) {
+					this.handleErrorGeneral("Cannot perform modulus on non-numeric values");
+				}
 				compiler.modulusStack();
 			} else if (lookAhead.getIdentifier().equals("mp_and")) {
 				multiplyingOperator();
-				factor();
-				compiler.andStack();
+				SR sr1 = sr;
+				SR sr2 = factor();
+				boolean error = false;
+				// all are booleans
+				sr = SR.bool();
+				if (sr1.checkBool()) {
+					if (sr2.checkBool()) {
+						// int * int
+						compiler.andStack();
+					} else {
+						error = true;
+					}
+				} else {
+					error = true;
+				}
+				if (error) {
+					this.handleErrorGeneral("Cannot perform and operator on non-boolean values");
+				}
 		    } else {
+		    	// WHAT IS THIS???
 				multiplyingOperator();
 				factor();
 			}
 		}
+		
+		return sr;
 	}
 	
 	private void termTail() {
@@ -986,62 +1432,70 @@ public class Parser {
 		}
 	}
 
-	// this is not LL1 for some reason??!!
-	private void factor() {
+	private SR factor() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_integer_lit":
 				compiler.push("#"+lookAhead.getLexeme());
-				unsignedInteger();
+				sr = unsignedInteger();
 				break;
 			case "mp_identifier":
 				// TODO: I didn't know what to do for value types, so I just made it go to variable() as well
 				if(symbolTable.inTable(lookAhead.getLexeme(), "var")){
-					variable();
+					sr = variable();
 				} else if (symbolTable.inTable(lookAhead.getLexeme(), "value")) {
-					variable();
+					sr = variable();
 				} else {
-					functionDesignator();
+					sr = functionDesignator();
 				}
 				break;
 			//case "mp_float_lit":
 			case "mp_fixed_lit":
 				compiler.push("#"+lookAhead.getLexeme());
-				identifier();
+				sr = identifier();
 				break;
 			case "mp_string_lit":
-				identifier();
+				sr = identifier();
 				break;
 			case "mp_lparen":
 				match("(");
-				expression();
+				sr = expression();
 				match(")");
 				break;
 			case "mp_not":
 				match("not");
-				factor();
-				// TODO: check if there is a nand op for this not. Otherwise this sucks. maybe I'm just not thinking about it right.
-				String toZero = compiler.skipLabel();
-				String flipDone = compiler.skipLabel();
-				compiler.push("#0");
-				compiler.compareGreaterStack();
-				compiler.branchTrueStack(toZero);
-				compiler.push("#1");
-				compiler.branch(flipDone);
-				compiler.label(toZero);
-				compiler.push("#0");
-				compiler.label(flipDone);
+				sr = factor();
+				if (sr.checkBool()) {
+					// TODO: check if there is a nand op for this not. Otherwise this sucks. maybe I'm just not thinking about it right.
+					String toZero = compiler.skipLabel();
+					String flipDone = compiler.skipLabel();
+					compiler.push("#0");
+					compiler.compareGreaterStack();
+					compiler.branchTrueStack(toZero);
+					compiler.push("#1");
+					compiler.branch(flipDone);
+					compiler.label(toZero);
+					compiler.push("#0");
+					compiler.label(flipDone);
+					sr = SR.bool();
+				} else {
+					handleErrorGeneral("Cannot perform not operator on non-boolean value");
+				}
 				break;
 			case "mp_true":
 				match("true");
 				compiler.push("#1");
+				sr = SR.bool();
 				break;
 			case "mp_false":
 				match("false");
 				compiler.push("#0");
+				sr = SR.bool();
 				break;
 			default:
 				handleError(false, "Factor");
 		}
+		
+		return sr;
 
 	}
 	
@@ -1121,34 +1575,73 @@ public class Parser {
 		}
 	}
 
-	private void functionDesignator() {
+	private SR functionDesignator() {
+		SR sr = null;
 		switch (lookAhead.getIdentifier()) {
 			case "mp_identifier":
-				passSymbol = symbolTable.findSymbol(lookAhead.getLexeme(), "function");
-				functionIdentifier();
+				Symbol symbol = symbolTable.findSymbol(lookAhead.getLexeme(), "function");
+				sr = functionIdentifier();
 				if (lookAhead.getIdentifier().equals("mp_lparen")) {
 					actualParameterList();
+					compiler.call(symbol.label);
+					compiler.push(symbol.getAddress());
+				} else if (lookAhead.getIdentifier().equals("mp_assign")) {
+					// assignment for return value
+					
+					match(":=");
+					SR dst = sr;
+					SR src = expression();
+					
+					if (src.checkIntlit()) {
+						if (dst.checkIntlit()) {
+							// int := int
+							compiler.pop(symbol.getAddress());
+						} else if (dst.checkFixedlit()) {
+							// float := int
+							compiler.castStackFloat();
+							compiler.pop(symbol.getAddress());
+						} else {
+							// int := bool || string (don't allow)
+							handleErrorGeneral("Invalid type cast to int");
+						}
+					} else if (src.checkFixedlit()) {
+						if (dst.checkIntlit()) {
+							// int := float
+							handleErrorGeneral("Cannot cast type float to type int");
+						} else if (dst.checkFixedlit()) {
+							// float := float
+							compiler.pop(symbol.getAddress());
+						} else {
+							// int := bool || string (don't allow)
+							handleErrorGeneral("Invalid type cast to float");
+						}
+					} else {
+						// currently no boolean or string keywords
+						handleErrorGeneral("Cannot assign type boolean");
+					}
+					
 				}
-				compiler.call(passSymbol.label);
-				compiler.push(passSymbol.getAddress());
 				break;
 			default: // default case is an invalid lookAhead token in language
 				handleError(false, "Function Designator");
 		}
+		return sr;
 	}
 
-	private void variable() {
+	private SR variable() {
+		SR sr = null;
 		switch (lookAhead.getIdentifier()) {
-		case "mp_identifier":
-		case "mp_string_lit":
-		case "mp_int_lit":
-		case "mp_fixed_lit":
-		case "mp_float_lit":
-			variableIdentifier();
-			break;
-		default: // default case is an invalid lookAhead token in language
-			handleError(false, "Variable");
+			case "mp_identifier":
+			case "mp_string_lit":
+			case "mp_int_lit":
+			case "mp_fixed_lit":
+			case "mp_float_lit":
+				sr = variableIdentifier();
+				break;
+			default: // default case is an invalid lookAhead token in language
+				handleError(false, "Variable");
 		}
+		return sr;
 	}
 
 	// Logan's section
@@ -1224,8 +1717,6 @@ public class Parser {
 	private void writeParameterList() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_scolon":
-				// this should be write line in the future i think, but i was having problems
-				compiler.write("#\"\\n\"");
 				break;
 			case "mp_lparen":
 				match("(");
@@ -1243,31 +1734,49 @@ public class Parser {
 	}
 
 	private void writeParameter() {
-		// I'm thinking this can all be done with a write stack at the end, since expression will put the correct element on top
+		
 		switch (lookAhead.getIdentifier()) {
 			case "mp_string_lit":
 				compiler.write("#\""+lookAhead.getLexeme()+"\"");
-				expression();
+				sr = expression();
 				break;
+			case "mp_fixed_lit":
 			case "mp_integer_lit":
-				compiler.write("#"+lookAhead.getLexeme());
-				expression();
-				break;
-			case "mp_float_lit":
-				compiler.write("#"+lookAhead.getLexeme());
-				expression();
+				sr = expression();
+				//compiler.writeStack();
 				break;
 			case "mp_identifier":
 			case "not":
 			case "mp_lparen":
 			case "mp_plus":
 			case "mp_minus":
-				expression();
-				compiler.writeStack();
+			case "mp_true":
+			case "mp_false":
+				sr = expression();
 				break;
 			default:
 				handleError(false, "Write");
 		}
+		
+		// perform write
+		if (sr.checkStringlit()) {
+			// do nothing, already directly written
+		} else if (sr.checkBool()) {
+			compiler.push("#1");
+			compiler.compareEqualStack();
+			String trueLabel = compiler.skipLabel();
+			String endLabel = compiler.skipLabel();
+			compiler.branchTrueStack(trueLabel);
+			compiler.write("#\"FALSE\"");
+			compiler.branch(endLabel);
+			compiler.label(trueLabel);
+			compiler.write("#\"TRUE\"");
+			compiler.label(endLabel);
+		} else {
+			// int or float
+			compiler.writeStack();
+		}
+		
 	}
 
 	private void booleanExpression() {
@@ -1300,18 +1809,19 @@ public class Parser {
 		}
 	}
 
-	private void variableIdentifier() {
+	private SR variableIdentifier() {
+		SR sr = null;
 		switch (lookAhead.getIdentifier()) {
 			case "mp_identifier":
 			case "mp_string_lit":
 			case "mp_integer_lit":
 			case "mp_fixed_lit":
-			//case "mp_float_lit":
-				identifier();
+				sr = identifier();
 				break;
 			default:
 				handleError(false, "Variable Identifier");
 		}
+		return sr;
 	}
 
 	private void procedureIdentifier() {
@@ -1326,15 +1836,17 @@ public class Parser {
 		}
 	}
 
-	private void functionIdentifier() {
+	private SR functionIdentifier() {
+		SR sr = null;
 		switch (lookAhead.getIdentifier()) {
 			case "mp_identifier":
 				if(symbolTable.inTable(lookAhead.getLexeme(), "function"))
-					identifier();
+					sr = identifier();
 				break;
 			default:
 				handleError(false, "Function Identifier");
 		}
+		return sr;
 	}
 
 	private ArrayList<String> identifierList() {
@@ -1356,28 +1868,46 @@ public class Parser {
 		}
 	}
 
-	private void identifier() {
+	private SR identifier() {
+		SR sr = null;
 		switch (lookAhead.getIdentifier()) {
 			case "mp_identifier":
+				Symbol s = symbolTable.findSymbol(lookAhead);
+				if (s!=null) {
+					sr = s.getType();
+				}
+				match(lookAhead.getLexeme());
+				break;
 			case "mp_string_lit":
+				sr = SR.stringlit();
+				match(lookAhead.getLexeme());
+				break;
 			case "mp_int_lit":
+				sr = SR.intlit();
+				match(lookAhead.getLexeme());
+				break;
 			case "mp_fixed_lit":
+				sr = SR.fixedlit();
 				match(lookAhead.getLexeme());
 				break;
 			//case "mp_float_lit":
 			default:
 				handleError(false, "Identifier");
 		}
+		return sr;
 	}
 
-	private void unsignedInteger() {
+	private SR unsignedInteger() {
+		SR sr = null;
 		switch (lookAhead.getIdentifier()) {
-		case "mp_integer_lit":
-			digitSequence();
-			break;
-		default:
-			handleError(false, "Unsigned Integer");
+			case "mp_integer_lit":
+				sr = SR.intlit();
+				digitSequence();
+				break;
+			default:
+				handleError(false, "Unsigned Integer");
 		}
+		return sr;
 	}
 
 	private void sign() {

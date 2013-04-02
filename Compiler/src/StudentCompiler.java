@@ -70,6 +70,10 @@ public class StudentCompiler implements Compiler {
 		compileFlag = false;
 	}
 	
+	public boolean checkOK() {
+		return compileFlag;
+	}
+	
 	// HALT instruction
 	
 	public void halt() {
@@ -110,16 +114,16 @@ public class StudentCompiler implements Compiler {
 	
 	//  - INTEGER
 	
-	public void negate() {
-		writeCommand("NEG src dst");
+	public void negate(String src, String dst) {
+		writeCommand("NEG "+src+" "+dst);
 	}
 	
-	public void add() {
-		writeCommand("ADD src1 src2 dst");
+	public void add(String src1, String src2, String dst) {
+		writeCommand("ADD "+src1+" "+src2+" "+dst);
 	}
 	
-	public void subtract() {
-		writeCommand("SUB src1 src2 dst");
+	public void subtract(String src1, String src2, String dst) {
+		writeCommand("SUB "+src1+" "+src2+" "+dst);
 	}
 	
 	public void multiply() {

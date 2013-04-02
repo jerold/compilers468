@@ -9,6 +9,7 @@ public interface Compiler {
 	void openFile(String output);
 	void writeFile();
 	void turnOff();
+	boolean checkOK();
 	
 	// Halt Instruction
 	
@@ -61,17 +62,17 @@ public interface Compiler {
 	/**
 	 * Performs dst <-- -src
 	 */
-	void negate();
+	void negate(String src, String dst);
 	
 	/**
 	 * Performs dst <-- src1 + src2
 	 */
-	void add();
+	void add(String src1, String src2, String dst);
 	
 	/**
 	 * Performs dst <-- src1 - src2
 	 */
-	void subtract();
+	void subtract(String src1, String src2, String dst);
 	
 	/**
 	 * Performs dst <-- src1 x src2
