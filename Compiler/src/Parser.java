@@ -176,7 +176,8 @@ public class Parser {
 		case "mp_program":
 			match("program");
 			//this is done at the end now
-			compiler.move("#100", "D0");
+			symbolTable.setAddress(100);
+			compiler.move("#"+symbolTable.getAddress(), "D0");
 			symbolTable.setTitle(lookAhead.getLexeme());
 			sr = identifier();
 			break;
@@ -188,20 +189,20 @@ public class Parser {
 
 	private void block() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_var":
-			variableDeclarationPart();
-			//break;
-		case "mp_procedure":
-		case "mp_function":
-			//compiler.move("#"+symbolTable.getOffset(),"D"+symbolTable.getLevel());
-			procedureAndFunctionDeclarationPart();
-			break;
-		case "mp_begin":
-			//compiler.move("#"+symbolTable.getOffset(),"D"+symbolTable.getLevel());
-			statementPart();
-			break;
-		default:
-			handleError(false, "Block");
+			case "mp_var":
+				variableDeclarationPart();
+				//break;
+			case "mp_procedure":
+			case "mp_function":
+				//compiler.move("#"+symbolTable.getOffset(),"D"+symbolTable.getLevel());
+				procedureAndFunctionDeclarationPart();
+				break;
+			case "mp_begin":
+				//compiler.move("#"+symbolTable.getOffset(),"D"+symbolTable.getLevel());
+				statementPart();
+				break;
+			default:
+				handleError(false, "Block");
 		}
 	}
 
@@ -260,23 +261,24 @@ public class Parser {
 
 	private void variableDeclaration() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_identifier":
-			retValues = identifierList();
-			match(":");
-			type = type();
-			ListIterator<String> iter = retValues.listIterator();
-			while(iter.hasNext()){
-				String name = iter.next();
-				if(!symbolTable.inTable(name)){
-					symbolTable.insert(name,"var", type, null);
-				}else {
-					invalidVariableName(name);
+			case "mp_identifier":
+				retValues = identifierList();
+				match(":");
+				type = type();
+				ListIterator<String> iter = retValues.listIterator();
+				while(iter.hasNext()){
+					String name = iter.next();
+					if(!symbolTable.inTable(name)){
+						//symbolTable.insert(name,"var", type, null);
+						symbolTable.insert(name,"value", type, null);
+					}else {
+						invalidVariableName(name);
+					}
 				}
-			}
-			retValues.clear();  //clear retValues after it is used each time
-			break;
-		default:
-			handleError(false, "Variable Declaration");
+				retValues.clear();  //clear retValues after it is used each time
+				break;
+			default:
+				handleError(false, "Variable Declaration");
 		}
 
 	}
@@ -300,12 +302,13 @@ public class Parser {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_procedure":
 				symbolTable = symbolTable.createScope();
-				compiler.branch(compiler.getLabel(1));
+				String endprocedure = compiler.skipLabel();
+				compiler.branch(endprocedure);
 				procedureHeading();
 				match(";");
 				block();
 				compiler.returnCall();
-				compiler.label();
+				compiler.label(endprocedure);
 				computeMemorySize(symbolTable);
 				symbolTable = symbolTable.getParent();
 				break;
@@ -332,6 +335,7 @@ public class Parser {
 				if (f==null || p==null) {
 					handleErrorGeneral("Function not declared in this scope");
 				} else {
+					// TODO: get address not working, should be more like 107, not 7
 					compiler.move(f.getAddress(),p.getAddress());
 					compiler.returnCall();
 					compiler.label(endlabel);
@@ -409,51 +413,51 @@ public class Parser {
 
 	private void formalParameterSection() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_identifier":
-			valueParameterSection(); 
-			break;
-		case "mp_var":
-			variableParameterSection();
-			break;
-		default:
-			handleError(false, "Formal Parameter Section");
+			case "mp_identifier":
+				valueParameterSection(); 
+				break;
+			case "mp_var":
+				variableParameterSection();
+				break;
+			default:
+				handleError(false, "Formal Parameter Section");
 		}
 	}
 
 	// Clark's section
 	private void valueParameterSection() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_identifier": // valueParameterSection -> IdentifierList, ":", Type
-			retValues = identifierList();
-			match(":");
-			type =  type();
-			ListIterator<String> iter = retValues.listIterator();
-			while(iter.hasNext()){
-				symbolTable.insert(iter.next(),"value", type, null);
-			}
-			retValues.clear();  //clear retValues after it is used each time
-			break;
-		default: // default case is an invalid lookAhead token in language
-			handleError(false, "Value Parameter Section");
+			case "mp_identifier": // valueParameterSection -> IdentifierList, ":", Type
+				retValues = identifierList();
+				match(":");
+				type =  type();
+				ListIterator<String> iter = retValues.listIterator();
+				while(iter.hasNext()){
+					symbolTable.insert(iter.next(),"value", type, null);
+				}
+				retValues.clear();  //clear retValues after it is used each time
+				break;
+			default: // default case is an invalid lookAhead token in language
+				handleError(false, "Value Parameter Section");
 		}
 	}
 
 	private void variableParameterSection() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_var": // variableParameterSection -> "var" ,identifierList,
-						// ":", Type
-			match("var");
-			retValues = identifierList();
-			match(":");
-			type = type();
-			ListIterator<String> iter = retValues.listIterator();
-			while(iter.hasNext()){
-				symbolTable.insert(iter.next(),"var", type, null);
-			}
-			retValues.clear();  //clear retValues after it is used each time
-			break;
-		default: // default case is an invalid lookAhead token in language
-			handleError(false, "Variable Parameter Section");
+			case "mp_var": // variableParameterSection -> "var" ,identifierList,
+							// ":", Type
+				match("var");
+				retValues = identifierList();
+				match(":");
+				type = type();
+				ListIterator<String> iter = retValues.listIterator();
+				while(iter.hasNext()){
+					symbolTable.insert(iter.next(),"var", type, null);
+				}
+				retValues.clear();  //clear retValues after it is used each time
+				break;
+			default: // default case is an invalid lookAhead token in language
+				handleError(false, "Variable Parameter Section");
 		}
 
 	}
@@ -729,8 +733,11 @@ public class Parser {
 				handleError(false, "Procedure Statement");
 		}
 		if (lookAhead.getIdentifier().equals("mp_lparen")) {
+			// here we pass the symbol
 			actualParameterList();
 		}
+		
+		//passSymbol.describe();
 		compiler.call(passSymbol.label);
 	}
 
@@ -801,8 +808,13 @@ public class Parser {
 	private void forStatement() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_for": // forStatement -> "for", controlVariable, ":=", initialValue, ("to"|"downto"), finalVariable, "do", statement
+				// TODO: check argument beforehand and skip for loop all-together if necessary
 				match("for");
-				Symbol s = symbolTable.findSymbol(lookAhead.getLexeme(),"var");
+				Symbol s = symbolTable.findSymbol(lookAhead);
+				if (s==null || (s.getToken()!="var" && s.getToken()!="value")) {
+					undeclaredVariableError(lookAhead.getLexeme());
+					break;
+				}
 				controlVariable();
 				match(":=");
 				initialValue();
@@ -817,7 +829,16 @@ public class Parser {
 					handleError(false, "For Statement Argument");
 				}
 				String finalvalue = lookAhead.getLexeme();
+				compiler.push(s.getAddress());
 				finalValue();
+				String endforloop = compiler.skipLabel();
+				if (add) {
+					compiler.compareGreaterStack();
+					compiler.branchTrueStack(endforloop);
+				} else {
+					compiler.compareLessStack();
+					compiler.branchTrueStack(endforloop);
+				}
 				match("do");
 				String startlabel = compiler.label();
 				statement();
@@ -838,7 +859,7 @@ public class Parser {
 					compiler.compareGreaterEqualStack();
 					compiler.branchTrueStack(startlabel);
 				}
-				// TODO: decrement SP here so the final value is removed
+				compiler.label(endforloop);
 				break;
 			default: // default case is an invalid lookAhead token in language
 				handleError(false, "For Statement");
@@ -1259,13 +1280,7 @@ public class Parser {
 	private SR term() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_identifier":
-				Symbol s = symbolTable.findSymbol(lookAhead.getLexeme(),"var");
-				if (s==null) {
-					s = symbolTable.findSymbol(lookAhead.getLexeme(),"value");
-				}
-				if (s==null) {
-					s = symbolTable.findSymbol(lookAhead.getLexeme(),"function");
-				}
+				Symbol s = symbolTable.findSymbol(lookAhead);
 				if (s!=null) {
 					compiler.push(s.getAddress());
 				} else {
@@ -1290,6 +1305,14 @@ public class Parser {
 			if (lookAhead.getIdentifier().equals("mp_times")) {
 				multiplyingOperator();
 				SR sr1 = sr;
+				if (lookAhead.getIdentifier().equals("mp_identifier")) {
+					Symbol s = symbolTable.findSymbol(lookAhead);
+					if (s!=null) {
+						compiler.push(s.getAddress());
+					} else {
+						handleErrorUndefined();
+					}
+				}
 				SR sr2 = factor();
 				boolean error = false;
 				// by default, set result to float
@@ -1439,14 +1462,26 @@ public class Parser {
 				sr = unsignedInteger();
 				break;
 			case "mp_identifier":
-				// TODO: I didn't know what to do for value types, so I just made it go to variable() as well
+				Symbol s = symbolTable.findSymbol(lookAhead);
+				if (s!=null) {
+					if(s.getToken()=="var" || s.getToken()=="value"){
+						sr = variable();
+					} else {
+						sr = functionDesignator();
+					}
+				} else {
+					this.undeclaredVariableError(lookAhead.getLexeme());
+				}
+				/*
 				if(symbolTable.inTable(lookAhead.getLexeme(), "var")){
+					compiler.push(src)
 					sr = variable();
 				} else if (symbolTable.inTable(lookAhead.getLexeme(), "value")) {
 					sr = variable();
 				} else {
 					sr = functionDesignator();
 				}
+				*/
 				break;
 			//case "mp_float_lit":
 			case "mp_fixed_lit":
@@ -1652,13 +1687,91 @@ public class Parser {
 				match("(");
 				// should check types against symbol table here
 				int count = 0;
-				actualParameter();
+				
+				String attr[] = passSymbol.getAttribute(count);
+				//System.out.println("  >>  "+attr[0]+" : "+attr[1]);
+				
+				// pass by pointer
+				if (attr[0].equals("var")) {
+					Symbol s = symbolTable.findSymbol(lookAhead);
+					if (s.getToken().equals("value")) {
+						if (s.getTypeString().equals(attr[1])) {
+							// type matches, pass variable's address
+							compiler.push("D"+s.getLevel());
+							compiler.push("#"+s.getOffset());
+							compiler.addStack();
+							match(lookAhead.getLexeme());
+						} else {
+							handleErrorGeneral("Argument type mismatch");
+						}
+					} else if (s.getToken().equals("var")) {
+						if (s.getTypeString().equals(attr[1])) {
+							// type matches, pass pointer directly
+							compiler.push(s.getAddress());
+							match(lookAhead.getLexeme());
+						} else {
+							handleErrorGeneral("Argument type mismatch");
+						}
+					} else {
+						handleErrorGeneral("Pointer must be passed as a variable name.");
+					}
+				// pass by value
+				} else {
+					Symbol s = symbolTable.findSymbol(lookAhead);
+					if (s.getTypeString().equals(attr[1])) {
+						// matches correct type
+						actualParameter();
+					} else {
+						handleErrorGeneral("Argument type mismatch");
+					}
+				}
+				
 				compiler.pop(passSymbol.getAttributeAddress(count));
-				while (lookAhead.getIdentifier().equals(",")) {
+				while (lookAhead.getIdentifier().equals("mp_comma")) {
 					count++;
 					match(",");
-					actualParameter();
+					
+					attr = passSymbol.getAttribute(count);
+					//System.out.println("  >>  "+attr[0]+" : "+attr[1]);
+					
+					// pass by pointer
+					if (attr[0].equals("var")) {
+						Symbol s = symbolTable.findSymbol(lookAhead);
+						if (s.getToken().equals("value")) {
+							if (s.getTypeString().equals(attr[1])) {
+								// type matches, pass variable's address
+								compiler.push("D"+s.getLevel());
+								compiler.push("#"+s.getOffset());
+								compiler.addStack();
+								match(lookAhead.getLexeme());
+							} else {
+								handleErrorGeneral("Argument type mismatch");
+							}
+						} else if (s.getToken().equals("var")) {
+							if (s.getTypeString().equals(attr[1])) {
+								// type matches, pass pointer directly
+								compiler.push(s.getAddress());
+								match(lookAhead.getLexeme());
+							} else {
+								handleErrorGeneral("Argument type mismatch");
+							}
+						} else {
+							handleErrorGeneral("Pointer must be passed as a variable name.");
+						}
+					// pass by value
+					} else {
+						Symbol s = symbolTable.findSymbol(lookAhead);
+						if (s.getTypeString().equals(attr[1])) {
+							// matches correct type
+							actualParameter();
+						} else {
+							handleErrorGeneral("Argument type mismatch");
+						}
+					}
+					
 					compiler.pop(passSymbol.getAttributeAddress(count));
+					//compiler.write("#\""+passSymbol.getAttributeAddress(count)+" = \"");
+					//compiler.writeLine(passSymbol.getAttributeAddress(count));
 				}
 				match(")");
 				break;
@@ -1701,13 +1814,18 @@ public class Parser {
 	private void readParameter() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_identifier":
-				Symbol s = symbolTable.findSymbol(lookAhead.getLexeme(),"var");
-				if (s.type=="integer") {
-					compiler.readInt(s.getAddress());
-				} else if (s.type=="float") {
-					compiler.readFloat(s.getAddress());
+				//Symbol s = symbolTable.findSymbol(lookAhead.getLexeme(),"var");
+				Symbol s = symbolTable.findSymbol(lookAhead);
+				if (s.getToken().equals("var") || s.getToken().equals("value")) {
+					if (s.type=="integer") {
+						compiler.readInt(s.getAddress());
+					} else if (s.type=="float") {
+						compiler.readFloat(s.getAddress());
+					}
+					variable();
+				} else {
+					undeclaredVariableError(lookAhead.getLexeme());
 				}
-				variable();
 				break;
 			default:
 				handleError(false, "Read Parameter");

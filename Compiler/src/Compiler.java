@@ -240,7 +240,7 @@ public interface Compiler {
 	 * @param index	The number of times in the future label will be called.
 	 * @return		The label that will be produced by the label calls.
 	 */
-	String getLabel(int index);
+	//String getLabel(int index);
 	
 	// LOGICAL OPERATOR instructions - defined for Booleans
 	

@@ -254,9 +254,11 @@ public class StudentCompiler implements Compiler {
 		return "L"+label++;
 	}
 	
+	/*
 	public String getLabel(int index) {
 		return "L"+(label+index);
 	}
+	*/
 	
 	// LOGICAL OPERATOR instructions - defined for Booleans
 	

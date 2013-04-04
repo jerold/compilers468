@@ -9,6 +9,7 @@ public class Table {
 	private String title= null;
 	private static Table root = new Table(null);
 	private int level = 0;
+	private int address;
 	
 	private Table(Table parent) {
 		this.parent = parent;
@@ -26,6 +27,14 @@ public class Table {
 	
 	public int getLevel() {
 		return this.level;
+	}
+	
+	public void setAddress(int address) {
+		this.address = address;
+	}
+	
+	public int getAddress() {
+		return address;
 	}
 	
 	/**
@@ -191,7 +200,7 @@ public class Table {
 	
 	public int getOffset() {
 		if (parent==null) {
-			return 0;
+			return this.address;
 		} else {
 			return parent.getSize()+parent.getOffset();
 		}

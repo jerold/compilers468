@@ -38,8 +38,32 @@ public class Symbol {
 	}
 	
 	public String getAddress() {
-		return offset+"(D"+parent.getLevel()+")";
+		String address = offset+"(D"+parent.getLevel()+")";
+		if (token=="var") {
+			address = "@"+address;
+		}
+		return address;
 	}
+	
+	public int getLevel() {
+		return parent.getLevel();
+	}
+	
+	public int getOffset() {
+		return offset;
+	}
+	
+	/*
+	public int getAddressGlobal() {
+		Table t = parent;
+		int globaloffset = t.getSize();
+		while (t.getParent() != null) {
+			t = t.getParent();
+			globaloffset += t.getSize();
+		}
+		return globaloffset+t.getAddress();
+	}
+	*/
 	
 	public String[] getAttribute(int index) {
 		return attributes[index];

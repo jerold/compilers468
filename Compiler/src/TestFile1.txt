@@ -1,35 +1,82 @@
-AND       and         aNd
-BEGIN     begin       bEgIn
-DIV       div         dIv
-DO        do          Do
-DOWNTO    downto      DownTo
-ELSE      else        ELSe
-END       end         ENd
-FOR       for         foR
-FUNCTION  function    fUnCtIoN
-IF        if          If
-MOD       mod         mOd
-NOT       not         nOt
-OR        or          oR
-PROCEDURE procedure   proceDURE
-PROGRAM   program     PROGram
-READ      read        rEAD
-REPEAT    repeat      RePeAT
-THEN      then        TheN
-TO        to          tO
-UNTIL     until       untiL
-VAR       var         vAr
-WHILE     while       whiLE
-WRITE     write       wRITe
+program Tester;
 
+var I: Integer; j:float; k,x:integer;
+ 	count:integer; 
+ 	{comment}
 
-a__
-a
-a_b___3
-b_____5
-_x3Z_5
-_X3Z_5_
+function fact( n: integer ): integer;
+begin
+	fact := 2+n;
+	writeln('return from fact here');
+end;
 
-begins
-ends
-a3+b4-c/67
+procedure myProc1(var t:integer); begin
+  Write('myProc1(',t,') = ');
+  t:=t*9;
+  Writeln(t);
+end;
+ 
+begin {tester}
+	
+	{
+	Write; Write;;
+    Write('Please enter an integer value for I: ' );
+    Read(I);
+    Writeln('The current value of I is ' , I);
+    Write;
+    
+    myProc1(i);
+    writeln('in between...');
+    i := fact(i);
+    Writeln('fact(10) = ',i);
+    writeln('SUCCESS!');
+    
+    for i:=30 downto 17 do
+	begin
+		Writeln(I);
+	end;
+	
+	if (true) then begin Writeln('THIS SHOULD PRINT!'); end; else begin Writeln('YOU DONT SEE THIS!'); end;
+	if (true) then begin Writeln('TRUE!'); end; else Writeln('NOT TRUE!');
+	if (false) then Writeln('FALSE!'); else begin Writeln('NOT FALSE!'); end;
+	
+	Write; Write;
+	
+	i := 0;
+	x := 49;
+	Repeat
+		begin
+	 	 Writeln(x);
+	 	 i := i+1;
+	 	 x := x+1;
+	 	end;
+	Until (x>50) and (i>10);
+	
+	if (not not not true) then Writeln('HAHA!');
+	if (not not not not true) then Writeln('HOHO!');
+
+	Write('Please enter an integer value for I: ' );
+    Read(I);
+    
+    Write('Please enter a float value for J: ' );
+    Read(j);
+    
+    Writeln('I: ',I);
+    Writeln('j: ',J);
+    
+    Write;
+    
+    Writeln(7+2.5*10.6+1-4.2);
+    
+    
+    j := 7+2.5*10.6+1-4.2;
+    i := 7*28+4-7;
+    j := j*i;
+    }
+    
+    myProc1(2);
+    Writeln(fact(5));
+    i := fact(10);
+    Writeln('One Dozen: ',i);
+    	
+end. {tester}

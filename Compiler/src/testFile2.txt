@@ -1,82 +1,43 @@
 program Tester;
 
-var I: Integer; j:float; k,x:integer;
- 	count:integer; 
- 	{comment}
+var x:integer; i,k:integer;
 
-function fact( n: integer ): integer;
-begin
-	fact := 2+n;
-	writeln('return from fact here');
-end;
-
-procedure myProc1(var t:integer); begin
-  Write('myProc1(',t,') = ');
-  t:=t*9;
+procedure myProc(v:integer; var t:integer); begin
+  Write('myProc(',v,',',t,') = ');
+  v := v*2;
+  t := t*2;
+  Writeln('(',v,',',t,')');
+  t:=v*t;
   Writeln(t);
+  for v:=0 to 10 do begin
+		writeln(v);
+  	end;
+  
+  t := 5;
+  if (t < 10) then begin
+		if (6 <> 5) then 
+			writeln('WTF Man?');
+		else begin
+				write('something');write;write('else', 'here');
+		end;
+		v := 0;
+		while (v < 5) do begin
+			write('Enter a number larger than 5: ');
+			read(v);
+			Write;
+		end;
+  end;
+  
 end;
  
-begin {tester}
-	
-	{
-	Write; Write;;
-    Write('Please enter an integer value for I: ' );
-    Read(I);
-    Writeln('The current value of I is ' , I);
-    Write;
+begin
     
-    myProc1(i);
-    writeln('in between...');
-    i := fact(i);
-    Writeln('fact(10) = ',i);
-    writeln('SUCCESS!');
-    
-    for i:=30 downto 17 do
-	begin
-		Writeln(I);
-	end;
-	
-	if (true) then begin Writeln('THIS SHOULD PRINT!'); end; else begin Writeln('YOU DONT SEE THIS!'); end;
-	if (true) then begin Writeln('TRUE!'); end; else Writeln('NOT TRUE!');
-	if (false) then Writeln('FALSE!'); else begin Writeln('NOT FALSE!'); end;
-	
-	Write; Write;
-	
-	i := 0;
-	x := 49;
-	Repeat
-		begin
-	 	 Writeln(x);
-	 	 i := i+1;
-	 	 x := x+1;
-	 	end;
-	Until (x>50) and (i>10);
-	
-	if (not not not true) then Writeln('HAHA!');
-	if (not not not not true) then Writeln('HOHO!');
-
-	Write('Please enter an integer value for I: ' );
-    Read(I);
-    
-    Write('Please enter a float value for J: ' );
-    Read(j);
-    
-    Writeln('I: ',I);
-    Writeln('j: ',J);
-    
-    Write;
-    
-    Writeln(7+2.5*10.6+1-4.2);
-    
-    
-    j := 7+2.5*10.6+1-4.2;
-    i := 7*28+4-7;
-    j := j*i;
-    }
-    
-    myProc1(2);
-    Writeln(fact(5));
-    i := fact(10);
-    Writeln('One Dozen: ',i);
+    i := 5;
+    k := 7;
+    Writeln('I: ',i);
+    Writeln('K: ',k);
+    myProc(i,k);
+    Writeln('I: ',i);
+    Writeln('K: ',k);
     	
-end. {tester}
+end.
