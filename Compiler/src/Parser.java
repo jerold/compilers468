@@ -95,6 +95,10 @@ public class Parser {
 		System.out.println("Error on line "+lookAhead.getLineNum()+" in column "+lookAhead.getColNum()+": "+description);
 	}
 	
+	private void handleWarningGeneral(String description) {
+		System.out.println("Warning` on line "+lookAhead.getLineNum()+" in column "+lookAhead.getColNum()+": "+description);
+	}
+	
 	private void invalidVariableName(String var) {
 		compiler.turnOff();
 		parseError = true;
@@ -175,9 +179,7 @@ public class Parser {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_program":
 			match("program");
-			//this is done at the end now
-			symbolTable.setAddress(100);
-			compiler.move("#"+symbolTable.getAddress(), "D0");
+			compiler.move("SP", "D0");
 			symbolTable.setTitle(lookAhead.getLexeme());
 			sr = identifier();
 			break;
@@ -194,11 +196,14 @@ public class Parser {
 				//break;
 			case "mp_procedure":
 			case "mp_function":
-				//compiler.move("#"+symbolTable.getOffset(),"D"+symbolTable.getLevel());
 				procedureAndFunctionDeclarationPart();
-				break;
+				System.out.println("     DONE DONE DONE    ");
 			case "mp_begin":
-				//compiler.move("#"+symbolTable.getOffset(),"D"+symbolTable.getLevel());
+				int size = symbolTable.getSize();
+				if (symbolTable.getLevel()>0) {
+					size++;
+				}
+				compiler.add("D"+symbolTable.getLevel(), "#"+size, "SP");
 				statementPart();
 				break;
 			default:
@@ -239,9 +244,6 @@ public class Parser {
 				match(";");
 				procedureAndFunctionDeclarationPart();
 				break;
-			case "mp_begin":
-				statementPart();
-				break;
 			default:
 				return;
 		}
@@ -269,7 +271,6 @@ public class Parser {
 				while(iter.hasNext()){
 					String name = iter.next();
 					if(!symbolTable.inTable(name)){
-						//symbolTable.insert(name,"var", type, null);
 						symbolTable.insert(name,"value", type, null);
 					}else {
 						invalidVariableName(name);
@@ -307,9 +308,11 @@ public class Parser {
 				procedureHeading();
 				match(";");
 				block();
+				compiler.pop("0(D"+symbolTable.getLevel()+")");
+				//compiler.move("D"+symbolTable.getLevel(), "SP");
+				compiler.add("D"+symbolTable.getLevel(), "#1", "SP");
 				compiler.returnCall();
 				compiler.label(endprocedure);
-				computeMemorySize(symbolTable);
 				symbolTable = symbolTable.getParent();
 				break;
 			default:
@@ -327,19 +330,18 @@ public class Parser {
 				functionHeading();
 				match(";");
 				block();
-				//symbolTable.insert(symbolTable.getTitle(), "value", symbolTable.getParent().findSymbol(symbolTable.getTitle(),"function").getTypeString(), null);
-				// put the return value on the top of the stack
+				// TODO: This is a hack
+				compiler.subtract("SP", "#1", "SP");
+				compiler.pop("0(D"+symbolTable.getLevel()+")");
+				compiler.add("D"+symbolTable.getLevel(), "#1", "SP");
 				Symbol f = symbolTable.findSymbol(symbolTable.getTitle(),"var");
-				//compiler.push(f.getAddress());
 				Symbol p = symbolTable.getParent().findSymbol(symbolTable.getTitle(),"function");
 				if (f==null || p==null) {
 					handleErrorGeneral("Function not declared in this scope");
 				} else {
-					// TODO: get address not working, should be more like 107, not 7
 					compiler.move(f.getAddress(),p.getAddress());
 					compiler.returnCall();
 					compiler.label(endlabel);
-					computeMemorySize(symbolTable);
 					symbolTable = symbolTable.getParent();
 				}
 				break;
@@ -697,18 +699,20 @@ public class Parser {
 						compiler.castStackFloat();
 						compiler.pop(symbol.getAddress());
 					} else {
-						// int := bool || string (don't allow)
+						// bool || string (don't allow) := int
 						handleErrorGeneral("Invalid type cast to int");
 					}
 				} else if (src.checkFixedlit()) {
 					if (dst.checkIntlit()) {
 						// int := float
-						handleErrorGeneral("Cannot cast type float to type int");
+						handleWarningGeneral("Possible loss of precision, attempt to assign float to int");
+						compiler.castStackInteger();
+						compiler.pop(symbol.getAddress());
 					} else if (dst.checkFixedlit()) {
 						// float := float
 						compiler.pop(symbol.getAddress());
 					} else {
-						// int := bool || string (don't allow)
+						// bool || string (don't allow) := float
 						handleErrorGeneral("Invalid type cast to float");
 					}
 				} else {
@@ -721,24 +725,6 @@ public class Parser {
 				handleError(false, "Assignment Statement");
 		}
 
-	}
-
-	private void procedureStatement() {
-		switch (lookAhead.getIdentifier()) {
-			case "mp_identifier": // procedureStatement -> procedureIdentifier, // [actualParameterList]
-				passSymbol = symbolTable.findSymbol(lookAhead.getLexeme(), "procedure");
-				procedureIdentifier();
-				break;	
-			default: // default case is an invalid lookAhead token in language
-				handleError(false, "Procedure Statement");
-		}
-		if (lookAhead.getIdentifier().equals("mp_lparen")) {
-			// here we pass the symbol
-			actualParameterList();
-		}
-		
-		//passSymbol.describe();
-		compiler.call(passSymbol.label);
 	}
 
 	private void ifStatement() {
@@ -1609,17 +1595,37 @@ public class Parser {
 			handleError(false, "Multiplying Operator");
 		}
 	}
+	
+	private void procedureStatement() {
+		switch (lookAhead.getIdentifier()) {
+			case "mp_identifier": // procedureStatement -> procedureIdentifier, // [actualParameterList]
+				passSymbol = symbolTable.findSymbol(lookAhead.getLexeme(), "procedure");
+				procedureIdentifier();
+				break;	
+			default: // default case is an invalid lookAhead token in language
+				handleError(false, "Procedure Statement");
+		}
+		if (lookAhead.getIdentifier().equals("mp_lparen")) {
+			// here we pass the symbol
+			actualParameterList();
+		}
+		compiler.call(passSymbol.label);
+	}
 
 	private SR functionDesignator() {
+		//compiler.subtract("SP", "#1", "SP");
+		//compiler.printStack();
 		SR sr = null;
 		switch (lookAhead.getIdentifier()) {
 			case "mp_identifier":
-				Symbol symbol = symbolTable.findSymbol(lookAhead.getLexeme(), "function");
+				passSymbol = symbolTable.findSymbol(lookAhead.getLexeme(), "function");
+				// TODO: This is a hack
+				compiler.subtract("SP","#1","SP");
 				sr = functionIdentifier();
 				if (lookAhead.getIdentifier().equals("mp_lparen")) {
 					actualParameterList();
-					compiler.call(symbol.label);
-					compiler.push(symbol.getAddress());
+					compiler.call(passSymbol.label);
+					compiler.push(passSymbol.getAddress());
 				} else if (lookAhead.getIdentifier().equals("mp_assign")) {
 					// assignment for return value
 					
@@ -1630,24 +1636,26 @@ public class Parser {
 					if (src.checkIntlit()) {
 						if (dst.checkIntlit()) {
 							// int := int
-							compiler.pop(symbol.getAddress());
+							compiler.pop(passSymbol.getAddress());
 						} else if (dst.checkFixedlit()) {
 							// float := int
 							compiler.castStackFloat();
-							compiler.pop(symbol.getAddress());
+							compiler.pop(passSymbol.getAddress());
 						} else {
-							// int := bool || string (don't allow)
+							// bool || string (don't allow) := int
 							handleErrorGeneral("Invalid type cast to int");
 						}
 					} else if (src.checkFixedlit()) {
 						if (dst.checkIntlit()) {
 							// int := float
-							handleErrorGeneral("Cannot cast type float to type int");
+							handleWarningGeneral("Possible loss of precision, attempt to assign float to int");
+							compiler.castStackInteger();
+							compiler.pop(passSymbol.getAddress());
 						} else if (dst.checkFixedlit()) {
 							// float := float
-							compiler.pop(symbol.getAddress());
+							compiler.pop(passSymbol.getAddress());
 						} else {
-							// int := bool || string (don't allow)
+							// bool || string (don't allow) := int
 							handleErrorGeneral("Invalid type cast to float");
 						}
 					} else {
@@ -1683,7 +1691,8 @@ public class Parser {
 	private void actualParameterList() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_lparen":
-				compiler.move("#"+(symbolTable.getOffset()+symbolTable.getSize()),"D"+(symbolTable.getLevel()+1));
+				compiler.move("SP","D"+(symbolTable.getLevel()+1));
+				compiler.add("SP", "#1", "SP");
 				match("(");
 				// should check types against symbol table here
 				int count = 0;
@@ -1697,6 +1706,7 @@ public class Parser {
 					if (s.getToken().equals("value")) {
 						if (s.getTypeString().equals(attr[1])) {
 							// type matches, pass variable's address
+							//compiler.add("D"+s.getLevel(), "#"+s.getOffset(), passSymbol.getAttributeAddress(count));
 							compiler.push("D"+s.getLevel());
 							compiler.push("#"+s.getOffset());
 							compiler.addStack();
@@ -1707,7 +1717,8 @@ public class Parser {
 					} else if (s.getToken().equals("var")) {
 						if (s.getTypeString().equals(attr[1])) {
 							// type matches, pass pointer directly
-							compiler.push(s.getAddress());
+							compiler.move(s.getAddress(), passSymbol.getAttributeAddress(count));
+							//compiler.push(s.getAddress());
 							match(lookAhead.getLexeme());
 						} else {
 							handleErrorGeneral("Argument type mismatch");
@@ -1731,6 +1742,8 @@ public class Parser {
 					count++;
 					match(",");
 					
+					compiler.add("SP", "#1", "SP");
+					
 					attr = passSymbol.getAttribute(count);
 					//System.out.println("  >>  "+attr[0]+" : "+attr[1]);
 					
@@ -1740,6 +1753,7 @@ public class Parser {
 						if (s.getToken().equals("value")) {
 							if (s.getTypeString().equals(attr[1])) {
 								// type matches, pass variable's address
+								//compiler.add("D"+s.getLevel(), "#"+s.getOffset(), passSymbol.getAttributeAddress(count));
 								compiler.push("D"+s.getLevel());
 								compiler.push("#"+s.getOffset());
 								compiler.addStack();
@@ -1750,7 +1764,8 @@ public class Parser {
 						} else if (s.getToken().equals("var")) {
 							if (s.getTypeString().equals(attr[1])) {
 								// type matches, pass pointer directly
-								compiler.push(s.getAddress());
+								compiler.move(s.getAddress(), passSymbol.getAttributeAddress(count));
+								//compiler.push(s.getAddress());
 								match(lookAhead.getLexeme());
 							} else {
 								handleErrorGeneral("Argument type mismatch");
@@ -1800,7 +1815,7 @@ public class Parser {
 			case "mp_lparen":
 				match("(");
 				readParameter();
-				while (lookAhead.getIdentifier().equals(",")) {
+				while (lookAhead.getIdentifier().equals("mp_comma")) {
 					match(",");
 					readParameter();
 				}

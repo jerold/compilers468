@@ -53,18 +53,6 @@ public class Symbol {
 		return offset;
 	}
 	
-	/*
-	public int getAddressGlobal() {
-		Table t = parent;
-		int globaloffset = t.getSize();
-		while (t.getParent() != null) {
-			t = t.getParent();
-			globaloffset += t.getSize();
-		}
-		return globaloffset+t.getAddress();
-	}
-	*/
-	
 	public String[] getAttribute(int index) {
 		return attributes[index];
 	}

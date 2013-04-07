@@ -5,7 +5,6 @@ public class Table {
 
 	private ArrayList<Symbol> symbols = new ArrayList<Symbol>();
 	private Table parent = null;
-	private int size = 0;
 	private String title= null;
 	private static Table root = new Table(null);
 	private int level = 0;
@@ -149,7 +148,6 @@ public class Table {
 		} else {
 			Symbol s = new Symbol(this,name,token,type,attributes,symbols.size());
 			symbols.add(s);
-			size ++;
 			return s;
 		}
 	}
@@ -194,7 +192,6 @@ public class Table {
 	 * get the size of the table (number of elements, not size of elements)
 	 */
 	public int getSize(){
-		//return size;
 		return symbols.size();
 	}
 	
