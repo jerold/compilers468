@@ -2,33 +2,24 @@ program Tester;
 
 var x:integer; i,k:integer;
 
+
 procedure myProc(v:integer; var t:integer); begin
   Write('myProc(',v,',',t,') = ');
-  v := v*2;
-  t := t*2;
+  v := 777;
+  t := 888;
   Writeln('(',v,',',t,')');
-  t:=v*t;
-  Writeln(t);
-  for v:=0 to 10 do begin
-		writeln(v);
-  	end;
-  
-  t := 5;
-  if (t < 10) then begin
-		if (6 <> 5) then 
-			writeln('WTF Man?');
-		else begin
-				write('something');write;write('else', 'here');
-		end;
-		v := 0;
-		while (v < 5) do begin
-			write('Enter a number larger than 5: ');
-			read(v);
-			Write;
-		end;
-  end;
-  
 end;
+
+
+
+function myFunc(v:integer; var t:integer):integer; begin
+  Write('myFunc(',v,',',t,') = ');
+  v := 777;
+  t := 888;
+  Writeln('(',v,',',t,')');
+  myFunc := 123;
+end;
+
  
 begin
     
@@ -37,6 +28,14 @@ begin
     Writeln('I: ',i);
     Writeln('K: ',k);
     myProc(i,k);
+    
+    Writeln('I: ',i);
+    Writeln('K: ',k);
+    i := myFunc(i,k);
+    Writeln('I: ',i);
+    Writeln('K: ',k);
+    Writeln('OUTPUT: ',i);
+    myFunc(k,i);
     Writeln('I: ',i);
     Writeln('K: ',k);
     	

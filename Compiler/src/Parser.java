@@ -201,6 +201,7 @@ public class Parser {
 			case "mp_begin":
 				int size = symbolTable.getSize();
 				if (symbolTable.getLevel()>0) {
+					symbolTable.describe();
 					size++;
 				}
 				compiler.add("D"+symbolTable.getLevel(), "#"+size, "SP");
@@ -330,8 +331,6 @@ public class Parser {
 				functionHeading();
 				match(";");
 				block();
-				// TODO: This is a hack
-				compiler.subtract("SP", "#1", "SP");
 				compiler.pop("0(D"+symbolTable.getLevel()+")");
 				compiler.add("D"+symbolTable.getLevel(), "#1", "SP");
 				Symbol f = symbolTable.findSymbol(symbolTable.getTitle(),"var");
@@ -498,13 +497,6 @@ public class Parser {
 			default: // default case is an invalid lookAhead token in language
 				handleError(false, "Statement Sequence");
 		}
-		/*
-		//recursive here
-		if (lookAhead.getIdentifier().equals("mp_scolon")) {
-			match(";");
-			statementSequence();
-		}
-		*/
 	}
 	
 	private void statementTail() {
@@ -516,14 +508,6 @@ public class Parser {
 				break;
 			default:
 				break;
-			/*
-			case "mp_else":
-			case "mp_until":
-			case "mp_end":
-				break;
-			default:
-				handleError(false, "Statement Tail");
-			*/
 		}
 	}
 	
@@ -562,15 +546,18 @@ public class Parser {
 			case "mp_writeln":
 				writeStatement();
 				break;
-			// seems ambiguous here???
 			case "mp_identifier": // simpleStatement -> assignmentStatement and // procedureStatement if lookAhead is identifier
 				Symbol s = symbolTable.findSymbol(lookAhead);
-				if (s.token=="procedure") {
-					procedureStatement();
-				} else if (s.token=="function") {
-					functionDesignator();
+				if (s!=null) {
+					if (s.token=="procedure") {
+						procedureStatement();
+					} else if (s.token=="function") {
+						functionDesignator();
+					} else {
+						assignmentStatement();
+					}
 				} else {
-					assignmentStatement();
+					handleErrorGeneral("Undefined identifier");
 				}
 				break;
 			case "mp_scolon": // simpleStatement -> emptyStatement-- not really sure what  epsilon is yet?!
@@ -790,11 +777,9 @@ public class Parser {
 		}
 	}
 
-	// TODO: should not execute if condition is false (now it executes one time for sure like a repeat)
 	private void forStatement() {
 		switch (lookAhead.getIdentifier()) {
-			case "mp_for": // forStatement -> "for", controlVariable, ":=", initialValue, ("to"|"downto"), finalVariable, "do", statement
-				// TODO: check argument beforehand and skip for loop all-together if necessary
+			case "mp_for": // forStatement -> "for", controlVariable, ":=", initialValue, ("to"|"downto"), finalVariable, "do", statement\
 				match("for");
 				Symbol s = symbolTable.findSymbol(lookAhead);
 				if (s==null || (s.getToken()!="var" && s.getToken()!="value")) {
@@ -1613,26 +1598,22 @@ public class Parser {
 	}
 
 	private SR functionDesignator() {
-		//compiler.subtract("SP", "#1", "SP");
-		//compiler.printStack();
 		SR sr = null;
 		switch (lookAhead.getIdentifier()) {
 			case "mp_identifier":
 				passSymbol = symbolTable.findSymbol(lookAhead.getLexeme(), "function");
-				// TODO: This is a hack
-				compiler.subtract("SP","#1","SP");
 				sr = functionIdentifier();
 				if (lookAhead.getIdentifier().equals("mp_lparen")) {
 					actualParameterList();
+					// leave space for return value (would ideally be pushing NULL here to assure null return)
+					compiler.push("#0");
 					compiler.call(passSymbol.label);
 					compiler.push(passSymbol.getAddress());
 				} else if (lookAhead.getIdentifier().equals("mp_assign")) {
 					// assignment for return value
-					
 					match(":=");
 					SR dst = sr;
 					SR src = expression();
-					
 					if (src.checkIntlit()) {
 						if (dst.checkIntlit()) {
 							// int := int
@@ -1686,20 +1667,17 @@ public class Parser {
 		}
 		return sr;
 	}
-
-	// Logan's section
+	
 	private void actualParameterList() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_lparen":
+				// move DX to the current location of SP
 				compiler.move("SP","D"+(symbolTable.getLevel()+1));
+				// move SP as activation record increases in size
 				compiler.add("SP", "#1", "SP");
 				match("(");
-				// should check types against symbol table here
 				int count = 0;
-				
 				String attr[] = passSymbol.getAttribute(count);
-				//System.out.println("  >>  "+attr[0]+" : "+attr[1]);
-				
 				// pass by pointer
 				if (attr[0].equals("var")) {
 					Symbol s = symbolTable.findSymbol(lookAhead);
@@ -1741,19 +1719,15 @@ public class Parser {
 				while (lookAhead.getIdentifier().equals("mp_comma")) {
 					count++;
 					match(",");
-					
+					// move SP as activation record increases in size
 					compiler.add("SP", "#1", "SP");
-					
 					attr = passSymbol.getAttribute(count);
-					//System.out.println("  >>  "+attr[0]+" : "+attr[1]);
-					
 					// pass by pointer
 					if (attr[0].equals("var")) {
 						Symbol s = symbolTable.findSymbol(lookAhead);
 						if (s.getToken().equals("value")) {
 							if (s.getTypeString().equals(attr[1])) {
 								// type matches, pass variable's address
-								//compiler.add("D"+s.getLevel(), "#"+s.getOffset(), passSymbol.getAttributeAddress(count));
 								compiler.push("D"+s.getLevel());
 								compiler.push("#"+s.getOffset());
 								compiler.addStack();
@@ -1765,7 +1739,6 @@ public class Parser {
 							if (s.getTypeString().equals(attr[1])) {
 								// type matches, pass pointer directly
 								compiler.move(s.getAddress(), passSymbol.getAttributeAddress(count));
-								//compiler.push(s.getAddress());
 								match(lookAhead.getLexeme());
 							} else {
 								handleErrorGeneral("Argument type mismatch");
@@ -1783,10 +1756,7 @@ public class Parser {
 							handleErrorGeneral("Argument type mismatch");
 						}
 					}
-					
 					compiler.pop(passSymbol.getAttributeAddress(count));
-					//compiler.write("#\""+passSymbol.getAttributeAddress(count)+" = \"");
-					//compiler.writeLine(passSymbol.getAttributeAddress(count));
 				}
 				match(")");
 				break;
@@ -1829,7 +1799,6 @@ public class Parser {
 	private void readParameter() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_identifier":
-				//Symbol s = symbolTable.findSymbol(lookAhead.getLexeme(),"var");
 				Symbol s = symbolTable.findSymbol(lookAhead);
 				if (s.getToken().equals("var") || s.getToken().equals("value")) {
 					if (s.type=="integer") {
@@ -1876,7 +1845,6 @@ public class Parser {
 			case "mp_fixed_lit":
 			case "mp_integer_lit":
 				sr = expression();
-				//compiler.writeStack();
 				break;
 			case "mp_identifier":
 			case "not":
@@ -1993,7 +1961,6 @@ public class Parser {
 				varLexemes.add(lookAhead.getLexeme());
 				identifier();
 			}
-			//break;
 			return varLexemes;
 		default:
 			handleError(false, "Identifier List");
@@ -2023,7 +1990,6 @@ public class Parser {
 				sr = SR.fixedlit();
 				match(lookAhead.getLexeme());
 				break;
-			//case "mp_float_lit":
 			default:
 				handleError(false, "Identifier");
 		}
@@ -2055,10 +2021,6 @@ public class Parser {
 			default:
 				handleError(false, "Sign");
 		}
-	}
-
-	private void under() {
-		match("_");
 	}
 	
 	private void digitSequence() {
