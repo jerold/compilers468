@@ -1,42 +1,41 @@
 program Tester;
 
-var x:integer; i,k:integer;
+var x:float; i,k:integer; s:string; b:boolean;
 
-
-procedure myProc(v:integer; var t:integer); begin
-  Write('myProc(',v,',',t,') = ');
-  v := 777;
-  t := 888;
-  Writeln('(',v,',',t,')');
-end;
-
-
-
-function myFunc(v:integer; var t:integer):integer; begin
+function myFunc(v:integer; var t:integer):string; begin
   Write('myFunc(',v,',',t,') = ');
   v := 777;
   t := 888;
   Writeln('(',v,',',t,')');
-  myFunc := 123;
+  myFunc := 'Goodbye World!';
 end;
 
+function greater(a,b:integer;c:float):boolean; begin
+	if (a>c) then greater := true;
+	else greater := false;
+end;
  
 begin
     
+    b := greater(85,20,52.7);
+    Writeln('B: ',b);
+  
     i := 5;
     k := 7;
-    Writeln('I: ',i);
-    Writeln('K: ',k);
-    myProc(i,k);
+    s := 'Hello World!';
+    b := true;
     
     Writeln('I: ',i);
     Writeln('K: ',k);
-    i := myFunc(i,k);
-    Writeln('I: ',i);
-    Writeln('K: ',k);
+    Writeln('S: ',s);
+    Writeln('B: ',b);
+    
+    myFunc(i,k);
+    
     Writeln('OUTPUT: ',i);
-    myFunc(k,i);
     Writeln('I: ',i);
     Writeln('K: ',k);
+    Writeln('S: ',s);
+    Writeln('B: ',b);
     	
 end.

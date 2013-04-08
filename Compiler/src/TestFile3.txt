@@ -1,7 +1,38 @@
-+1 12 -123
-+1.2 12.34 -123.456
-+1.2E3 12.34E45 -123.456E789 +1.2E+3 -123.456E-789
+program Tester;
 
-'Hello World'
-'Julie''s World'
-'Gretchen''s' 'way is the right way!'
+var x:integer; i,k:integer;
+
+
+procedure myProc(v:integer; var t:integer); begin
+  Write('myProc(',v,',',t,') = ');
+  v := 777;
+  t := 888;
+  Writeln('(',v,',',t,')');
+end;
+
+
+
+function myFunc(v:integer; var t:integer):integer; begin
+  Write('myFunc(',v,',',t,') = ');
+  v := 777;
+  t := 888;
+  Writeln('(',v,',',t,')');
+  myFunc := 123;
+end;
+
+ 
+begin
+    
+    i := 5;
+    k := 7;
+    Writeln('I: ',i);
+    Writeln('K: ',k);
+    myProc(i,k);
+    
+    Writeln('I: ',i);
+    Writeln('K: ',k);
+    i := myFunc(k,i);
+    Writeln('OUTPUT: ',i);
+    myFunc(i,k);
+    	
+end.

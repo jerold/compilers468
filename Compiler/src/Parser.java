@@ -125,15 +125,10 @@ public class Parser {
 			while (lookAhead == null) {
 				lookAhead = scanner.getToken();
 			}
+			//lookAhead.describe();
 		} else {
 			handleError(true, s);
 		}
-	}
-	
-	private void computeMemorySize(Table outerTable) {
-		int newsize = symbolTable.getOffset()+symbolTable.getSize();
-		if (newsize > memorySize)
-			memorySize = newsize;
 	}
 	
 	public void setRamSize(int ramSize) {
@@ -197,11 +192,9 @@ public class Parser {
 			case "mp_procedure":
 			case "mp_function":
 				procedureAndFunctionDeclarationPart();
-				System.out.println("     DONE DONE DONE    ");
 			case "mp_begin":
 				int size = symbolTable.getSize();
 				if (symbolTable.getLevel()>0) {
-					symbolTable.describe();
 					size++;
 				}
 				compiler.add("D"+symbolTable.getLevel(), "#"+size, "SP");
@@ -293,6 +286,12 @@ public class Parser {
 			case "mp_float":
 				match("float");
 				return "float";
+			case "mp_string":
+				match("string");
+				return "string";
+			case "mp_boolean":
+				match("boolean");
+				return "boolean";
 			default:
 				handleError(false, "Type");
 				return null;
@@ -676,6 +675,10 @@ public class Parser {
 				sr = expression();
 				SR src = sr;
 				SR dst = symbol.getType();
+				if (dst==null) {
+					handleErrorGeneral("Variable type not recognized.");
+				}
+				
 				
 				if (src.checkIntlit()) {
 					if (dst.checkIntlit()) {
@@ -702,16 +705,30 @@ public class Parser {
 						// bool || string (don't allow) := float
 						handleErrorGeneral("Invalid type cast to float");
 					}
+				} else if (src.checkStringlit()) {
+					if (dst.checkStringlit()) {
+						// string := string
+						compiler.pop(symbol.getAddress());
+					} else {
+						// can only assign strings to strings
+						handleErrorGeneral("Invalid type cast to string");
+					}
+				} else if (src.checkBool()) {
+					if (dst.checkBool()) {
+						// bool := bool
+						compiler.pop(symbol.getAddress());
+					} else {
+						// can only assign strings to strings
+						handleErrorGeneral("Invalid type cast to boolean");
+					}
 				} else {
-					// currently no boolean or string keywords
-					handleErrorGeneral("Cannot assign type boolean");
+					handleErrorGeneral("Unrecognized type");
 				}
 				
 				break;
 			default: // default case is an invalid lookAhead token in language
 				handleError(false, "Assignment Statement");
 		}
-
 	}
 
 	private void ifStatement() {
@@ -1443,16 +1460,6 @@ public class Parser {
 				} else {
 					this.undeclaredVariableError(lookAhead.getLexeme());
 				}
-				/*
-				if(symbolTable.inTable(lookAhead.getLexeme(), "var")){
-					compiler.push(src)
-					sr = variable();
-				} else if (symbolTable.inTable(lookAhead.getLexeme(), "value")) {
-					sr = variable();
-				} else {
-					sr = functionDesignator();
-				}
-				*/
 				break;
 			//case "mp_float_lit":
 			case "mp_fixed_lit":
@@ -1460,6 +1467,7 @@ public class Parser {
 				sr = identifier();
 				break;
 			case "mp_string_lit":
+				compiler.push("#\""+lookAhead.getLexeme()+"\"");
 				sr = identifier();
 				break;
 			case "mp_lparen":
@@ -1707,7 +1715,7 @@ public class Parser {
 				// pass by value
 				} else {
 					Symbol s = symbolTable.findSymbol(lookAhead);
-					if (s.getTypeString().equals(attr[1])) {
+					if (lookAhead.compareIdentifier(attr[1]) || (lookAhead.getIdentifier().equals("mp_identifier") && s.getTypeString().equals(attr[1]))) {
 						// matches correct type
 						actualParameter();
 					} else {
@@ -1749,7 +1757,7 @@ public class Parser {
 					// pass by value
 					} else {
 						Symbol s = symbolTable.findSymbol(lookAhead);
-						if (s.getTypeString().equals(attr[1])) {
+						if (lookAhead.compareIdentifier(attr[1]) || (lookAhead.getIdentifier().equals("mp_identifier") && s.getTypeString().equals(attr[1]))) {
 							// matches correct type
 							actualParameter();
 						} else {
@@ -1770,9 +1778,13 @@ public class Parser {
 			case "not":
 			case "mp_identifier":
 			case "mp_integer_lit":
+			case "mp_fixed_lit":
 			case "mp_lparen":
 			case "mp_plus":
 			case "mp_minus":
+			case "mp_true":
+			case "mp_false":
+			case "mp_string_lit":
 				expression();
 				break;
 			default:
@@ -1839,7 +1851,7 @@ public class Parser {
 		
 		switch (lookAhead.getIdentifier()) {
 			case "mp_string_lit":
-				compiler.write("#\""+lookAhead.getLexeme()+"\"");
+				//compiler.write("#\""+lookAhead.getLexeme()+"\"");
 				sr = expression();
 				break;
 			case "mp_fixed_lit":
@@ -1860,9 +1872,7 @@ public class Parser {
 		}
 		
 		// perform write
-		if (sr.checkStringlit()) {
-			// do nothing, already directly written
-		} else if (sr.checkBool()) {
+		if (sr.checkBool()) {
 			compiler.push("#1");
 			compiler.compareEqualStack();
 			String trueLabel = compiler.skipLabel();
@@ -1874,7 +1884,7 @@ public class Parser {
 			compiler.write("#\"TRUE\"");
 			compiler.label(endLabel);
 		} else {
-			// int or float
+			// int, float, or string
 			compiler.writeStack();
 		}
 		

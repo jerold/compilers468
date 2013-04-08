@@ -20,6 +20,20 @@ public class Token {
 		System.out.println("[" + identifier + "] [" + lineNum + "] [" + colNum + "] [" + lexeme + "]");
 	}
 	
+	public boolean compareIdentifier(String comp) {
+		if (comp.equals("integer") && identifier.equals("mp_integer_lit")) {
+			return true;
+		} else if (comp.equals("float") && identifier.equals("mp_fixed_lit")) {
+			return true;
+		} else if (comp.equals("boolean") && (identifier.equals("mp_true") || identifier.equals("mp_false"))) {
+			return true;
+		} else if (comp.equals("string") && identifier.equals("mp_string_lit")) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
 	public String getIdentifier() {
 		return identifier;
 	}

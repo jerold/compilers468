@@ -11,7 +11,7 @@ public class Scanner {
 				"else", "end", "fixed", "float", "for", "function", "if",
 				"integer", "mod", "not", "or", "procedure",
 				"program", "read", "repeat", "then", "to", "until", "var",
-				"while", "write", "writeln", "true", "false" };
+				"while", "write", "writeln", "true", "false", "string", "boolean" };
 	}
 
 	public void openFile(String fileIn) {
@@ -126,15 +126,16 @@ public class Scanner {
 				id = "mp_divide_float";
 				break;
 			case '\'':
-				recCall = false;  //assume this will not be a recursive call
+				recCall = false;
 				lexeme = fetchLexemeString();
 				id = "mp_string_lit";
-				if (error){
+				if (error) {
 					id = "mp_run_string";
 				}
 				if(recCall){
 					lexeme = lexeme.substring(1, lexeme.length() - 1);
 				}
+				fp.peekColumn--;
 				break;
 			case '\u0000':
 				lexeme = "eof";
@@ -420,14 +421,15 @@ public class Scanner {
 			} 
 			lex = lex + fp.getNext();
 		}
+		
 		// this handles the escape char '' inside a string.
 		lex = lex + fp.getNext();
-		if (fp.peekNext() == '\''){
+		if (fp.peekNext() == '\'') {
 			recCall = true;		//set recCall to true if a recursive call is made here
 			lex = lex + fetchLexemeString().substring(1);  //the .substring(1) peels off the escape char'
-		} if(recCall){
+		} 
+		if(recCall) {
 			return lex; //this is the proper return if recursive call was made
-			
 		} else {
 			//this is the proper return if a recursive call was not made
 			return lex.substring(1,lex.length() - 1);

@@ -1,9 +1,45 @@
-?
-:
-123E-456--5
-a++b-67/8//
-__apple
-'This is a run on string
-'This is a run on string too ''
-apple___
-{ This is a run on comment
+program Tester;
+
+ var I: Integer; j:float; k,x:integer;
+ 	count:integer;
+ 	{comment}
+
+function myFun1(j,k:float; var s:integer):integer; begin
+	j:=2*9;
+end;
+
+procedure myProc1(l:integer); begin
+  i:=i*9;
+end;
+ 
+begin {tester}
+	
+	Write; Write;;
+    Write('Please enter an integer value for I: ' );
+    Read(I);
+    I := I + 1;
+    Write('The current value of I is ' , I-2);
+    Write; Write;
+    
+    myProc1(5);
+    
+    Write('one','two');
+    
+    {if (count < 10) then begin}
+    	if (count <> 5) then 
+    		write('WTF Man?');
+		else begin
+    			write('something');write;write('else', 'here');
+    	end;
+		while (1) do begin
+			read(j);
+			k:=10;
+		end;
+	{end;}
+	
+	for j:=k-10 to k do begin
+ 		i:=i-1;
+ 		write('Waaasuuuuup!?');
+	end;
+    	
+end. {tester}

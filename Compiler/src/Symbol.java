@@ -113,11 +113,15 @@ public class Symbol {
 			case "float":
 				sr = SR.fixedlit();
 				break;
-			case "none":
-				sr = null;
+			case "string":
+				sr = SR.stringlit();
+				break;
+			case "boolean":
+				sr = SR.bool();
 				break;
 			default:
-				System.out.println("ERROR: resolving type from \""+type+"\"");
+				sr = null;
+				break;
 		}
 		return sr;
 	}
