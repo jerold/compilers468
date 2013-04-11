@@ -138,11 +138,18 @@ public class Parser {
 	private int start() {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_program":
+			compiler.move("#0", "D0");
+			compiler.move("#0", "D1");
+			compiler.move("#0", "D2");
+			compiler.move("#0", "D3");
+			compiler.move("#0", "D4");
+			compiler.move("#0", "D5");
+			compiler.move("#0", "D6");
+			compiler.move("#0", "D7");
+			compiler.move("#0", "D8");
+			compiler.move("#0", "D9");
 			program();
 			match("eof");
-			// start register D0 at the end of RAM
-			//compiler.move("#"+(ramSize-memorySize), "D0");
-			//compiler.injectLast(0);
 			compiler.halt();
 			if(parseError){
 				return 0;
@@ -188,16 +195,12 @@ public class Parser {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_var":
 				variableDeclarationPart();
-				//break;
 			case "mp_procedure":
 			case "mp_function":
 				procedureAndFunctionDeclarationPart();
 			case "mp_begin":
-				int size = symbolTable.getSize();
-				if (symbolTable.getLevel()>0) {
-					size++;
-				}
-				compiler.add("D"+symbolTable.getLevel(), "#"+size, "SP");
+				// move SP to end of activation record
+				compiler.add("D"+symbolTable.getLevel(), "#"+symbolTable.getSize(), "SP");
 				statementPart();
 				break;
 			default:
@@ -216,6 +219,7 @@ public class Parser {
 					 match(";");
 				}
 				break;
+			// TODO: is this right? shouldn't it be taken care of in block?
 			case "mp_procedure":
 			case "mp_function":
 			case "mp_begin":
@@ -305,13 +309,17 @@ public class Parser {
 				symbolTable = symbolTable.createScope();
 				String endprocedure = compiler.skipLabel();
 				compiler.branch(endprocedure);
+				
+				System.out.println("");
+				
 				procedureHeading();
 				match(";");
 				block();
-				compiler.pop("0(D"+symbolTable.getLevel()+")");
-				//compiler.move("D"+symbolTable.getLevel(), "SP");
-				compiler.add("D"+symbolTable.getLevel(), "#1", "SP");
+				
+				compiler.move("D"+symbolTable.getLevel(), "SP");
+				compiler.pop("D"+symbolTable.getLevel());
 				compiler.returnCall();
+				System.out.println("");
 				compiler.label(endprocedure);
 				symbolTable = symbolTable.getParent();
 				break;
@@ -327,18 +335,29 @@ public class Parser {
 				symbolTable = symbolTable.createScope();
 				String endlabel = compiler.skipLabel();
 				compiler.branch(endlabel);
+				System.out.println("");
 				functionHeading();
+				
+				// find the return variable and store address of behind PC
+				Symbol f = symbolTable.findSymbol(symbolTable.getTitle(),"var");
+				compiler.subtract("D"+symbolTable.getLevel(), "#3", f.getOffset()+"(D"+symbolTable.getLevel()+")");
+				
 				match(";");
 				block();
-				compiler.pop("0(D"+symbolTable.getLevel()+")");
-				compiler.add("D"+symbolTable.getLevel(), "#1", "SP");
-				Symbol f = symbolTable.findSymbol(symbolTable.getTitle(),"var");
+				
 				Symbol p = symbolTable.getParent().findSymbol(symbolTable.getTitle(),"function");
 				if (f==null || p==null) {
 					handleErrorGeneral("Function not declared in this scope");
 				} else {
-					compiler.move(f.getAddress(),p.getAddress());
+					
+					//compiler.move(f.getAddress(),p.getAddress());
+					
+					compiler.move("D"+symbolTable.getLevel(), "SP");
+					compiler.pop("D"+symbolTable.getLevel());
+					//compiler.printStack();
 					compiler.returnCall();
+					System.out.println("");
+					
 					compiler.label(endlabel);
 					symbolTable = symbolTable.getParent();
 				}
@@ -664,11 +683,20 @@ public class Parser {
 					break;
 				}
 				
+				String lex = lookAhead.getLexeme();
+				
 				if (symbol.getToken()=="var" || symbol.getToken()=="value") {
 					variable();
 				} else {
 					undeclaredVariableError(lookAhead.getLexeme());
 					lookAhead = scanner.getToken();
+				}
+				
+				// not actually an assignment, just a stand-alone recursive function call
+				if (lookAhead.getLexeme().equals("(")) {
+					passSymbol = symbolTable.findSymbol(lex,"var");
+					functionDesignatorTail();
+					break;
 				}
 				
 				match(":=");
@@ -1452,8 +1480,16 @@ public class Parser {
 			case "mp_identifier":
 				Symbol s = symbolTable.findSymbol(lookAhead);
 				if (s!=null) {
-					if(s.getToken()=="var" || s.getToken()=="value"){
+					if(s.getToken()=="var" || s.getToken()=="value") {
+						String lex = lookAhead.getLexeme();
 						sr = variable();
+						if (lookAhead.getLexeme().equals("(")) {
+							passSymbol = symbolTable.findSymbol(lex, "var");
+							sr = passSymbol.getType();
+							// back up SP (address of return variable was already pushed)
+							compiler.subtract("SP","#1","SP");
+							functionDesignatorTail();
+						}
 					} else {
 						sr = functionDesignator();
 					}
@@ -1598,11 +1634,22 @@ public class Parser {
 			default: // default case is an invalid lookAhead token in language
 				handleError(false, "Procedure Statement");
 		}
+		
+		System.out.println("");
+		String register = "D"+(symbolTable.getLevel()+1);
+		// leave space for PC pushed by call later
+		compiler.add("SP","#1","SP");
+		compiler.push(register);
+		compiler.move("SP", register);
+		
 		if (lookAhead.getIdentifier().equals("mp_lparen")) {
 			// here we pass the symbol
 			actualParameterList();
 		}
+		
+		compiler.subtract(register, "#2", "SP");
 		compiler.call(passSymbol.label);
+		System.out.println("");
 	}
 
 	private SR functionDesignator() {
@@ -1611,53 +1658,47 @@ public class Parser {
 			case "mp_identifier":
 				passSymbol = symbolTable.findSymbol(lookAhead.getLexeme(), "function");
 				sr = functionIdentifier();
-				if (lookAhead.getIdentifier().equals("mp_lparen")) {
-					actualParameterList();
-					// leave space for return value (would ideally be pushing NULL here to assure null return)
-					compiler.push("#0");
-					compiler.call(passSymbol.label);
-					compiler.push(passSymbol.getAddress());
-				} else if (lookAhead.getIdentifier().equals("mp_assign")) {
-					// assignment for return value
-					match(":=");
-					SR dst = sr;
-					SR src = expression();
-					if (src.checkIntlit()) {
-						if (dst.checkIntlit()) {
-							// int := int
-							compiler.pop(passSymbol.getAddress());
-						} else if (dst.checkFixedlit()) {
-							// float := int
-							compiler.castStackFloat();
-							compiler.pop(passSymbol.getAddress());
-						} else {
-							// bool || string (don't allow) := int
-							handleErrorGeneral("Invalid type cast to int");
-						}
-					} else if (src.checkFixedlit()) {
-						if (dst.checkIntlit()) {
-							// int := float
-							handleWarningGeneral("Possible loss of precision, attempt to assign float to int");
-							compiler.castStackInteger();
-							compiler.pop(passSymbol.getAddress());
-						} else if (dst.checkFixedlit()) {
-							// float := float
-							compiler.pop(passSymbol.getAddress());
-						} else {
-							// bool || string (don't allow) := int
-							handleErrorGeneral("Invalid type cast to float");
-						}
-					} else {
-						// currently no boolean or string keywords
-						handleErrorGeneral("Cannot assign type boolean");
-					}
-					
-				}
+				functionDesignatorTail();
 				break;
 			default: // default case is an invalid lookAhead token in language
 				handleError(false, "Function Designator");
 		}
 		return sr;
+	}
+	
+	private void functionDesignatorTail() {
+		switch (lookAhead.getIdentifier()) {
+			case "mp_lparen":
+			case "mp_scolon":
+					
+				System.out.println("");
+				int level = passSymbol.getLevel();
+				if (passSymbol.getToken().equals("function")) {
+					level++;
+				}
+				String register = "D"+level;
+				// leave 2 places for PC and return var
+				compiler.add("SP","#2","SP");
+				compiler.push(register);
+				
+				int count = actualParameterList();
+				
+				// back up DX to point to beginning of activation record (had to wait because of recursive calls needing reference to current DX)
+				compiler.subtract("SP", "#"+count, register);
+				// go to where PC should be placed
+				compiler.subtract(register, "#3", "SP");
+				// push the return value
+				//compiler.push(passSymbol.getAddress());
+				compiler.push("#0"); // like setting result to null, kind of
+				passSymbol = symbolTable.findSymbol(passSymbol.getName(),"function");
+				compiler.call(passSymbol.label);
+				System.out.println("");
+					
+				break;
+				
+			default: // default case is an invalid lookAhead token in language
+				handleError(false, "Function Designator Tail");
+		}
 	}
 
 	private SR variable() {
@@ -1676,16 +1717,22 @@ public class Parser {
 		return sr;
 	}
 	
-	private void actualParameterList() {
+	// returns number of parameters seen
+	private int actualParameterList() {
+		int count = 0;
 		switch (lookAhead.getIdentifier()) {
 			case "mp_lparen":
 				// move DX to the current location of SP
-				compiler.move("SP","D"+(symbolTable.getLevel()+1));
+				//compiler.move("SP","D"+(symbolTable.getLevel()+1));
 				// move SP as activation record increases in size
-				compiler.add("SP", "#1", "SP");
+				//compiler.add("SP", "#1", "SP");
 				match("(");
-				int count = 0;
-				String attr[] = passSymbol.getAttribute(count);
+				String attr[];
+				if (passSymbol.getToken().equals("var")) {
+					attr = symbolTable.findSymbol(passSymbol.getName(),"function").getAttribute(count);
+				} else {
+					attr = passSymbol.getAttribute(count);
+				}
 				// pass by pointer
 				if (attr[0].equals("var")) {
 					Symbol s = symbolTable.findSymbol(lookAhead);
@@ -1703,8 +1750,8 @@ public class Parser {
 					} else if (s.getToken().equals("var")) {
 						if (s.getTypeString().equals(attr[1])) {
 							// type matches, pass pointer directly
-							compiler.move(s.getAddress(), passSymbol.getAttributeAddress(count));
-							//compiler.push(s.getAddress());
+							//compiler.move(s.getAddress(), passSymbol.getAttributeAddress(count));
+							compiler.push(s.getAddress());
 							match(lookAhead.getLexeme());
 						} else {
 							handleErrorGeneral("Argument type mismatch");
@@ -1723,13 +1770,16 @@ public class Parser {
 					}
 				}
 				
-				compiler.pop(passSymbol.getAttributeAddress(count));
+				//compiler.pop(passSymbol.getAttributeAddress(count));
 				while (lookAhead.getIdentifier().equals("mp_comma")) {
 					count++;
 					match(",");
 					// move SP as activation record increases in size
-					compiler.add("SP", "#1", "SP");
-					attr = passSymbol.getAttribute(count);
+					if (passSymbol.getToken().equals("var")) {
+						attr = symbolTable.findSymbol(passSymbol.getName(),"function").getAttribute(count);
+					} else {
+						attr = passSymbol.getAttribute(count);
+					}
 					// pass by pointer
 					if (attr[0].equals("var")) {
 						Symbol s = symbolTable.findSymbol(lookAhead);
@@ -1746,7 +1796,8 @@ public class Parser {
 						} else if (s.getToken().equals("var")) {
 							if (s.getTypeString().equals(attr[1])) {
 								// type matches, pass pointer directly
-								compiler.move(s.getAddress(), passSymbol.getAttributeAddress(count));
+								//compiler.move(s.getAddress(), passSymbol.getAttributeAddress(count));
+								compiler.push(s.getAddress());
 								match(lookAhead.getLexeme());
 							} else {
 								handleErrorGeneral("Argument type mismatch");
@@ -1764,13 +1815,19 @@ public class Parser {
 							handleErrorGeneral("Argument type mismatch");
 						}
 					}
-					compiler.pop(passSymbol.getAttributeAddress(count));
+					//compiler.pop(passSymbol.getAttributeAddress(count));
 				}
 				match(")");
+				// count is indexed starting at zero, increment it up to provide an actual count of params
+				count++;
+				break;
+			case "mp_scolon":
 				break;
 			default:
 				handleError(false, "Actual Parameter List");
 		}
+		
+		return count;
 	}
 
 	private void actualParameter() {

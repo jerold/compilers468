@@ -11,7 +11,8 @@ public class Scanner {
 				"else", "end", "fixed", "float", "for", "function", "if",
 				"integer", "mod", "not", "or", "procedure",
 				"program", "read", "repeat", "then", "to", "until", "var",
-				"while", "write", "writeln", "true", "false", "string", "boolean" };
+				"while", "write", "writeln", "true", "false", "string", "boolean", 
+				"type", "vector", "array", "..", "of" };
 	}
 
 	public void openFile(String fileIn) {
@@ -41,9 +42,21 @@ public class Scanner {
 		// Single char length symbols can all be matched
 		// with fetchLexemeSymbol()
 		switch (nextChar) {
-			case '.':
+			case '[':
 				lexeme = fetchLexemeSymbol();
-				id = "mp_period";
+				id = "mp_lbracket";
+				break;
+			case ']':
+				lexeme = fetchLexemeSymbol();
+				id = "mp_rbracket";
+				break;
+			case '.':
+				lexeme = fetchLexemePeriod();
+				if (lexeme.length() == 1) {
+					id = "mp_period";
+				} else {
+					id = "mp_span";
+				}
 				break;
 			case ',':
 				lexeme = fetchLexemeSymbol();
@@ -285,6 +298,19 @@ public class Scanner {
 			fp.setPeekToBufferColumn();
 		}
 		// System.out.print("fetchLexemeCloseCarrot:  ");
+		return lex;
+	}
+	
+	public String fetchLexemePeriod() {
+		String lex = "" + fp.getNext();
+		char newChar = fp.peekNext();
+		if (newChar == '.') {
+			newChar = fp.getNext();
+			lex = lex + newChar;
+		} else {
+			fp.setPeekToBufferColumn();
+		}
+		// System.out.print("fetchLexemeColonOrAssignment:  ");
 		return lex;
 	}
 

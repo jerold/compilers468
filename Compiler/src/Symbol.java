@@ -33,6 +33,10 @@ public class Symbol {
 		this.label = null;
 	}
 	
+	public String getName() {
+		return this.name;
+	}
+	
 	public String getToken() {
 		return this.token;
 	}
@@ -54,7 +58,10 @@ public class Symbol {
 	}
 	
 	public String[] getAttribute(int index) {
-		return attributes[index];
+		if (attributes.length>index)
+			return attributes[index];
+		else
+			return null;
 	}
 	
 	public String getAttributeAddress(int index) {
@@ -95,8 +102,7 @@ public class Symbol {
 		System.out.print("   " + this.offset);
 		if (this.label!=null) 
 			System.out.print("   " + this.label);
-		if (this.level>0)
-			System.out.print("   level:" + this.level);
+		System.out.print("   level:" + this.getLevel());
 		System.out.println("");
 	}
 	
