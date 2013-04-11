@@ -34,13 +34,14 @@ public class Parser {
 		}
 		i = start();
 		
+		
 		if(i == 1){
-			System.out.println("File Parsed successfully!");
+			//System.out.println("File Parsed successfully!");
 		} else {
 			System.out.println("File Did Not Parse successfully!");
 		}
 		if (compiler.checkOK()) {
-			System.out.println("File Compiled successfully!");
+			//System.out.println("File Compiled successfully!");
 		} else {
 			System.out.println("File Did Not Compile successfully...");
 		}
@@ -310,7 +311,7 @@ public class Parser {
 				String endprocedure = compiler.skipLabel();
 				compiler.branch(endprocedure);
 				
-				System.out.println("");
+				//System.out.println("");
 				
 				procedureHeading();
 				match(";");
@@ -319,7 +320,7 @@ public class Parser {
 				compiler.move("D"+symbolTable.getLevel(), "SP");
 				compiler.pop("D"+symbolTable.getLevel());
 				compiler.returnCall();
-				System.out.println("");
+				//System.out.println("");
 				compiler.label(endprocedure);
 				symbolTable = symbolTable.getParent();
 				break;
@@ -335,7 +336,7 @@ public class Parser {
 				symbolTable = symbolTable.createScope();
 				String endlabel = compiler.skipLabel();
 				compiler.branch(endlabel);
-				System.out.println("");
+				//System.out.println("");
 				functionHeading();
 				
 				// find the return variable and store address of behind PC
@@ -356,7 +357,7 @@ public class Parser {
 					compiler.pop("D"+symbolTable.getLevel());
 					//compiler.printStack();
 					compiler.returnCall();
-					System.out.println("");
+					//System.out.println("");
 					
 					compiler.label(endlabel);
 					symbolTable = symbolTable.getParent();
@@ -1635,7 +1636,7 @@ public class Parser {
 				handleError(false, "Procedure Statement");
 		}
 		
-		System.out.println("");
+		//System.out.println("");
 		String register = "D"+(symbolTable.getLevel()+1);
 		// leave space for PC pushed by call later
 		compiler.add("SP","#1","SP");
@@ -1649,7 +1650,7 @@ public class Parser {
 		
 		compiler.subtract(register, "#2", "SP");
 		compiler.call(passSymbol.label);
-		System.out.println("");
+		//System.out.println("");
 	}
 
 	private SR functionDesignator() {
@@ -1671,7 +1672,7 @@ public class Parser {
 			case "mp_lparen":
 			case "mp_scolon":
 					
-				System.out.println("");
+				//System.out.println("");
 				int level = passSymbol.getLevel();
 				if (passSymbol.getToken().equals("function")) {
 					level++;
@@ -1692,7 +1693,7 @@ public class Parser {
 				compiler.push("#0"); // like setting result to null, kind of
 				passSymbol = symbolTable.findSymbol(passSymbol.getName(),"function");
 				compiler.call(passSymbol.label);
-				System.out.println("");
+				//System.out.println("");
 					
 				break;
 				
