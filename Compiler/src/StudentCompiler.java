@@ -46,7 +46,7 @@ public class StudentCompiler implements Compiler {
 	
 	private void writeCommand(String command) {
 		if (compileFlag) {
-			System.out.println(command);
+			//System.out.println(command);
 			code.add(command);
 		}
 	}
@@ -56,7 +56,7 @@ public class StudentCompiler implements Compiler {
 			try {
 				openFile();
 				for (String command : code) {
-					//System.out.println(command);
+					System.out.println(command);
 					out.write(command+"\n");
 				}
 				closeFile();

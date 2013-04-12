@@ -13,10 +13,28 @@ public class ServerUpload {
 	private String directory = "compilers";
 	private JSch jsch;
 	private Session session;
+	private String output;
 	private boolean stripmessage = false;
+	private boolean showResults = true;
 	
 	public ServerUpload() {
 		
+	}
+	
+	// Custom
+	public ServerUpload(String localfile, String host, String username, String password, String directory) {
+		file = new File(localfile);
+		this.host = host;
+		this.username = username;
+		this.password = password;
+		this.directory = directory;
+	}
+	
+	/**
+	 * Don't show any results from server.
+	 */
+	public void noShow() {
+		showResults = false;
 	}
 	
 	/**
@@ -31,12 +49,8 @@ public class ServerUpload {
 		stripmessage = false;
 	}
 	
-	// Custom
-	public ServerUpload(String localfile, String host, String username, String password) {
-		file = new File(localfile);
-		this.host = host;
-		this.username = username;
-		this.password = password;
+	public String getOutput() {
+		return this.output;
 	}
 	
 	public boolean go() {
@@ -73,7 +87,6 @@ public class ServerUpload {
 			}
 		}
         try {
-
             com.jcraft.jsch.Channel channel = session.openChannel("sftp");
             channel.connect();
             ChannelSftp sftpChannel = (ChannelSftp) channel;
@@ -118,21 +131,41 @@ public class ServerUpload {
 			return false;
 		}
 	    
+	    boolean success = true;
+	    
 	    byte[] tmp = new byte[1024];
-	    while (true){
+	    int count = 0;
+	    while (count<10){
+	    	count++;
 	        try {
 				while (in.available() > 0) {
 				    int i = in.read(tmp, 0, 1024);
 				    if (i < 0) {
 				        break;
 				    }
+				    
 				    String line = new String(tmp, 0, i);
-				    if (stripmessage) {
-					    String sep = "-------------------------------";
-					    line = line.substring(line.indexOf(sep)+sep.length()+1);
-					    line = line.substring(0,line.indexOf(sep)-1);
+				    
+				    String sep = "-------------------------------";
+				    int start = line.indexOf(sep)+sep.length()+1;
+				    int end = -1;
+				    if (start>0) {
+				    	end = line.indexOf(sep,start)+sep.length()+1;
+				    } else {
+				    	// runtime error
+				    	System.out.println("RUNTIME ERROR!!!!!!!!!!!!!!!!!");
+				    	success = true;
 				    }
-				    System.out.println(line);
+				    
+				    if (stripmessage) {
+					    line = line.substring(start);
+					    line = line.substring(0,end);
+				    }
+				    output = line;
+				    
+				    if (showResults) {
+				    	System.out.println(output);
+				    }
 				}
 			} catch (IOException e) {
 				return false;
@@ -146,9 +179,15 @@ public class ServerUpload {
 	            //ignore
 	        }
 	    }
+	    
+	    if (count>=10) {
+	    	success = false;
+	    	System.out.println(success);
+	    }
+	    
 	    channel.disconnect();
 	    
-	    return true;
+	    return success;
 	}  
 	
 }

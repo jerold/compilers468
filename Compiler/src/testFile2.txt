@@ -1,41 +1,13 @@
-program Tester;
-
-var x:float; i,k:integer; s:string; b:boolean;
-
-function myFunc(v:integer; var t:integer):string; begin
-  Write('myFunc(',v,',',t,') = ');
-  v := 777;
-  t := 888;
-  Writeln('(',v,',',t,')');
-  myFunc := 'Goodbye World!';
-end;
-
-function greater(a,b:integer;c:float):boolean; begin
-	if (a>c) then greater := true;
-	else greater := false;
-end;
- 
-begin
-    
-    b := greater(85,20,52.7);
-    Writeln('B: ',b);
-  
-    i := 5;
-    k := 7;
-    s := 'Hello World!';
-    b := true;
-    
-    Writeln('I: ',i);
-    Writeln('K: ',k);
-    Writeln('S: ',s);
-    Writeln('B: ',b);
-    
-    myFunc(i,k);
-    
-    Writeln('OUTPUT: ',i);
-    Writeln('I: ',i);
-    Writeln('K: ',k);
-    Writeln('S: ',s);
-    Writeln('B: ',b);
-    	
-end.
+program Program4;
+ var Sum, I, N : Integer;
+ begin
+     Read(N);
+     I   := 0;
+     Sum := 0;
+     repeat begin
+       Sum := Sum + I;
+       I   := I + 1;
+       Writeln(I, ' ', Sum);
+       end;
+     until (I > N) and (I <= 100)
+   end.

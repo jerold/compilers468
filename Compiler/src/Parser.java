@@ -13,8 +13,6 @@ public class Parser {
 	private String type;
 	private Compiler compiler;
 	private Symbol passSymbol;
-	private int ramSize;
-	private int memorySize;
 	private SR sr;
 	
 	public Parser(Scanner scanner, Compiler compiler) {
@@ -22,10 +20,10 @@ public class Parser {
 		this.compiler = compiler;
 		//this.symbolTable = Table.rootInstance();
 		retValues = null;
-		ramSize = 100;
 	}
 
 	public int run() {
+		Table.clear();
 		lookAhead = scanner.getToken();
 		int i = 0;
 		// lookAhead would be null if comment opens the program
@@ -130,10 +128,6 @@ public class Parser {
 		} else {
 			handleError(true, s);
 		}
-	}
-	
-	public void setRamSize(int ramSize) {
-		this.ramSize = ramSize;
 	}
 
 	private int start() {
@@ -865,7 +859,13 @@ public class Parser {
 				}
 				compiler.pop(s.getAddress());
 				compiler.push(s.getAddress());
-				compiler.push("#"+finalvalue);
+				Symbol f = symbolTable.findSymbol(finalvalue,"var");
+				if (f==null) f = symbolTable.findSymbol(finalvalue,"value");
+				if (f==null) {
+					compiler.push("#"+finalvalue);
+				} else {
+					compiler.push(f.getAddress());
+				}
 				if (add) {
 					compiler.compareLessEqualStack();
 					compiler.branchTrueStack(startlabel);
@@ -1734,6 +1734,10 @@ public class Parser {
 				// pass by pointer
 				if (attr[0].equals("var")) {
 					Symbol s = symbolTable.findSymbol(lookAhead);
+					if (s==null) {
+						handleErrorGeneral("Must pass an existing variable to pointer argument.");
+						break;
+					}
 					if (s.getToken().equals("value")) {
 						if (s.getTypeString().equals(attr[1])) {
 							// type matches, pass variable's address
@@ -1781,6 +1785,10 @@ public class Parser {
 					// pass by pointer
 					if (attr[0].equals("var")) {
 						Symbol s = symbolTable.findSymbol(lookAhead);
+						if (s==null) {
+							handleErrorGeneral("Must pass an existing variable to pointer argument.");
+							break;
+						}
 						if (s.getToken().equals("value")) {
 							if (s.getTypeString().equals(attr[1])) {
 								// type matches, pass variable's address

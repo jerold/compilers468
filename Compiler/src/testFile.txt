@@ -1,20 +1,75 @@
-myString = 'test ' inside string. this should be an error' 
-Hello   World
-Boss(Hi:_there:=123) skipsthelast one
-.,;=< <= > >= <> +-*/:= unless it is a word
-353.1511 1.6 123.123.123
-1e-2
-41.41E+123
-37234.123E+ror
-{this is a
- comment} not this
- _my__name
- myName_
- &
- {test_comment
- integer 34
- {test}_comment2}
- myString = 'test string that is a long lexeme'
- myString = 'I''m rooting cat''s hah'
- myErrorString = 'This is a running string that will throw an error because there is no apostrophe at the end
- end.
+program Tester;
+
+var i,x,y:integer; s:string; b:boolean;
+
+procedure printMessage;
+	begin
+		Writeln('MESSAGE!');
+	end;
+
+function ReturnOne:integer;
+	begin
+		ReturnOne := 1;
+	end;
+
+function fact(a:integer):integer;
+	begin
+		if (a < 2) then fact := 1;
+		else fact := fact(a-2)+fact(a-1);
+	end;
+
+function test(m:integer):string;
+	var x,c,d:integer;
+	
+	procedure test2(var p:integer);
+	begin
+		x := 77777777;
+		p := 54321;
+		writeln('STARTING TEST 2');
+		writeln('C: ',c);
+		writeln('X: ',x);
+		writeln('END TEST 2');
+		test := 'Goodbye World!';
+	end;
+	
+	begin
+		c := 99;
+		test2(y);
+		writeln(fact(5));
+	end;
+	
+function isSeven(t:integer):boolean;
+	begin
+		if (t=7) then isSeven := true;
+		else isSeven := false;
+	end;
+ 
+begin
+  
+    x := 15;
+    y := 77;
+    s := 'Hello World!';
+    
+    printMessage;
+    
+    x := ReturnOne;
+    
+    Writeln('RETURN: ',x);
+    
+    for i:=0 to 10 do begin
+ 		writeln(i,'! = ',fact(i));
+	end;
+    
+    
+    writeln('Y: ',y);
+    writeln(s);
+    writeln('########################');
+    s := test(1);
+    writeln('########################');
+    writeln(s);
+    writeln('Y: ',y);
+    Writeln('RETURN: ',x);
+    
+    writeln('NEW THING WITH FTP VERSION 3.0!!!');
+    
+end.

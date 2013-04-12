@@ -18,6 +18,10 @@ public class Table {
 		return root;
 	}
 	
+	public static void clear() {
+		root = new Table(null);
+	}
+	
 	public Table createScope() {
 		Table table = new Table(this);
 		table.level = (this.level+1);
