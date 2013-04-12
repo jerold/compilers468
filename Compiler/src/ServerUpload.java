@@ -6,26 +6,29 @@ import com.jcraft.jsch.*;
 
 public class ServerUpload {
 	
-	private String ftpAddress;
-	private File file;
+	private File file = new File("target/uMachine_code.il");
 	private String username = "logan.perreault";
 	private String password = "aKJ4382e";
 	private String host = "esus.cs.montana.edu";
 	private String directory = "compilers";
-	private boolean secure = true;
 	private JSch jsch;
 	private Session session;
+	private boolean stripmessage = false;
 	
-	// Default
 	public ServerUpload() {
-		file = new File("target/uMachine_code.il");
-		ftpAddress = generateAddress();
+		
 	}
-
-	// Custom
-	public ServerUpload(String localfile, String serverAddress) {
-		file = new File(localfile);
-		ftpAddress = serverAddress;
+	
+	/**
+	 * Strips the default message displayed by the VM. 
+	 * Won't work if there is a long period of "-" characters printed by the program, but this is for our benefit anyway.
+	 */
+	public void stripMessage() {
+		stripmessage = true;
+	}
+	
+	public void showMessage() {
+		stripmessage = false;
 	}
 	
 	// Custom
@@ -34,11 +37,14 @@ public class ServerUpload {
 		this.host = host;
 		this.username = username;
 		this.password = password;
-		ftpAddress = generateAddress();
 	}
 	
-	private String generateAddress() {
-		return (secure?"sftp":"ftp")+"://"+username+":"+password+"@"+host+directory;
+	public boolean go() {
+		boolean success = connect();
+		if (success) success = upload();
+		if (success) success = execute();
+		if (success) success = disconnect();
+		return success;
 	}
 	
 	public boolean connect() {
@@ -49,7 +55,7 @@ public class ServerUpload {
             session.setPassword(password);
             session.connect();
         } catch (JSchException e) {
-            e.printStackTrace();  
+            return false;
         }
         return true;
 	}
@@ -59,7 +65,7 @@ public class ServerUpload {
 		return true;
 	}
 	
-	// This is pretty cool. If we need, we can check for an exception and even chmod it beforehand with this sucker.
+	// This is pretty cool. If we need, we can check for an exception and even chmod it beforehand.
 	public boolean upload() {
 		if (jsch==null) {
 			if (connect()==false) {
@@ -72,12 +78,11 @@ public class ServerUpload {
             channel.connect();
             ChannelSftp sftpChannel = (ChannelSftp) channel;
             sftpChannel.put(file.getPath(), directory+"/"+file.getName());
-            //System.out.println("Pushed to "+directory+"/"+file.getName());
             sftpChannel.exit();
         } catch (JSchException e) {
-            e.printStackTrace();  
+            return false;
         } catch (SftpException e) {
-            e.printStackTrace();
+        	return false;
         }
 		return true;
 	}
@@ -94,7 +99,7 @@ public class ServerUpload {
 		try {
 			channel = (ChannelExec) session.openChannel("exec");
 		} catch (JSchException e) {
-			e.printStackTrace();
+			return false;
 		}
 		
 		String command = "cd "+directory+"; "+"./execute "+file.getName();
@@ -105,12 +110,12 @@ public class ServerUpload {
 		try {
 			in = channel.getInputStream();
 		} catch (IOException e) {
-			e.printStackTrace();
+			return false;
 		}
 	    try {
 			channel.connect();
 		} catch (JSchException e) {
-			e.printStackTrace();
+			return false;
 		}
 	    
 	    byte[] tmp = new byte[1024];
@@ -122,10 +127,15 @@ public class ServerUpload {
 				        break;
 				    }
 				    String line = new String(tmp, 0, i);
-				    System.out.println("Unix system console output: " +line);
+				    if (stripmessage) {
+					    String sep = "-------------------------------";
+					    line = line.substring(line.indexOf(sep)+sep.length()+1);
+					    line = line.substring(0,line.indexOf(sep)-1);
+				    }
+				    System.out.println(line);
 				}
 			} catch (IOException e) {
-				e.printStackTrace();
+				return false;
 			}
 	        if (channel.isClosed()){
 	            break;

@@ -269,9 +269,9 @@ public class Parser {
 				ListIterator<String> iter = retValues.listIterator();
 				while(iter.hasNext()){
 					String name = iter.next();
-					if(!symbolTable.inTable(name)){
+					if(!symbolTable.inTable(name,true)) {
 						symbolTable.insert(name,"value", type, null);
-					}else {
+					} else {
 						invalidVariableName(name);
 					}
 				}
@@ -311,8 +311,6 @@ public class Parser {
 				String endprocedure = compiler.skipLabel();
 				compiler.branch(endprocedure);
 				
-				//System.out.println("");
-				
 				procedureHeading();
 				match(";");
 				block();
@@ -320,7 +318,6 @@ public class Parser {
 				compiler.move("D"+symbolTable.getLevel(), "SP");
 				compiler.pop("D"+symbolTable.getLevel());
 				compiler.returnCall();
-				//System.out.println("");
 				compiler.label(endprocedure);
 				symbolTable = symbolTable.getParent();
 				break;
