@@ -101,8 +101,7 @@ public class ServerUpload {
             com.jcraft.jsch.Channel channel = session.openChannel("sftp");
             channel.connect();
             ChannelSftp sftpChannel = (ChannelSftp) channel;
-            System.out.println(file.getPath()+"  -->  "+directory+"/"+file.getName());
-            sftpChannel.put(file.getPath(), directory+"/"+file.getName());
+            sftpChannel.put(file.getPath(), directory+"/"+defaultname);
             sftpChannel.exit();
             channel.disconnect();
         } catch (JSchException e) {
@@ -128,8 +127,7 @@ public class ServerUpload {
 			return false;
 		}
 		
-		System.out.println("EXECUTE: "+file.getName());
-		String command = "cd "+directory+" && "+"./execute "+file.getName();
+		String command = "cd "+directory+" && "+"./execute "+defaultname;
 	    channel.setCommand(command);
 	    channel.setInputStream(null);
 	    ((ChannelExec) channel).setErrStream(System.err);

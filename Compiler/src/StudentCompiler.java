@@ -61,10 +61,11 @@ public class StudentCompiler implements Compiler {
 			try {
 				openFile();
 				for (String command : code) {
-					System.out.println(command);
+					//System.out.println(command);
 					out.write(command+"\n");
 				}
 				closeFile();
+				code = new ArrayList<String>();
 			} catch (IOException e) {
 				System.out.println("Unable to write to the output file");
 			}
