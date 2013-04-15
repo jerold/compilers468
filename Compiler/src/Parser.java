@@ -229,12 +229,12 @@ public class Parser {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_function":
 				functionDeclaration();
-				match(";");
+				//match(";");
 				procedureAndFunctionDeclarationPart();
 				break;
 			case "mp_procedure":
 				procedureDeclaration();
-				match(";");
+				//match(";");
 				procedureAndFunctionDeclarationPart();
 				break;
 			default:
@@ -511,10 +511,20 @@ public class Parser {
 	
 	private void statementTail() {
 		switch (lookAhead.getIdentifier()) {
+			case "mp_identifier":
+			case "mp_while":
+				statement();
+				statementTail();
+				break;
 			case "mp_scolon":
 				match(";");
 				statement();
 				statementTail();
+				break;
+			case "mp_until":
+			case "mp_end":
+			case "mp_else":
+			case "mp_period":
 				break;
 			default:
 				break;
@@ -529,7 +539,8 @@ public class Parser {
 			case "mp_repeat": // statement -> structuredStatement
 			case "mp_while": // statement -> structuredStatement
 				structuredStatement();
-				statement();
+				//statementTail();
+				
 				break;
 			case "mp_read": // statement -> simpleStatement
 			case "mp_write": // statement -> simpleStatement
@@ -760,14 +771,14 @@ public class Parser {
 				compiler.branchFalseStack(elselabel);
 				match("then");
 				statement();
-				match(";");
+				statementTail();
 				String endlabel = compiler.skipLabel();
 				compiler.branch(endlabel);
 				compiler.label(elselabel);
 				if (lookAhead.getIdentifier().equals("mp_else")) {
 					match("else");
 					statement();
-					match(";");
+					statementTail();
 				}
 				compiler.label(endlabel);
 				break;
@@ -783,7 +794,7 @@ public class Parser {
 		case "mp_repeat": // repeatStatement -> "repeat", statementSequence, "until", booleanExpression
 			match("repeat");
 			String startlabel = compiler.label();
-			statement();
+			statementSequence();
 			if(lookAhead.getIdentifier().equals("mp_scolon")){
 				match(";");
 			}
@@ -850,6 +861,7 @@ public class Parser {
 				match("do");
 				String startlabel = compiler.label();
 				statement();
+				//statementTail();
 				compiler.push(s.getAddress());
 				compiler.push("#1");
 				if (add) {
@@ -903,6 +915,7 @@ public class Parser {
 			case "mp_minus":
 			case "mp_integer_lit":
 			case "mp_fixed_lit":
+			case "mp_float_lit":
 			case "mp_identifier":
 			case "mp_string_lit":
 			case "mp_lparen":
@@ -1175,6 +1188,7 @@ public class Parser {
 			case "mp_false":
 			case "mp_identifier":
 			case "mp_fixed_lit":
+			case "mp_float_lit":
 			case "mp_integer_lit":
 				sr = term();
 				break;
@@ -1302,8 +1316,8 @@ public class Parser {
 				}
 				sr = factor();
 				break;
-			//case "mp_float_lit":
 			case "mp_fixed_lit":
+			case "mp_float_lit":
 			case "mp_integer_lit":
 			case "mp_string_lit":
 			case "mp_lparen":
@@ -1495,8 +1509,8 @@ public class Parser {
 					this.undeclaredVariableError(lookAhead.getLexeme());
 				}
 				break;
-			//case "mp_float_lit":
 			case "mp_fixed_lit":
+			case "mp_float_lit":
 				compiler.push("#"+lookAhead.getLexeme());
 				sr = identifier();
 				break;
@@ -1705,7 +1719,7 @@ public class Parser {
 			case "mp_identifier":
 			case "mp_string_lit":
 			case "mp_int_lit":
-			case "mp_fixed_lit":
+			case "mp_fixed_lit":	
 			case "mp_float_lit":
 				sr = variableIdentifier();
 				break;
@@ -1842,6 +1856,7 @@ public class Parser {
 			case "mp_identifier":
 			case "mp_integer_lit":
 			case "mp_fixed_lit":
+			case "mp_float_lit":
 			case "mp_lparen":
 			case "mp_plus":
 			case "mp_minus":
@@ -1918,6 +1933,7 @@ public class Parser {
 				sr = expression();
 				break;
 			case "mp_fixed_lit":
+			case "mp_float_lit":
 			case "mp_integer_lit":
 				sr = expression();
 				break;
@@ -1990,6 +2006,7 @@ public class Parser {
 			case "mp_string_lit":
 			case "mp_integer_lit":
 			case "mp_fixed_lit":
+			case "mp_float_lit":
 				sr = identifier();
 				break;
 			default:
@@ -2060,6 +2077,7 @@ public class Parser {
 				match(lookAhead.getLexeme());
 				break;
 			case "mp_fixed_lit":
+			case "mp_float_lit":
 				sr = SR.fixedlit();
 				match(lookAhead.getLexeme());
 				break;
