@@ -19,7 +19,7 @@ public class Driver {
 		Scanner scanner = new Scanner();
 		Compiler compiler = new StudentCompiler();
 		
-		
+		/*
 		
 		if(args.length == 0){
 			scanner.openFile("src/testFile2.txt");
@@ -32,10 +32,10 @@ public class Driver {
 		
 		// write and execute file on ESUS if possible (if cannot connect or the VM cannot be reached, just print a success message)
 		if (compiler.checkOK()) {
-			System.out.println("COMPILED SUCCESSFULLY");
 			ServerUpload su = new ServerUpload();
 			su.stripMessage();
 			boolean success = su.go();
+			// compiled, but unable to use server upload
 			if (!success) {
 				System.out.println("File compiled successfully.");
 			}
@@ -43,10 +43,11 @@ public class Driver {
 			System.out.println("File failed to compile.");
 		}
 		
-		/*
+		*/
+		
+		
 		TestSuite ts = new TestSuite(compiler,"TestSuite");
 		ts.run();
-		*/
 		
 		System.exit(0);
 	}

@@ -1,7 +1,9 @@
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -16,11 +18,22 @@ public class TestSuite {
 	private BufferedReader br;
 	private ArrayList<File> sourceFiles = new ArrayList<File>();
 	private ArrayList<File> outputFiles = new ArrayList<File>();
+	private boolean casesensitive = false;
+	private String compiledname;
 	
 	public TestSuite(Compiler compiler, String directory) {
 		this.compiler = compiler;
 		this.directory = directory;
 		this.scanner = new Scanner();
+		refresh();
+	}
+	
+	public void setCaseSensitive() {
+		casesensitive = true;
+	}
+	
+	public void refresh() {
+		// SU
 		this.su = new ServerUpload();
 		this.su.stripMessage();
 		this.su.noShow();
@@ -29,30 +42,58 @@ public class TestSuite {
 	public void run() {
 		readFiles();
 		matchFiles();
+		int code = 1;
 		for (int i=0; i<sourceFiles.size(); i++) {
+			refresh();
 			File fin = sourceFiles.get(i);
 			System.out.println("running "+fin.getName());
 			System.out.println("######################################################");
+			scanner = new Scanner();
 			scanner.openFile(fin.getPath());
+			compiledname = fin.getName().substring(0,fin.getName().indexOf("."))+".il";
+			compiler.setOutput(directory+"/compiled/", compiledname);
+			compiler.openFile();
 			parser = new Parser(scanner,compiler);
 			parser.run();
-			int code = execute();
-			if (code>=0) {
-				String output = this.su.getOutput();
-				File fout = getFile(fin.getName(),outputFiles);
-				int line = compare(output,fout);
-				// found a discrepancy, print it out
-				if (line>=0) {
-					System.out.println("FOUND DISCREPANCY ON LINE "+line);
-				} else {
-					System.out.println("correct");
+			if (code==1) {
+				code = execute();
+				if (code==1) {
+					String output = this.su.getOutput();
+					writeFile(fin.getName(),output);
+					File fout = getFile(fin.getName(),outputFiles);
+					int line = compare(output,fout);
+					// found a discrepancy, print it out
+					if (line<0) {
+						System.out.println("correct");
+					}
+				} else if (code==0) {
+					System.out.println("\ncompiled successfully, but unable to connect to server. continuing with run.");
+				} else if (code==-1) {
+					System.out.println("\nCOMPILE ERROR, PLEASE CORRECT");
+					break;
 				}
-			} else if (code==1) {
-				System.out.println("\nCOMPILE ERROR, PLEASE CORRECT");
-				break;
+				System.out.println("");
+			} else {
+				if (compiler.checkOK()) {
+					System.out.println("\ncompiled successfully");
+				} else {
+					System.out.println("\nCOMPILE ERROR");
+				}
 			}
-			System.out.println("");
 		}
+	}
+	
+	private boolean writeFile(String filename, String contents) {
+		try{
+			// Create file 
+			FileWriter fstream = new FileWriter(directory+"/output/"+filename);
+			BufferedWriter out = new BufferedWriter(fstream);
+			out.write(contents);
+			out.close();
+		} catch (Exception e) {
+			return false;
+		}
+		return true;
 	}
 	
 	private int compare(String output, File file) {
@@ -69,12 +110,26 @@ public class TestSuite {
 			while (br.ready()) {
 				i++;
 				line = br.readLine();
-				if (data.length-1>i || !line.equals(data[i])) {
-					System.out.println(line+" vs "+data[i]);
-					// discrepancy
-					linenumber = i;
+				if (data.length-1<i) {
+					linenumber = i+1;
+					System.out.println("FOUND DISCREPANCY ON LINE "+linenumber+": line does not exist");
 					break;
 				}
+				
+				if (!casesensitive) {
+					line = line.toLowerCase();
+					data[i] = data[i].toLowerCase();
+				}
+				if (!line.equals(data[i])) {
+					// discrepancy
+					linenumber = i+1;
+					System.out.println("FOUND DISCREPANCY ON LINE "+linenumber+": found \""+data[i]+"\" but should be \""+line+"\"");
+					break;
+				}
+			}
+			if (i<data.length-1) {
+				linenumber = data.length-1;
+				System.out.println("FOUND DISCREPANCY ON LINE "+linenumber+": line does not exist");
 			}
 		} catch (IOException e) {
 			System.out.println("Error reading output file during comparison.");
@@ -85,10 +140,10 @@ public class TestSuite {
 	private int execute() {
 		int code = 1;
 		if (compiler.checkOK()) {
+			su.setFile(directory+"/compiled/"+compiledname);
 			// connection error
 			if (!su.go()) {
 				code = 0;
-				System.out.println("Unable to connect to server.");
 			}
 		} else {
 			code = -1;
@@ -105,7 +160,7 @@ public class TestSuite {
 	
 	private void readFiles() {
 		File src = new File(directory+"/src");
-		File output = new File(directory+"/output");
+		File output = new File(directory+"/expected");
 		// loop through src files
 		for (final File file : src.listFiles()) {
 			if (file.isFile() && file.getName().substring(file.getName().length()-4).equals(".txt")) {

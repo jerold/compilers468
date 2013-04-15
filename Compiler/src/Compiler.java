@@ -6,10 +6,11 @@ public interface Compiler {
 	
 	// Back-end functions
 	
-	void openFile(String output);
+	void openFile();
 	void writeFile();
 	void turnOff();
 	boolean checkOK();
+	void setOutput(String root, String output);
 	
 	// Halt Instruction
 	

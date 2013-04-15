@@ -6,7 +6,9 @@ import com.jcraft.jsch.*;
 
 public class ServerUpload {
 	
-	private File file = new File("target/uMachine_code.il");
+	private String defaultname = "uMachine_code.il";
+	private String filename = "target/"+defaultname;
+	private File file = new File(filename);
 	private String username = "logan.perreault";
 	private String password = "aKJ4382e";
 	private String host = "esus.cs.montana.edu";
@@ -53,6 +55,10 @@ public class ServerUpload {
 		return this.output;
 	}
 	
+	public void setFile(String filename) {
+		this.filename = filename;
+	}
+	
 	public boolean go() {
 		boolean success = connect();
 		if (success) success = upload();
@@ -81,17 +87,24 @@ public class ServerUpload {
 	
 	// This is pretty cool. If we need, we can check for an exception and even chmod it beforehand.
 	public boolean upload() {
+		
+		// refresh file
+		file = new File(filename);
+		
 		if (jsch==null) {
 			if (connect()==false) {
 				return false;
 			}
 		}
+		
         try {
             com.jcraft.jsch.Channel channel = session.openChannel("sftp");
             channel.connect();
             ChannelSftp sftpChannel = (ChannelSftp) channel;
+            System.out.println(file.getPath()+"  -->  "+directory+"/"+file.getName());
             sftpChannel.put(file.getPath(), directory+"/"+file.getName());
             sftpChannel.exit();
+            channel.disconnect();
         } catch (JSchException e) {
             return false;
         } catch (SftpException e) {
@@ -115,7 +128,8 @@ public class ServerUpload {
 			return false;
 		}
 		
-		String command = "cd "+directory+"; "+"./execute "+file.getName();
+		System.out.println("EXECUTE: "+file.getName());
+		String command = "cd "+directory+" && "+"./execute "+file.getName();
 	    channel.setCommand(command);
 	    channel.setInputStream(null);
 	    ((ChannelExec) channel).setErrStream(System.err);
@@ -133,9 +147,11 @@ public class ServerUpload {
 	    
 	    boolean success = true;
 	    
+	    int maxcount = 5;
+	    
 	    byte[] tmp = new byte[1024];
 	    int count = 0;
-	    while (count<10){
+	    while (count<maxcount) {
 	    	count++;
 	        try {
 				while (in.available() > 0) {
@@ -143,25 +159,29 @@ public class ServerUpload {
 				    if (i < 0) {
 				        break;
 				    }
-				    
 				    String line = new String(tmp, 0, i);
-				    
 				    String sep = "-------------------------------";
 				    int start = line.indexOf(sep)+sep.length()+1;
 				    int end = -1;
+				    
 				    if (start>0) {
 				    	end = line.indexOf(sep,start)+sep.length()+1;
+				    	// started but not ended, must be looking for a read
+				    	if (end<0) {
+				    		
+				    	}
 				    } else {
 				    	// runtime error
 				    	System.out.println("RUNTIME ERROR!!!!!!!!!!!!!!!!!");
 				    	success = true;
 				    }
 				    
-				    if (stripmessage) {
-					    line = line.substring(start);
-					    line = line.substring(0,end);
-				    }
+				    
+				    
 				    output = line;
+				    if (stripmessage) {
+				    	output = output.substring(start,end-sep.length()-1);
+				    }
 				    
 				    if (showResults) {
 				    	System.out.println(output);
@@ -180,9 +200,8 @@ public class ServerUpload {
 	        }
 	    }
 	    
-	    if (count>=10) {
+	    if (count>=maxcount) {
 	    	success = false;
-	    	System.out.println(success);
 	    }
 	    
 	    channel.disconnect();

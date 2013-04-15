@@ -22,11 +22,16 @@ public class StudentCompiler implements Compiler {
 		output = "uMachine_code.il";
 	}
 	
+	public void setOutput(String root, String output) {
+		this.root = root;
+		this.output = output;
+	}
+	
 	public void openFile() {
 		openFile(output);
 	}
 	
-	public void openFile(String output) {
+	private void openFile(String output) {
 		try {
 			fstream = new FileWriter(root+output);
 			out = new BufferedWriter(fstream);
