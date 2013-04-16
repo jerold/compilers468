@@ -511,8 +511,15 @@ public class Parser {
 	
 	private void statementTail() {
 		switch (lookAhead.getIdentifier()) {
-			case "mp_identifier":
-			case "mp_while":
+			case "mp_begin": // statementTail -> statement
+			case "mp_for": // statementTail -> statement
+			case "mp_if": // statementTail -> statement
+			case "mp_read": // statementTail -> statement
+			case "mp_repeat": // statementTail -> statement
+			case "mp_while":  // statementTail -> statement
+			case "mp_write":  // statementTail -> statement
+			case "mp_writeln": // statementTail -> statement
+			case "mp_identifier": // statementTail -> statement
 				statement();
 				statementTail();
 				break;
@@ -533,31 +540,56 @@ public class Parser {
 	
 	private void statement() {
 		switch (lookAhead.getIdentifier()) {
-			case "mp_begin": // statement -> structuredStatement
-			case "mp_for": // statement -> structuredStatement
-			case "mp_if": // statement -> structuredStatement
-			case "mp_repeat": // statement -> structuredStatement
-			case "mp_while": // statement -> structuredStatement
-				structuredStatement();
-				//statementTail();
-				
+			case "mp_begin": // statement -> statementSequence
+				compoundStatement();
 				break;
-			case "mp_read": // statement -> simpleStatement
-			case "mp_write": // statement -> simpleStatement
+			case "mp_for": // statement -> forStatement
+				forStatement();
+				break;
+			case "mp_if": // statement -> ifStatement
+				ifStatement();
+				break;
+			case "mp_repeat": // statement -> repeatStatement
+				repeatStatement();
+				break;
+			case "mp_while": // statement -> whileStatement
+				whileStatement();
+				break;
+			case "mp_read": // statement -> readStatement
+				readStatement();
+				break;
+			case "mp_write": // statement -> writeStatement
 			case "mp_writeln":
+				writeStatement();
+				break;
 			case "mp_identifier": // statement -> simpleStatement
-			case "mp_scolon":    // statement -> simpleStatement
-				simpleStatement();
+				Symbol s = symbolTable.findSymbol(lookAhead);
+				if (s!=null) {
+					if (s.token=="procedure") {
+						procedureStatement();
+					} else if (s.token=="function") {
+						functionDesignator();
+					} else {
+						assignmentStatement();
+					}
+				} else {
+					handleErrorGeneral("Undefined identifier");
+				}
+				break;
+			case "mp_scolon":    // statement -> emptyStatement
+				emptyStatement();
 				break;
 			case "mp_else":
 			case "mp_until":
 			case "mp_end":
+				//statement();
+				//statementTail();
 				break;
 			default: // default case is an invalid lookAhead token in language
 				handleError(false, "Statement");
 		}
 	}
-
+/*
 	private void simpleStatement() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_read": // simpleStatement -> readStatement
@@ -636,7 +668,7 @@ public class Parser {
 		}
 
 	}
-
+*/
 	private void emptyStatement() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_scolon":
