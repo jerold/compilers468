@@ -534,7 +534,7 @@ public class Parser {
 			case "mp_period":
 				break;
 			default:
-				break;
+				handleError(false, "statementTail");
 		}
 	}
 	
