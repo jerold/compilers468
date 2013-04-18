@@ -479,6 +479,9 @@ public class Parser {
 				match("begin");
 				statementSequence();
 				match("end");
+				if(lookAhead.getIdentifier().equalsIgnoreCase("mp_scolon")){
+					match(";");
+				}
 				break;
 			default: // default case is an invalid lookAhead token in language
 				handleError(false, "Compound Statement");
@@ -803,14 +806,12 @@ public class Parser {
 				compiler.branchFalseStack(elselabel);
 				match("then");
 				statement();
-				statementTail();
 				String endlabel = compiler.skipLabel();
 				compiler.branch(endlabel);
 				compiler.label(elselabel);
 				if (lookAhead.getIdentifier().equals("mp_else")) {
 					match("else");
 					statement();
-					statementTail();
 				}
 				compiler.label(endlabel);
 				break;
@@ -953,9 +954,6 @@ public class Parser {
 			case "mp_lparen":
 			case "mp_true":
 			case "mp_false":
-				sr = simpleExpression();
-				sr = expression();
-				break;
 			case "mp_not":
 				sr = simpleExpression();
 				sr = expression();
@@ -1713,8 +1711,18 @@ public class Parser {
 	private void functionDesignatorTail() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_lparen":
+			case "mp_rparen":
 			case "mp_scolon":
-					
+			case "mp_comma":
+			case "mp_lthan":
+			case "mp_gthan":
+			case "mp_equals":	
+			case "not":
+			case "mp_plus":
+			case "mp_minus":
+			case "mp_time":
+			case "mp_div":
+			case "mp_/":
 				//System.out.println("");
 				int level = passSymbol.getLevel();
 				if (passSymbol.getToken().equals("function")) {
@@ -1724,8 +1732,10 @@ public class Parser {
 				// leave 2 places for PC and return var
 				compiler.add("SP","#2","SP");
 				compiler.push(register);
-				
-				int count = actualParameterList();
+				int count = 0;
+				if(lookAhead.getLexeme().equals("(")){
+						count = actualParameterList();
+				}
 				
 				// back up DX to point to beginning of activation record (had to wait because of recursive calls needing reference to current DX)
 				compiler.subtract("SP", "#"+count, register);
@@ -1739,7 +1749,6 @@ public class Parser {
 				//System.out.println("");
 					
 				break;
-				
 			default: // default case is an invalid lookAhead token in language
 				handleError(false, "Function Designator Tail");
 		}
@@ -2003,7 +2012,7 @@ public class Parser {
 
 	private void booleanExpression() {
 		switch (lookAhead.getIdentifier()) {
-			case "not":
+			case "mp_not":
 			case "mp_identifier":
 			case "mp_integer_lit":
 			case "mp_lparen":
@@ -2018,7 +2027,7 @@ public class Parser {
 
 	private void ordinalExpression() {
 		switch (lookAhead.getIdentifier()) {
-			case "not":
+			case "mp_not":
 			case "mp_identifier":
 			case "mp_integer_lit":
 			case "mp_lparen":
