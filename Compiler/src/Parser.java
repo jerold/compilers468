@@ -1558,10 +1558,11 @@ public class Parser {
 				sr = factor();
 				if (sr.checkBool()) {
 					// TODO: check if there is a nand op for this not. Otherwise this sucks. maybe I'm just not thinking about it right.
+					// TODO: this throws runtime errors. We need to go over this.
 					String toZero = compiler.skipLabel();
 					String flipDone = compiler.skipLabel();
 					compiler.push("#0");
-					compiler.compareGreaterStack();
+					compiler.compareGreaterStack();  //runtime error with this op
 					compiler.branchTrueStack(toZero);
 					compiler.push("#1");
 					compiler.branch(flipDone);
@@ -1936,9 +1937,12 @@ public class Parser {
 						compiler.readInt(s.getAddress());
 					} else if (s.type=="float") {
 						compiler.readFloat(s.getAddress());
+					} else {
+						//string need to be handled here
+						
 					}
 					variable();
-				} else {
+				}else {
 					undeclaredVariableError(lookAhead.getLexeme());
 				}
 				break;
@@ -1970,14 +1974,9 @@ public class Parser {
 		
 		switch (lookAhead.getIdentifier()) {
 			case "mp_string_lit":
-				//compiler.write("#\""+lookAhead.getLexeme()+"\"");
-				sr = expression();
-				break;
 			case "mp_fixed_lit":
 			case "mp_float_lit":
 			case "mp_integer_lit":
-				sr = expression();
-				break;
 			case "mp_identifier":
 			case "not":
 			case "mp_lparen":
