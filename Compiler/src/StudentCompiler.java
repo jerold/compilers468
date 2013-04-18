@@ -96,6 +96,10 @@ public class StudentCompiler implements Compiler {
 		writeCommand("RDF "+dst);
 	}
 	
+	public void readString(String dst) {
+		writeCommand("RDS "+dst);
+	}
+	
 	public void write(String src) {
 		writeCommand("WRT "+src);
 	}

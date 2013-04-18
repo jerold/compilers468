@@ -580,7 +580,7 @@ public class Parser {
 				}
 				break;
 			case "mp_scolon":    // statement -> emptyStatement
-				emptyStatement();
+				//emptyStatement();
 				break;
 			case "mp_else":
 			case "mp_until":
@@ -673,11 +673,8 @@ public class Parser {
 	}
 */
 	private void emptyStatement() {
-		switch (lookAhead.getIdentifier()) {
-			case "mp_scolon":
-				break;
-			default:
-				handleError(false, "Empty Statement");
+		while(lookAhead.getIdentifier().equals("mp_scolon")){
+			match(";");
 		}
 
 	}
@@ -806,12 +803,14 @@ public class Parser {
 				compiler.branchFalseStack(elselabel);
 				match("then");
 				statement();
+				emptyStatement();
 				String endlabel = compiler.skipLabel();
 				compiler.branch(endlabel);
 				compiler.label(elselabel);
 				if (lookAhead.getIdentifier().equals("mp_else")) {
 					match("else");
 					statement();
+					emptyStatement();
 				}
 				compiler.label(endlabel);
 				break;
@@ -827,7 +826,8 @@ public class Parser {
 		case "mp_repeat": // repeatStatement -> "repeat", statementSequence, "until", booleanExpression
 			match("repeat");
 			String startlabel = compiler.label();
-			statementSequence();
+			statement();
+			emptyStatement();
 			if(lookAhead.getIdentifier().equals("mp_scolon")){
 				match(";");
 			}
@@ -850,6 +850,7 @@ public class Parser {
 				compiler.branchFalseStack(endlabel);
 				match("do");
 				statement();
+				emptyStatement();
 				compiler.branch(startlabel);
 				compiler.label(endlabel);
 				break;
@@ -894,7 +895,7 @@ public class Parser {
 				match("do");
 				String startlabel = compiler.label();
 				statement();
-				//statementTail();
+				emptyStatement();
 				compiler.push(s.getAddress());
 				compiler.push("#1");
 				if (add) {
@@ -1555,8 +1556,10 @@ public class Parser {
 				break;
 			case "mp_not":
 				match("not");
+				Symbol sym = symbolTable.findSymbol(lookAhead);
 				sr = factor();
 				if (sr.checkBool()) {
+					compiler.push(sym.getAddress());
 					// TODO: check if there is a nand op for this not. Otherwise this sucks. maybe I'm just not thinking about it right.
 					// TODO: this throws runtime errors. We need to go over this.
 					String toZero = compiler.skipLabel();
@@ -1937,11 +1940,11 @@ public class Parser {
 						compiler.readInt(s.getAddress());
 					} else if (s.type=="float") {
 						compiler.readFloat(s.getAddress());
-					} else {
-						//string need to be handled here
-						
+					} else if(s.type=="string"){
+						compiler.readString(s.getAddress());	
 					}
-					variable();
+					//variable();
+					match(lookAhead.getLexeme());
 				}else {
 					undeclaredVariableError(lookAhead.getLexeme());
 				}

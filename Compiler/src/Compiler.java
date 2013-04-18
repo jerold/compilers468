@@ -32,6 +32,11 @@ public interface Compiler {
 	void readFloat(String dst);
 	
 	/**
+	 * Read the value in src to STDOUT
+	 */
+	void readString(String dst);
+	
+	/**
 	 * Write the value in src to STDOUT
 	 */
 	void write(String src);
