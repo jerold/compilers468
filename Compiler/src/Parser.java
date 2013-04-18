@@ -826,8 +826,7 @@ public class Parser {
 		case "mp_repeat": // repeatStatement -> "repeat", statementSequence, "until", booleanExpression
 			match("repeat");
 			String startlabel = compiler.label();
-			statement();
-			emptyStatement();
+			statementSequence();
 			if(lookAhead.getIdentifier().equals("mp_scolon")){
 				match(";");
 			}
