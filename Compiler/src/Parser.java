@@ -1205,10 +1205,10 @@ public class Parser {
 		//optional sign
 		boolean negative = false;
 		if (lookAhead.getIdentifier()=="mp_plus" || lookAhead.getIdentifier()=="mp_minus") {
-			sign();
 			if (lookAhead.getIdentifier()=="mp_minus") {
 				negative = true;
 			}
+			sign();
 		}
 		switch (lookAhead.getIdentifier()) {
 			case "mp_string_lit":
