@@ -1893,7 +1893,36 @@ public class Parser {
 		
 		return count;
 	}
-
+	
+	/*
+	ActualParameter >> 
+		OrdinalExpression >>
+			Expression >> 
+				SimpleExpression >>
+					OptionalSign >> "+"
+					Term >>
+						Factor >> 
+							UnsignedInteger
+							VariableIdentifier >> 
+								Identifier
+							"not" Factor
+							"(" Expression ")"
+							FunctionIdentifier >> 
+								Identifier
+							OptionalActualParameterList >> 
+								"(" ActualParameter ActualParameterTail ")"
+						FactorTail >> 
+							MultiplyingOperator >> "*"
+							Factor
+							FactorTail
+					TermTail >>
+						AddingOperator >> "+"
+						Term
+						TermTail
+				OptionalRelationalPart >>
+					RelationalOperator >> "="
+					SimpleExpression
+	*/
 	private void actualParameter() {
 		switch (lookAhead.getIdentifier()) {
 			case "not":
@@ -1914,6 +1943,7 @@ public class Parser {
 		}
 	}
 
+	// >> "(" readParameter [ "," readParameter ]*
 	private void readParameterList() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_lparen":
@@ -1930,6 +1960,7 @@ public class Parser {
 		}
 	}
 
+	// >> VariableIdentifier
 	private void readParameter() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_identifier":
@@ -1953,6 +1984,7 @@ public class Parser {
 		}
 	}
 
+	// >> "(" writeParameter [ "," writeParameter ]*
 	private void writeParameterList() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_scolon":
@@ -1972,8 +2004,8 @@ public class Parser {
 		
 	}
 
+	//  >> OrdinalExpression
 	private void writeParameter() {
-		
 		switch (lookAhead.getIdentifier()) {
 			case "mp_string_lit":
 			case "mp_fixed_lit":
@@ -1992,7 +2024,7 @@ public class Parser {
 				handleError(false, "Write");
 		}
 		
-		// perform write
+		// >> perform write
 		if (sr.checkBool()) {
 			compiler.push("#1");
 			compiler.compareEqualStack();
@@ -2011,6 +2043,7 @@ public class Parser {
 		
 	}
 
+	// >> Expression
 	private void booleanExpression() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_not":
@@ -2025,7 +2058,8 @@ public class Parser {
 				handleError(false, "Boolean Expression");
 		}
 	}
-
+	
+	// >> Expression
 	private void ordinalExpression() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_not":
@@ -2041,6 +2075,7 @@ public class Parser {
 		}
 	}
 
+	// >> Identifier
 	private SR variableIdentifier() {
 		SR sr = null;
 		switch (lookAhead.getIdentifier()) {
@@ -2057,6 +2092,7 @@ public class Parser {
 		return sr;
 	}
 
+	// >> Identifier
 	private void procedureIdentifier() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_identifier":
@@ -2068,7 +2104,8 @@ public class Parser {
 				handleError(false, "Procedure Identifier");
 		}
 	}
-
+	
+	// >> Identifier
 	private SR functionIdentifier() {
 		SR sr = null;
 		switch (lookAhead.getIdentifier()) {
@@ -2082,6 +2119,7 @@ public class Parser {
 		return sr;
 	}
 
+	// >> identifier IdentifierTail
 	private ArrayList<String> identifierList() {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_identifier":
