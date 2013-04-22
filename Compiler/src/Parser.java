@@ -1269,7 +1269,7 @@ public class Parser {
 			default:
 				handleError(false, "term");
 		}
-		while (lookAhead.getIdentifier().equals("mp_times") || lookAhead.getIdentifier().equals("mp_div") || lookAhead.getIdentifier().equals("mp_mod") || lookAhead.getIdentifier().equals("mp_and")) {
+		while (lookAhead.getIdentifier().equals("mp_times") || lookAhead.getIdentifier().equals("mp_div") || lookAhead.getIdentifier().equals("mp_mod") || lookAhead.getIdentifier().equals("mp_and") || lookAhead.getIdentifier().equals("mp_divide_float")) {
 			if (lookAhead.getIdentifier().equals("mp_times")) {
 				multiplyingOperator();
 				SR sr1 = sr;
@@ -1320,6 +1320,14 @@ public class Parser {
 			} else if (lookAhead.getIdentifier().equals("mp_div")) {
 				multiplyingOperator();
 				SR sr1 = sr;
+				if (lookAhead.getIdentifier().equals("mp_identifier")) {
+					Symbol s = symbolTable.findSymbol(lookAhead);
+					if (s!=null) {
+						compiler.push(s.getAddress());
+					} else {
+						handleErrorUndefined();
+					}
+				}
 				SR sr2 = factor();
 				boolean error = false;
 				// all results are floats
@@ -1356,9 +1364,68 @@ public class Parser {
 				if (error) {
 					this.handleErrorGeneral("Cannot perform division on non-numeric values");
 				}
+			} else if (lookAhead.getIdentifier().equals("mp_divide_float")) {
+				multiplyingOperator();
+				SR sr1 = sr;
+				if (lookAhead.getIdentifier().equals("mp_identifier")) {
+					Symbol s = symbolTable.findSymbol(lookAhead);
+					if (s!=null) {
+						compiler.push(s.getAddress());
+					} else {
+						handleErrorUndefined();
+					}
+				}
+				SR sr2 = factor();
+				boolean error = false;
+				// all results are floats
+				sr = SR.fixedlit();
+				if (sr1.checkIntlit()) {
+					if (sr2.checkIntlit()) {
+						// int / int
+						compiler.castStackFloat();
+						compiler.subtract("SP", "#1", "SP");
+						compiler.castStackFloat();
+						compiler.add("SP", "#1", "SP");
+						compiler.divideStackFloat();
+						// set result to int
+						sr = SR.intlit();
+					} else if (sr2.checkFixedlit()) {
+						// int / float
+						compiler.subtract("SP", "#1", "SP");
+						compiler.castStackFloat();
+						compiler.add("SP", "#1", "SP");
+						compiler.divideStackFloat();
+					} else {
+						error = true;
+					}
+				} else if (sr1.checkFixedlit()) {
+					if (sr2.checkIntlit()) {
+						// float / int
+						compiler.castStackFloat();
+						compiler.divideStackFloat();
+					} else if (sr2.checkFixedlit()) {
+						// float / float
+						compiler.divideStackFloat();
+					} else {
+						error = true;
+					}
+				} else {
+					error = true;
+				}
+				if (error) {
+					this.handleErrorGeneral("Cannot perform division on non-numeric values");
+				}
 			} else if (lookAhead.getIdentifier().equals("mp_mod")) {
 				multiplyingOperator();
 				SR sr1 = sr;
+				if (lookAhead.getIdentifier().equals("mp_identifier")) {
+					Symbol s = symbolTable.findSymbol(lookAhead);
+					if (s!=null) {
+						compiler.push(s.getAddress());
+					} else {
+						handleErrorUndefined();
+					}
+				}
 				SR sr2 = factor();
 				boolean error = false;
 				// only allows integers
@@ -1376,10 +1443,17 @@ public class Parser {
 				if (error) {
 					this.handleErrorGeneral("Cannot perform modulus on non-numeric values");
 				}
-				compiler.modulusStack();
 			} else if (lookAhead.getIdentifier().equals("mp_and")) {
 				multiplyingOperator();
 				SR sr1 = sr;
+				if (lookAhead.getIdentifier().equals("mp_identifier")) {
+					Symbol s = symbolTable.findSymbol(lookAhead);
+					if (s!=null) {
+						compiler.push(s.getAddress());
+					} else {
+						handleErrorUndefined();
+					}
+				}
 				SR sr2 = factor();
 				boolean error = false;
 				// all are booleans
@@ -1448,10 +1522,8 @@ public class Parser {
 				break;
 			case "mp_not":
 				match("not");
-				Symbol sym = symbolTable.findSymbol(lookAhead);
-				sr = factor();
+				sr = simpleExpression();
 				if (sr.checkBool()) {
-					compiler.push(sym.getAddress());
 					String toZero = compiler.skipLabel();
 					String flipDone = compiler.skipLabel();
 					compiler.push("#0");
@@ -1534,6 +1606,9 @@ public class Parser {
 		case "mp_div":
 			match("div");
 			break;
+		case "mp_divide_float":
+			match("/");
+			break;
 		case "mp_mod":
 			match("mod");
 			break;
@@ -1555,15 +1630,19 @@ public class Parser {
 				handleError(false, "Procedure Statement");
 		}
 		
-		String register = "D"+(symbolTable.getLevel()+1);
+		// TODO: changed
+		String register = "D"+(passSymbol.getLevel()+1);
 		// leave space for PC pushed by call later
 		compiler.add("SP","#1","SP");
 		compiler.push(register);
-		compiler.move("SP", register);
 		
+		int count = 0;
 		if (lookAhead.getIdentifier().equals("mp_lparen")) {
-			actualParameterList();
+			count = actualParameterList();
 		}
+		
+		// back up DX to point to beginning of activation record (had to wait because of recursive calls needing reference to current DX)
+		compiler.subtract("SP", "#"+count, register);
 		
 		compiler.subtract(register, "#2", "SP");
 		compiler.call(passSymbol.label);
@@ -1654,6 +1733,7 @@ public class Parser {
 				} else {
 					attr = passSymbol.getAttribute(count);
 				}
+				
 				// pass by pointer
 				if (attr[0].equals("var")) {
 					Symbol s = symbolTable.findSymbol(lookAhead);
@@ -1674,7 +1754,7 @@ public class Parser {
 					} else if (s.getToken().equals("var")) {
 						if (s.getTypeString().equals(attr[1])) {
 							// type matches, pass pointer directly
-							compiler.push(s.getAddress());
+							compiler.push(s.getAddress(false));
 							match(lookAhead.getLexeme());
 						} else {
 							handleErrorGeneral("Argument type mismatch");
@@ -1722,7 +1802,7 @@ public class Parser {
 						} else if (s.getToken().equals("var")) {
 							if (s.getTypeString().equals(attr[1])) {
 								// type matches, pass pointer directly
-								compiler.push(s.getAddress());
+								compiler.push(s.getAddress(false));
 								match(lookAhead.getLexeme());
 							} else {
 								handleErrorGeneral("Argument type mismatch");

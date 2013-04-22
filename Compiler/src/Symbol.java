@@ -42,8 +42,12 @@ public class Symbol {
 	}
 	
 	public String getAddress() {
+		return getAddress(true);
+	}
+	
+	public String getAddress(boolean dereferenced) {
 		String address = offset+"(D"+parent.getLevel()+")";
-		if (token=="var") {
+		if (token=="var" && dereferenced) {
 			address = "@"+address;
 		}
 		return address;
