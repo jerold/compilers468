@@ -173,6 +173,6 @@ public class Symbol {
 				sr = null;
 				break;
 		}
-		return sr;
+		return sr;  
 	}
 }

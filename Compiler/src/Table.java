@@ -16,7 +16,7 @@ public class Table {
 	 * @param parent	referenced parent table
 	 */
 	private Table(Table parent) {
-		this.parent = parent;
+		this.parent = parent;  
 	}
 	
 	/**
