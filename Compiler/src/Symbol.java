@@ -1,14 +1,11 @@
-import java.util.ArrayList;
 
 
 public class Symbol {
 
 	String name;
-	String token;		// change to enum?
-	String type;		// change to enum? rename?
-	//String attributes;
+	String token;
+	String type;	
 	String[][] attributes;
-	//ArrayList<String> attributes = new ArrayList<String>();
 	int offset;
 	String label;
 	int level;
@@ -33,18 +30,36 @@ public class Symbol {
 		this.label = null;
 	}
 	
+	/**
+	 * get the lexeme of the symbol
+	 * @return the lexeme
+	 */
 	public String getName() {
 		return this.name;
 	}
 	
+	/**
+	 * get the token(var, function...) of the symbol
+	 * @return the token type
+	 */
 	public String getToken() {
 		return this.token;
 	}
 	
+	/**
+	 * get the address(offset of runtime memory stack) of the symbol
+	 * call helper method
+	 * @return string representing the address offset
+	 */
 	public String getAddress() {
 		return getAddress(true);
 	}
 	
+	/**
+	 * get the address(offset of runtime memory stack) of the symbol
+	 * dereferenced immediately if it is of type var
+	 * @return string representing the address offset
+	 */
 	public String getAddress(boolean dereferenced) {
 		String address = offset+"(D"+parent.getLevel()+")";
 		if (token=="var" && dereferenced) {
@@ -53,14 +68,26 @@ public class Symbol {
 		return address;
 	}
 	
+	/**
+	 * get the level of the symbol
+	 * @return the level
+	 */
 	public int getLevel() {
 		return parent.getLevel();
 	}
 	
+	/**
+	 * get the offset of the symbol
+	 * @return the offset
+	 */
 	public int getOffset() {
 		return offset;
 	}
 	
+	/**
+	 * get the attributes of the symbol
+	 * @return the attributes
+	 */
 	public String[] getAttribute(int index) {
 		if (attributes.length>index)
 			return attributes[index];
@@ -68,6 +95,10 @@ public class Symbol {
 			return null;
 	}
 	
+	/**
+	 * get the attribute address of the symbol
+	 * @return the String representing the nesting level
+	 */
 	public String getAttributeAddress(int index) {
 		return index+"(D"+level+")";
 	}
@@ -110,10 +141,19 @@ public class Symbol {
 		System.out.println("");
 	}
 	
+	/**
+	 * get the type of the symbol as a string
+	 * @return the type
+	 */
 	public String getTypeString() {
 		return type;
 	}
 	
+	/**
+	 * get the enumerated type of the symbol as a 
+	 * semantic record type
+	 * @return the SR type
+	 */
 	public SR getType() {
 		SR sr = null;
 		switch(type) {

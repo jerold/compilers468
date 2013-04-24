@@ -10,32 +10,62 @@ public class Table {
 	private int level = 0;
 	private int address;
 	
+	/**
+	 * singleton constructor for the Table
+	 * 
+	 * @param parent	referenced parent table
+	 */
 	private Table(Table parent) {
 		this.parent = parent;
 	}
+	
+	/**
+	 * get the root instance of the Table
+	 * @return the root of the Table
+	 */
 	
 	public static Table rootInstance() {
 		return root;
 	}
 	
+	/**
+	 * destroys the symbol table -- needed to test 
+	 * multiple files in the test suite
+	 */
 	public static void clear() {
 		root = new Table(null);
 	}
 	
+	/**
+	 * add a new table to the table hierarchy
+	 * @return the full table hierarchy
+	 */
 	public Table createScope() {
 		Table table = new Table(this);
 		table.level = (this.level+1);
 		return table;
 	}
 	
+	/**
+	 * get the level of the symbol table
+	 * @return the level of the symbol table currently in scope
+	 */
 	public int getLevel() {
 		return this.level;
 	}
 	
+	/**
+	 * set the contents of the register for the current level
+	 * @param address	the address of a variable
+	 */
 	public void setAddress(int address) {
 		this.address = address;
 	}
 	
+	/**
+	 * get the contents of the register for the current level
+	 * @return	the address of a variable
+	 */
 	public int getAddress() {
 		return address;
 	}
@@ -53,6 +83,11 @@ public class Table {
 		}
 	}
 	
+	/**
+	 * find the element in a table by searching on type
+	 * @param lookAhead the token being searched for
+	 * @return	the symbol associated with parameter Token
+	 */
 	public Symbol findSymbol(Token lookAhead) {
 		Symbol s = findSymbol(lookAhead.getLexeme(), "var");
 		if (s==null)
