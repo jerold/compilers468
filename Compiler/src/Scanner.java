@@ -1,10 +1,13 @@
 public class Scanner {
+	
 	private static FilePointer fp;
 	private static String[] resWords;
 	private boolean error;
-	//didn't need this with the solution David and Clark came up with
-	//private boolean warning;
 	private static boolean recCall;  //flag for recursive call in findLexemeString()
+	
+	/**
+	 * constructor initialized resWords with the reserved words
+	 */
 	public Scanner() {
 		// array containing the reserved words of the language
 		resWords = new String[] { "and", "begin", "div", "do", "downto",
@@ -15,25 +18,36 @@ public class Scanner {
 				"type", "vector", "array", "..", "of" };
 	}
 
+	/**
+	 * get a reference to the input text file
+	 * @param fileIn	assigned to fp
+	 */
 	public void openFile(String fileIn) {
 		fp = new FilePointer(fileIn);
 	}
 	
+	/**
+	 * get the reference to the input file
+	 * @return the reference to the input file
+	 */
 	public FilePointer getFP(){
 		return fp;
 	}
 
-	// Driver which skips white space and then kicks off the right lexeme parser
-	// a Token is the constructed from the lexeme and returned to the driver
+	/**
+	 * Driver which skips white space and then kicks off the right lexeme parser
+	 * a Token is then constructed from the lexeme and returned to the driver
+	 * the switch statement handles all of the cases in token scanning
+	 * 
+	 * @return	the next lexeme in the input file
+	 */
 	public Token getToken() {
 		//set error flag to false
 		error = false;
-		//warning = false;
 		// skip white space
 		fp.skipWhiteSpace();
-
+		//get the next character in file
 		char nextChar = fp.peekNext();
-		// System.out.println("Next Char [" + nextChar + "]");
 
 		String lexeme = null;
 		String id = null;
@@ -41,6 +55,8 @@ public class Scanner {
 		int columnNumber = fp.getColumnNumber();
 		// Single char length symbols can all be matched
 		// with fetchLexemeSymbol()
+		// otherwise the correct method to package the lexeme
+		// is called
 		switch (nextChar) {
 			case '[':
 				lexeme = fetchLexemeSymbol();
@@ -118,17 +134,10 @@ public class Scanner {
 				break;
 			// handles a comment
 			case '{':
-				// nextChar = fp.getNext();
 				lexeme = fetchLexemeComment();
-				// should return a warning vs an error in the future, now just an error
 				if (error) {
 					id = "mp_run_comment";
 				}
-				//now handle this in the fetchLexemeComment() function to print the error directly
-				//} else if (warning) {
-				//	id = "mp_run_comment";
-					
-				//}
 				break;
 			case '}':
 				lexeme = "" + fp.getNext();
@@ -241,7 +250,6 @@ public class Scanner {
 				}
 				break;
 			default:
-				// This is very strange...
 				//package the next char(not valid in the language) as an error token and 
 				//pass it to the parser
 				lexeme = "" + fp.getNext();
@@ -261,17 +269,27 @@ public class Scanner {
 		return t;
 	}
 
-	// Mystery Method
+	/**
+	 * get the flag marking end of file
+	 * @return the endofFile flag
+	 */
 	public boolean endOfFile() {
 		return fp.endOfFile();
 	}
 
+	/**
+	 * 
+	 * @return	the next lexeme in the file
+	 */
 	public String fetchLexemeSymbol() {
 		String lex = "" + fp.getNext();
-		// System.out.print("fetchLexemeSymbol    :  ");
 		return lex;
 	}
 
+	/**
+	 * package up a lexeme that starts with open carrot
+	 * @return	the lexeme
+	 */
 	public String fetchLexemeOpenCarrot() {
 		String lex = "" + fp.getNext();
 		char newChar = fp.peekNext();
@@ -284,10 +302,13 @@ public class Scanner {
 		} else {
 			fp.setPeekToBufferColumn();
 		}
-		// System.out.print("fetchLexemeOpenCarrot:  ");
 		return lex;
 	}
 
+	/**
+	 * package up a lexeme that starts with close carrot
+	 * @return	the lexeme
+	 */
 	public String fetchLexemeCloseCarrot() {
 		String lex = "" + fp.getNext();
 		char newChar = fp.peekNext();
@@ -297,10 +318,13 @@ public class Scanner {
 		} else {
 			fp.setPeekToBufferColumn();
 		}
-		// System.out.print("fetchLexemeCloseCarrot:  ");
 		return lex;
 	}
 	
+	/**
+	 * package up a lexeme that starts with period
+	 * @return	the lexeme
+	 */
 	public String fetchLexemePeriod() {
 		String lex = "" + fp.getNext();
 		char newChar = fp.peekNext();
@@ -310,10 +334,13 @@ public class Scanner {
 		} else {
 			fp.setPeekToBufferColumn();
 		}
-		// System.out.print("fetchLexemeColonOrAssignment:  ");
 		return lex;
 	}
 
+	/**
+	 * package up a lexeme that starts with colon
+	 * @return	the lexeme
+	 */
 	public String fetchLexemeColon() {
 		String lex = "" + fp.getNext();
 		char newChar = fp.peekNext();
@@ -323,10 +350,13 @@ public class Scanner {
 		} else {
 			fp.setPeekToBufferColumn();
 		}
-		// System.out.print("fetchLexemeColonOrAssignment:  ");
 		return lex;
 	}
 
+	/**
+	 * package up a lexeme that is an identifier
+	 * @return	the lexeme
+	 */
 	public String fetchLexemeIdentifier() {
 		String lex = "" + fp.getNext();
 		boolean sameToken = true;
@@ -349,12 +379,16 @@ public class Scanner {
 		if (lex.endsWith("_")){
 			error = true;
 		}
-		// System.out.print("fetchLexemeIdentifier:  ");
 		// send all identifiers to the parser in lower case
-		//because language is case insensitive
+		//because language is not case insensitive
 		return lex.toLowerCase();
 	}
 
+	/**
+	 * package up a lexeme that is a number
+	 * this can be an intlit floatlit or fixedlit
+	 * @return	the lexeme
+	 */
 	public String fetchLexemeNumber() {
 		String lex = "" + fp.getNext();
 		boolean sameToken = true;
@@ -383,10 +417,15 @@ public class Scanner {
 				sameToken = false;
 			}
 		}
-		// System.out.print("fetchLexemeInteger:  ");
 		return lex;
 	}
 
+	/**
+	 * package up a lexeme that is a floatlit
+	 * 
+	 * @param	the first part of the number up to the e
+	 * @return	the lexeme
+	 */
 	public String fetchLexemeFloatLit(String leftSide) {
 		String lex = "" + fp.getNext();
 		char newChar = fp.peekNext();
@@ -426,7 +465,7 @@ public class Scanner {
 		}
 		return -1;
 	}
-	/*
+	/**
 	 * Strings now handled. There are three cases handled here
 	 * 1--the string is legal and is a string_lit
 	 * 2--the string is legal with escape char used if apostrophe used in string
@@ -436,7 +475,8 @@ public class Scanner {
 	 * 	  the remainder of the string is scanned as if not a string and the parser deals with
 	 *    any tokens sent to it(most likely not valid) when the intended string closing apostrophe 
 	 *    is reached end of line will be reached and run_string token will be sent
-	 *    this case is now the first line in testFile.txt
+	 *    
+	 *    @return	the lexeme 
 	 */
 	public String fetchLexemeString() {
 		String lex = "" + fp.getNext();
@@ -462,6 +502,10 @@ public class Scanner {
 		}
 	}
 	
+	/**
+	 * package up a lexeme that is a comment
+	 * @return	the lexeme
+	 */
 	public String fetchLexemeComment() {
 		String lex = "" + fp.getNext();
 		while (fp.peekNext() != '}') {
@@ -480,7 +524,6 @@ public class Scanner {
 			lex = lex + fp.getNext();
 		}
 		fp.getNext();
-		//fp.getNext();
 		return null;
 	}
 	
