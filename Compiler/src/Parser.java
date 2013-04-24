@@ -13,39 +13,57 @@ public class Parser {
 	private Symbol passSymbol;
 	private SR sr;
 	
+	/**
+	 * Constructor for the parser
+	 * 
+	 * @param scanner	A scanner object for the language
+	 * @param compiler	A compiler object for the language
+	 */
 	public Parser(Scanner scanner, Compiler compiler) {
 		this.scanner = scanner;
 		this.compiler = compiler;
 		retValues = null;
 	}
 
+	/**
+	 * Starts parsing and semantic analysis given the program scanned in by the scanner.
+	 * 
+	 * @return	code indicating success or failure
+	 */
 	public int run() {
+		
+		// reset the symbol table and get the first token
 		Table.clear();
 		lookAhead = scanner.getToken();
-		int i = 0;
-		// lookAhead would be null if comment opens the program
+		
+		// skip to first valid lookahead (start comment returns null)
 		while (lookAhead == null) {
 			lookAhead = scanner.getToken();
 		}
-		i = start();
 		
+		// call root of CFG
+		int i = start();
 		
-		if(i == 1) {
-			// Silence is golden.
-			//System.out.println("File Parsed successfully!");
-		} else {
+		// print errors or write file if successful
+		if(i != 1) {
 			System.out.println("File Did Not Parse successfully!");
-		}
-		if (compiler.checkOK()) {
-			// Silence is golden.
-			//System.out.println("File Compiled successfully!");
-		} else {
+		} else if (!compiler.checkOK()) {
 			System.out.println("File Did Not Compile successfully...");
+		} else {
+			compiler.writeFile();
 		}
-		compiler.writeFile();
+		
+		// return error code
 		return i;
 	}
 
+	
+	/**
+	 * Error handler used during parse.
+	 * 
+	 * @param matchError	Flag indicating whether or not the error is of type match
+	 * @param s				The string to append to the error
+	 */
 	private void handleError(boolean matchError, String s) {
 		compiler.turnOff();
 		if (matchError) {
@@ -54,17 +72,12 @@ public class Parser {
 			System.out.println("Expected \"" + s + "\" but found \"" + errorToken
 					+ "\" on line " + lookAhead.getLineNum() + " in column "
 					+ lookAhead.getColNum() + ".");
-			// get the next token and keep trying
-			// at some point we will have to determine the appropriate method to
-			// call after getting the next token
 			lookAhead = scanner.getToken();
 			while (lookAhead == null){
 				lookAhead = scanner.getToken();
 			}
 		} else {
 			if (lookAhead == null) {
-				// this happens with a valid comment. we just want the next
-				// token and continue
 				lookAhead = scanner.getToken();
 			} else {
 				parseError = true;
@@ -77,6 +90,9 @@ public class Parser {
 
 	}
 	
+	/**
+	 * Error handler specifically for undefined variables.
+	 */
 	private void handleErrorUndefined() {
 		compiler.turnOff();
 		System.out.println("Error: Unedefined variable \""+
@@ -85,6 +101,11 @@ public class Parser {
 							lookAhead.getColNum()+".");
 	}
 	
+	/**
+	 * General error handler used as a catch-all.
+	 * 
+	 * @param description	The text to append to error and line number
+	 */
 	private void handleErrorGeneral(String description) {
 		compiler.turnOff();
 		System.out.println("Error on line "+lookAhead.getLineNum()+
@@ -92,12 +113,22 @@ public class Parser {
 							": "+description);
 	}
 	
+	/**
+	 * General warning used as a catch-all.
+	 * 
+	 * @param description	The text to append to warning and line number
+	 */
 	private void handleWarningGeneral(String description) {
 		System.out.println("Warning` on line "+lookAhead.getLineNum()+
 							" in column "+lookAhead.getColNum()+
 							": "+description);
 	}
 	
+	/**
+	 * Error used for invalid variable names.
+	 * 
+	 * @param var	Name of the variable with invalid name
+	 */
 	private void invalidVariableName(String var) {
 		compiler.turnOff();
 		parseError = true;
@@ -109,6 +140,11 @@ public class Parser {
 		System.out.println("----------------");
 	}
 	
+	/**
+	 * Error used for undeclared variables.
+	 * 
+	 * @param var	The name of the variable that was not declared
+	 */
 	private void undeclaredVariableError(String var) {
 		compiler.turnOff();
 		parseError = true;
@@ -121,6 +157,11 @@ public class Parser {
 		System.out.println("----------------");
 	}
 
+	/**
+	 * Matches the lexeme if lookahead matches, otherwise throws an error.
+	 * 
+	 * @param s	The lexeme that should be matched
+	 */
 	private void match(String s) {
 		if (s.equals(lookAhead.getLexeme())) {
 			lookAhead = scanner.getToken();
@@ -182,7 +223,7 @@ public class Parser {
 	}
 
 	/**
-	 * >> "program" ProgramIdentifier
+	 * >> "program" Identifier
 	 */
 	private void programHeading() {
 		switch (lookAhead.getIdentifier()) {
@@ -199,7 +240,7 @@ public class Parser {
 	}
 
 	/**
-	 * >> VariableDeclarationPart ProcedureAndFunctionDeclarationPart StatementPart
+	 * >> [ VariableDeclarationPart ] [ ProcedureAndFunctionDeclarationPart ] StatementPart
 	 */
 	private void block() {
 		switch (lookAhead.getIdentifier()) {
@@ -219,7 +260,8 @@ public class Parser {
 	}
 
 	/**
-	 * >> "var" VariableDeclaration ";" VariableDeclarationTail
+	 * >> "var" VariableDeclaration ";" [ VariableDeclaration ";" ]*
+	 * >> ProcedureAndFunctionDeclarationPart
 	 */
 	private void variableDeclarationPart() {
 		switch (lookAhead.getIdentifier()) {
@@ -243,7 +285,7 @@ public class Parser {
 	}
 	
 	/**
-	 * >> Identifierlist ":" Type
+	 * >> IdentifierList ":" Type
 	 */
 	private void variableDeclaration() {
 		switch (lookAhead.getIdentifier()) {
@@ -252,6 +294,7 @@ public class Parser {
 				match(":");
 				type = type();
 				ListIterator<String> iter = retValues.listIterator();
+				// add variables to symbol table
 				while(iter.hasNext()){
 					String name = iter.next();
 					if(!symbolTable.inTable(name,true)) {
@@ -286,9 +329,11 @@ public class Parser {
 			default:
 				return;
 		}
-
 	}
 
+	/**
+	 * >> CompoundStatement
+	 */
 	private void statementPart() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_begin":
@@ -297,9 +342,16 @@ public class Parser {
 			default:
 				handleError(false, "Statement Part");
 		}
-
 	}
 
+	/**
+	 * >> "mp_integer"
+	 * >> "mp_float"
+	 * >> "mp_string"
+	 * >> "mp_boolean"
+	 * 
+	 * @return	The variable type that was matched
+	 */
 	private String type() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_integer":
@@ -318,23 +370,23 @@ public class Parser {
 				handleError(false, "Type");
 				return null;
 		}
-
 	}
 
 	/**
-	 * >> ProcedureHeading ";" Block ";"
+	 * >> ProcedureHeading ";" Block
 	 */
 	private void procedureDeclaration() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_procedure":
+				// compile code
 				symbolTable = symbolTable.createScope();
 				String endprocedure = compiler.skipLabel();
 				compiler.branch(endprocedure);
-				
+				// continue parsing
 				procedureHeading();
 				match(";");
 				block();
-				
+				// compile code
 				compiler.move("D"+symbolTable.getLevel(), "SP");
 				compiler.pop("D"+symbolTable.getLevel());
 				compiler.returnCall();
@@ -344,34 +396,33 @@ public class Parser {
 			default:
 				handleError(false, "Procedure Declaration");
 		}
-
 	}
 
 	/**
-	 * >>  FunctionHeading ";" Block ";"
+	 * >>  FunctionHeading ";" Block
 	 */
 	private void functionDeclaration() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_function":
+				// compile code
 				symbolTable = symbolTable.createScope();
 				String endlabel = compiler.skipLabel();
 				compiler.branch(endlabel);
+				// continue parsing
 				functionHeading();
-				
 				// find the return variable and store address of behind PC
 				Symbol f = symbolTable.findSymbol(symbolTable.getTitle(),"var");
 				compiler.subtract("D"+symbolTable.getLevel(), 
 								"#3", 
 								f.getOffset()+"(D"+symbolTable.getLevel()+")");
-				
+				// continue parsing
 				match(";");
 				block();
-				
+				// compile code
 				Symbol p = symbolTable.getParent().findSymbol(symbolTable.getTitle(),"function");
 				if (f==null || p==null) {
 					handleErrorGeneral("Function not declared in this scope");
 				} else {
-					
 					compiler.move("D"+symbolTable.getLevel(), "SP");
 					compiler.pop("D"+symbolTable.getLevel());
 					compiler.returnCall();
@@ -386,7 +437,7 @@ public class Parser {
 	}
 
 	/**
-	 * >>  "procedure" procedureIdentifier FormalParameterList
+	 * >>  "procedure" Identifier [ FormalParameterList ]
 	 */
 	private void procedureHeading() {
 		switch (lookAhead.getIdentifier()) {
@@ -409,7 +460,7 @@ public class Parser {
 	}
 
 	/**
-	 * >>  "function" functionIdentifier FormalParameterList Type
+	 * >>  "function" Identifier [ FormalParameterList ] ":" Type
 	 */
 	private void functionHeading() {
 		switch (lookAhead.getIdentifier()) {
@@ -435,11 +486,10 @@ public class Parser {
 			default:
 				handleError(false, "Function Heading");
 		}
-
 	}
 
 	/**
-	 * >>  "(" FormalParameterSection FormalParameterSectionTail ")"
+	 * >>  "(" FormalParameterSection [ ";" FormalParameterSection ]* ")"
 	 */
 	private void formalParameterList() {
 		switch (lookAhead.getIdentifier()) {
@@ -483,6 +533,7 @@ public class Parser {
 				retValues = identifierList();
 				match(":");
 				type =  type();
+				// insert variables into symbol table
 				ListIterator<String> iter = retValues.listIterator();
 				while(iter.hasNext()){
 					symbolTable.insert(iter.next(),"value", type, null);
@@ -504,6 +555,7 @@ public class Parser {
 				retValues = identifierList();
 				match(":");
 				type = type();
+				// insert variables into symbol table
 				ListIterator<String> iter = retValues.listIterator();
 				while(iter.hasNext()){
 					symbolTable.insert(iter.next(),"var", type, null);
@@ -517,7 +569,7 @@ public class Parser {
 	}
 
 	/**
-	 * >> begin StatementSequence "end"
+	 * >> begin StatementSequence "end" [ ";" ]
 	 */
 	private void compoundStatement() {
 		switch (lookAhead.getIdentifier()) {
@@ -525,7 +577,7 @@ public class Parser {
 				match("begin");
 				statementSequence();
 				match("end");
-				if(lookAhead.getIdentifier().equalsIgnoreCase("mp_scolon")){
+				if(lookAhead.getIdentifier().equalsIgnoreCase("mp_scolon")) {
 					match(";");
 				}
 				break;
@@ -537,6 +589,7 @@ public class Parser {
 
 	/**
 	 * >> Statement StatementTail
+	 * >> empty
 	 */
 	private void statementSequence() {
 		switch (lookAhead.getIdentifier()) {
@@ -561,7 +614,9 @@ public class Parser {
 	}
 	
 	/**
-	 * >>  ";" Statement StatementTail
+	 * >> Statement StatementTail
+	 * >> ";" Statement StatementTail
+	 * >> empty
 	 */
 	private void statementTail() {
 		switch (lookAhead.getIdentifier()) {
@@ -593,7 +648,6 @@ public class Parser {
 	}
 	
 	/**
-	 * >>  EmptyStatement
 	 * >>  CompoundStatement
 	 * >>  ReadStatement
 	 * >>  WriteStatement
@@ -603,6 +657,8 @@ public class Parser {
 	 * >>  RepeatStatement
 	 * >>  ForStatement
 	 * >>  ProcedureStatement
+	 * >>  FunctionDesignator
+	 * >>  empty
 	 */
 	private void statement() {
 		switch (lookAhead.getIdentifier()) {
@@ -653,8 +709,7 @@ public class Parser {
 	}
 	
 	/**
-	 * >> empty
-	 * (modified)
+	 * >> [ ";" ]*
 	 */
 	private void emptyStatement() {
 		while(lookAhead.getIdentifier().equals("mp_scolon")){
@@ -663,7 +718,7 @@ public class Parser {
 	}
 
 	/**
-	 * >>  "read" readParameterList
+	 * >>  "read" ReadParameterList
 	 */
 	private void readStatement() {
 		switch (lookAhead.getIdentifier()) {
@@ -674,16 +729,15 @@ public class Parser {
 			default:
 				handleError(false, "Read Statement");
 		}
-
 	}
 
 	/**
-	 * >>  write writeParameterList
-	 * >>  writeln writeParameterList
+	 * >>  "write" WriteParameterList
+	 * >>  "writeln" WriteParameterList
 	 */
 	private void writeStatement() {
 		switch (lookAhead.getIdentifier()) {
-			case "mp_write": // writeStatement -> "write", writeParameterList
+			case "mp_write":
 				match("write");
 				writeParameterList();
 				break;
@@ -695,39 +749,36 @@ public class Parser {
 			default:
 				handleError(false, "Write Statement");
 		}
-
 	}
 
 	/**
-	 * >>  VariableIdentifier ":=" Expression
-	 * >>  FunctionIdentifier ":=" Expression
+	 * >>  Variable ":=" Expression
+	 * >>  Variable FunctionDesignatorTail
 	 */
 	private void assignmentStatement() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_identifier": // assignmentStatement -> (Variable|FunctionIdentifier), ":=", expression
-				Symbol symbol = symbolTable.findSymbol(lookAhead);
 				
+				Symbol symbol = symbolTable.findSymbol(lookAhead);
 				if (symbol==null) {
 					handleError(false, "Variable not found");
 					break;
 				}
-				
 				String lex = lookAhead.getLexeme();
 				
+				// found a variable
 				if (symbol.getToken()=="var" || symbol.getToken()=="value") {
 					variable();
 				} else {
 					undeclaredVariableError(lookAhead.getLexeme());
 					lookAhead = scanner.getToken();
 				}
-				
 				// not actually an assignment, just a stand-alone recursive function call
 				if (lookAhead.getLexeme().equals("(")) {
 					passSymbol = symbolTable.findSymbol(lex,"var");
 					functionDesignatorTail();
 					break;
 				}
-				
 				match(":=");
 				sr = expression();
 				SR src = sr;
@@ -735,7 +786,6 @@ public class Parser {
 				if (dst==null) {
 					handleErrorGeneral("Variable type not recognized.");
 				}
-				
 				
 				if (src.checkIntlit()) {
 					if (dst.checkIntlit()) {
@@ -789,7 +839,7 @@ public class Parser {
 	}
 
 	/**
-	 * >> if BooleanExpression "then" Statement {else Statement}
+	 * >> "if" BooleanExpression "then" Statement EmptyStatement [ "else" Statement EmptyStatement ]
 	 */
 	private void ifStatement() {
 		switch (lookAhead.getIdentifier()) {
@@ -814,11 +864,10 @@ public class Parser {
 			default:
 				handleError(false, "If Statement");
 		}
-
 	}
 
 	/**
-	 * >> repeat StatementSequence "until" BooleanExpression
+	 * >> "repeat" StatementSequence [ ";" ] "until" BooleanExpression
 	 */
 	private void repeatStatement() {
 		switch (lookAhead.getIdentifier()) {
@@ -839,7 +888,7 @@ public class Parser {
 	}
 
 	/**
-	 * >> while BooleanExpression "do" Statement
+	 * >> "while" BooleanExpression "do" Statement EmptyStatement
 	 */
 	private void whileStatement() {
 		switch (lookAhead.getIdentifier()) {
@@ -861,7 +910,7 @@ public class Parser {
 	}
 
 	/**
-	 * >> for ControlVariable ":=" InitialValue StepValue FinalValue "do" Statement
+	 * >> "for" ControlVariable ":=" InitialValue ("to"|"downto") FinalValue "do" Statement EmptyStatement
 	 */
 	private void forStatement() {
 		switch (lookAhead.getIdentifier()) {
@@ -1222,7 +1271,7 @@ public class Parser {
 	}
 
 	/**
-	 * >> OptionalSign Term TermTail
+	 * >> [ Sign ] Term [ AddingOperator Term ]*
 	 * 
 	 * @return	Type of variable left on stack
 	 */
@@ -1250,6 +1299,7 @@ public class Parser {
 			default:
 				handleError(false, "simple Expression");
 		}
+		// if the sign was negative
 		if (negative) {
 			if (sr.checkIntlit()) {
 				compiler.negateStack();
@@ -1361,7 +1411,7 @@ public class Parser {
 	}
 
 	/**
-	 * >> Factor {MultiplyingOperator Factor FactorTail}
+	 * >> Factor [ MultiplyingOperator Factor ]*
 	 * 
 	 * @return	Type of variable left on stack
 	 */
@@ -1602,10 +1652,11 @@ public class Parser {
 
 	/**
 	 * >> UnsignedInteger
-	 * >> VariableIdentifier
-	 * >> not Factor
+	 * >> Variable [ FunctionDesignatorTail ]
+	 * >> FunctionDesignator
+	 * >> Identifier
+	 * >> not SimpleExpression
 	 * >> "(" Expression ")"
-	 * >> FunctionDesignatorTail
 	 * 
 	 * @return	Type of variable left on stack
 	 */
@@ -1687,12 +1738,12 @@ public class Parser {
 	}
 
 	/**
-	 * >> "="
-	 * >> "<"
-	 * >> ">"
-	 * >> "<="
-	 * >> ">="
-	 * >> "<>"
+	 * >> "mp_equal"
+	 * >> "mp_lthan"
+	 * >> "mp_gthan"
+	 * >> "mp_lequal"
+	 * >> "mp_gequal"
+	 * >> "mp_nequal"
 	 */
 	private void relationalOperator() {
 		switch (lookAhead.getIdentifier()) {
@@ -1720,9 +1771,9 @@ public class Parser {
 	}
 
 	/**
-	 * >> "+"
-	 * >> "-"
-	 * >> "or"
+	 * >> "mp_plus"
+	 * >> "mp_minus"
+	 * >> "mp_or"
 	 */
 	private void addingOperator() {
 		switch (lookAhead.getIdentifier()) {
@@ -1741,11 +1792,11 @@ public class Parser {
 	}
 
 	/**
-	 * >> "*"
-	 * >> "div"
-	 * >> "/"
-	 * >> "mod"
-	 * >> "and"
+	 * >> "mp_times"
+	 * >> "mp_div"
+	 * >> "mp_divide_float"
+	 * >> "mp_mod"
+	 * >> "mp_and"
 	 */
 	private void multiplyingOperator() {
 		switch (lookAhead.getIdentifier()) {
@@ -1770,11 +1821,11 @@ public class Parser {
 	}
 	
 	/**
-	 * >> ProcedureIdentifier {actualParameterList}
+	 * >> ProcedureIdentifier [ ActualParameterList ]
 	 */
 	private void procedureStatement() {
 		switch (lookAhead.getIdentifier()) {
-			case "mp_identifier": // procedureStatement -> procedureIdentifier, // [actualParameterList]
+			case "mp_identifier":
 				passSymbol = symbolTable.findSymbol(lookAhead.getLexeme(), "procedure");
 				procedureIdentifier();
 				break;	
@@ -1800,8 +1851,7 @@ public class Parser {
 	}
 
 	/**
-	 * >> FunctionIdentifier
-	 * >> FunctionDesignatorTail
+	 * >> FunctionIdentifier FunctionDesignatorTail
 	 * 
 	 * @return	The return type of the function left on the stack
 	 */
@@ -1820,7 +1870,7 @@ public class Parser {
 	}
 	
 	/**
-	 * >> empty
+	 * >> [ ActualParameterList ]
 	 */
 	private void functionDesignatorTail() {
 		switch (lookAhead.getIdentifier()) {
@@ -1866,7 +1916,7 @@ public class Parser {
 	}
 
 	/**
-	 * >> variableIdentifier
+	 * >> VariableIdentifier
 	 * 
 	 * @return
 	 */
@@ -1887,7 +1937,7 @@ public class Parser {
 	}
 	
 	/**
-	 * >>  "(" ActualParameter ActualParameterTail ")"
+	 * >>  "(" ActualParameter [ "," ActualParameter ]* ")"
 	 * 
 	 * @return	number of parameters seen
 	 */
@@ -2027,7 +2077,7 @@ public class Parser {
 	}
 
 	/**
-	 * >> "(" readParameter [ "," readParameter ]*
+	 * >> "(" ReadParameter [ "," ReadParameter ]* ")"
 	 */
 	private void readParameterList() {
 		switch (lookAhead.getIdentifier()) {
@@ -2071,7 +2121,7 @@ public class Parser {
 	}
 
 	/**
-	 *  >> "(" writeParameter [ "," writeParameter ]*
+	 *  >> "(" WriteParameter [ "," WriteParameter ]* ")"
 	 */
 	private void writeParameterList() {
 		switch (lookAhead.getIdentifier()) {
@@ -2093,7 +2143,7 @@ public class Parser {
 	}
 
 	/**
-	 *   >> OrdinalExpression
+	 *   >> Expression
 	 */
 	private void writeParameter() {
 		switch (lookAhead.getIdentifier()) {
@@ -2114,7 +2164,7 @@ public class Parser {
 				handleError(false, "Write");
 		}
 		
-		// >> perform write
+		// perform write
 		if (sr.checkBool()) {
 			compiler.push("#1");
 			compiler.compareEqualStack();
@@ -2134,7 +2184,7 @@ public class Parser {
 	}
 
 	/**
-	 *  >> Expression
+	 *  >> OrdinalExpression
 	 */
 	private void booleanExpression() {
 		switch (lookAhead.getIdentifier()) {
@@ -2191,7 +2241,7 @@ public class Parser {
 	}
 
 	/**
-	 *  >> Identifier
+	 *  >> [ Identifier ]
 	 */
 	private void procedureIdentifier() {
 		switch (lookAhead.getIdentifier()) {
@@ -2206,7 +2256,7 @@ public class Parser {
 	}
 	
 	/**
-	 *  >> Identifier
+	 *  >> [ Identifier ]
 	 * 
 	 * @return	The return type of the function found
 	 */
@@ -2224,7 +2274,7 @@ public class Parser {
 	}
 
 	/**
-	 *  >> identifier IdentifierTail
+	 *  >> Identifier [ "," Identifer ]*
 	 * 
 	 * @return	The list of lexemes seen in the list
 	 */
@@ -2247,7 +2297,7 @@ public class Parser {
 	}
 
 	/**
-	 * >> "identifier"
+	 * >> "mp_identifier"
 	 * >> "mp_string_lit"
 	 * >> "mp_int_lit"
 	 * >> "mp_fixed_lit"
@@ -2303,8 +2353,8 @@ public class Parser {
 	}
 
 	/**
-	 * >> "+"
-	 * >> "-"
+	 * >> "mp_plus"
+	 * >> "mp_minus"
 	 */
 	private void sign() {
 		switch (lookAhead.getIdentifier()) {
@@ -2321,7 +2371,7 @@ public class Parser {
 	}
 	
 	/**
-	 * >> empty
+	 * >> "mp_integer_lit"
 	 */
 	private void digitSequence() {
 		switch (lookAhead.getIdentifier()) {
