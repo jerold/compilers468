@@ -132,32 +132,40 @@ public class Parser {
 		}
 	}
 
+	/**
+	 * >> Program EOF
+	 * 
+	 * @return code indicating success or failure
+	 */
 	private int start() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_program":
-			compiler.move("#0", "D0");
-			compiler.move("#0", "D1");
-			compiler.move("#0", "D2");
-			compiler.move("#0", "D3");
-			compiler.move("#0", "D4");
-			compiler.move("#0", "D5");
-			compiler.move("#0", "D6");
-			compiler.move("#0", "D7");
-			compiler.move("#0", "D8");
-			compiler.move("#0", "D9");
-			program();
-			match("eof");
-			compiler.halt();
-			if(parseError){
+			case "mp_program":
+				compiler.move("#0", "D0");
+				compiler.move("#0", "D1");
+				compiler.move("#0", "D2");
+				compiler.move("#0", "D3");
+				compiler.move("#0", "D4");
+				compiler.move("#0", "D5");
+				compiler.move("#0", "D6");
+				compiler.move("#0", "D7");
+				compiler.move("#0", "D8");
+				compiler.move("#0", "D9");
+				program();
+				match("eof");
+				compiler.halt();
+				if(parseError){
+					return 0;
+				} else {
+					return 1;
+				}
+			default:
 				return 0;
-			} else {
-				return 1;
-			}
-		default:
-			return 0;
 		}
 	}
 
+	/**
+	 * >> ProgramHeading ";" Block "."
+	 */
 	private void program() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_program":
@@ -173,6 +181,9 @@ public class Parser {
 
 	}
 
+	/**
+	 * >> "program" ProgramIdentifier
+	 */
 	private void programHeading() {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_program":
@@ -187,6 +198,9 @@ public class Parser {
 
 	}
 
+	/**
+	 * >> VariableDeclarationPart ProcedureAndFunctionDeclarationPart StatementPart
+	 */
 	private void block() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_var":
@@ -204,6 +218,9 @@ public class Parser {
 		}
 	}
 
+	/**
+	 * >> "var" VariableDeclaration ";" VariableDeclarationTail
+	 */
 	private void variableDeclarationPart() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_var":
@@ -224,7 +241,38 @@ public class Parser {
 				handleError(false, "Variable Declaration Part");
 		}
 	}
+	
+	/**
+	 * >> Identifierlist ":" Type
+	 */
+	private void variableDeclaration() {
+		switch (lookAhead.getIdentifier()) {
+			case "mp_identifier":
+				retValues = identifierList();
+				match(":");
+				type = type();
+				ListIterator<String> iter = retValues.listIterator();
+				while(iter.hasNext()){
+					String name = iter.next();
+					if(!symbolTable.inTable(name,true)) {
+						symbolTable.insert(name,"value", type, null);
+					} else {
+						invalidVariableName(name);
+					}
+				}
+				retValues.clear();  //clear retValues after it is used each time
+				break;
+			default:
+				handleError(false, "Variable Declaration");
+		}
 
+	}
+
+	/**
+	 * >>  ProcedureDeclaration ProcedureAndFunctionDeclarationPart
+	 * >>  FunctionDeclaration ProcedureAndFunctionDeclarationPart
+	 * >>  empty
+	 */
 	private void procedureAndFunctionDeclarationPart() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_function":
@@ -252,29 +300,6 @@ public class Parser {
 
 	}
 
-	private void variableDeclaration() {
-		switch (lookAhead.getIdentifier()) {
-			case "mp_identifier":
-				retValues = identifierList();
-				match(":");
-				type = type();
-				ListIterator<String> iter = retValues.listIterator();
-				while(iter.hasNext()){
-					String name = iter.next();
-					if(!symbolTable.inTable(name,true)) {
-						symbolTable.insert(name,"value", type, null);
-					} else {
-						invalidVariableName(name);
-					}
-				}
-				retValues.clear();  //clear retValues after it is used each time
-				break;
-			default:
-				handleError(false, "Variable Declaration");
-		}
-
-	}
-
 	private String type() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_integer":
@@ -296,6 +321,9 @@ public class Parser {
 
 	}
 
+	/**
+	 * >> ProcedureHeading ";" Block ";"
+	 */
 	private void procedureDeclaration() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_procedure":
@@ -319,6 +347,9 @@ public class Parser {
 
 	}
 
+	/**
+	 * >>  FunctionHeading ";" Block ";"
+	 */
 	private void functionDeclaration() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_function":
@@ -354,6 +385,9 @@ public class Parser {
 		}
 	}
 
+	/**
+	 * >>  "procedure" procedureIdentifier FormalParameterList
+	 */
 	private void procedureHeading() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_procedure":
@@ -374,6 +408,9 @@ public class Parser {
 
 	}
 
+	/**
+	 * >>  "function" functionIdentifier FormalParameterList Type
+	 */
 	private void functionHeading() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_function":
@@ -401,6 +438,9 @@ public class Parser {
 
 	}
 
+	/**
+	 * >>  "(" FormalParameterSection FormalParameterSectionTail ")"
+	 */
 	private void formalParameterList() {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_lparen":
@@ -417,6 +457,10 @@ public class Parser {
 		}
 	}
 
+	/**
+	 * >>  ValueParameterSection
+	 * >>  VariableParameterSection 
+	 */
 	private void formalParameterSection() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_identifier":
@@ -430,6 +474,9 @@ public class Parser {
 		}
 	}
 
+	/**
+	 * >> IdentifierList ":" Type
+	 */
 	private void valueParameterSection() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_identifier": // valueParameterSection -> IdentifierList, ":", Type
@@ -447,10 +494,12 @@ public class Parser {
 		}
 	}
 
+	/**
+	 * >>  "var" IdentifierList ":" Type            
+	 */
 	private void variableParameterSection() {
 		switch (lookAhead.getIdentifier()) {
-			case "mp_var": // variableParameterSection -> "var" ,identifierList,
-							// ":", Type
+			case "mp_var":
 				match("var");
 				retValues = identifierList();
 				match(":");
@@ -467,6 +516,9 @@ public class Parser {
 
 	}
 
+	/**
+	 * >> begin StatementSequence "end"
+	 */
 	private void compoundStatement() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_begin": // compoundStatement -> "begin", statementSequence, "end"
@@ -483,8 +535,10 @@ public class Parser {
 
 	}
 
+	/**
+	 * >> Statement StatementTail
+	 */
 	private void statementSequence() {
-
 		switch (lookAhead.getIdentifier()) {
 			case "mp_begin": // statementSequence -> statement
 			case "mp_for": // statementSequence -> statement
@@ -506,6 +560,9 @@ public class Parser {
 		}
 	}
 	
+	/**
+	 * >>  ";" Statement StatementTail
+	 */
 	private void statementTail() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_begin": // statementTail -> statement
@@ -535,6 +592,18 @@ public class Parser {
 		}
 	}
 	
+	/**
+	 * >>  EmptyStatement
+	 * >>  CompoundStatement
+	 * >>  ReadStatement
+	 * >>  WriteStatement
+	 * >>  AssignmentStatement
+	 * >>  IfStatement
+	 * >>  WhileStatement
+	 * >>  RepeatStatement
+	 * >>  ForStatement
+	 * >>  ProcedureStatement
+	 */
 	private void statement() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_begin": // statement -> statementSequence
@@ -583,13 +652,19 @@ public class Parser {
 		}
 	}
 	
+	/**
+	 * >> empty
+	 * (modified)
+	 */
 	private void emptyStatement() {
 		while(lookAhead.getIdentifier().equals("mp_scolon")){
 			match(";");
 		}
-
 	}
 
+	/**
+	 * >>  "read" readParameterList
+	 */
 	private void readStatement() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_read": // readStatement -> "read", readParameterList
@@ -602,6 +677,10 @@ public class Parser {
 
 	}
 
+	/**
+	 * >>  write writeParameterList
+	 * >>  writeln writeParameterList
+	 */
 	private void writeStatement() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_write": // writeStatement -> "write", writeParameterList
@@ -619,6 +698,10 @@ public class Parser {
 
 	}
 
+	/**
+	 * >>  VariableIdentifier ":=" Expression
+	 * >>  FunctionIdentifier ":=" Expression
+	 */
 	private void assignmentStatement() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_identifier": // assignmentStatement -> (Variable|FunctionIdentifier), ":=", expression
@@ -705,6 +788,9 @@ public class Parser {
 		}
 	}
 
+	/**
+	 * >> if BooleanExpression "then" Statement {else Statement}
+	 */
 	private void ifStatement() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_if": // ifStatement -> "if", booleanExpression, "then", statement, ["else", statement]
@@ -731,6 +817,9 @@ public class Parser {
 
 	}
 
+	/**
+	 * >> repeat StatementSequence "until" BooleanExpression
+	 */
 	private void repeatStatement() {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_repeat": // repeatStatement -> "repeat", statementSequence, "until", booleanExpression
@@ -749,6 +838,9 @@ public class Parser {
 		}
 	}
 
+	/**
+	 * >> while BooleanExpression "do" Statement
+	 */
 	private void whileStatement() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_while": // whileStatement -> "while", booleanExpression, "do"
@@ -768,6 +860,9 @@ public class Parser {
 		}
 	}
 
+	/**
+	 * >> for ControlVariable ":=" InitialValue StepValue FinalValue "do" Statement
+	 */
 	private void forStatement() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_for": // forStatement -> "for", controlVariable, ":=", initialValue, ("to"|"downto"), finalVariable, "do", statement\
@@ -835,18 +930,33 @@ public class Parser {
 		}
 	}
 
+	/**
+	 * >>  VariableIdentifier
+	 */
 	private void controlVariable() {
 		variableIdentifier();
 	}
 
+	/**
+	 * >>  OrdinalExpression
+	 */
 	private void initialValue() {
 		ordinalExpression();
 	}
 
+	/**
+	 * >>  OrdinalExpression
+	 */
 	private void finalValue() {
 		ordinalExpression();
 	}
 
+	/**
+	 * >> SimpleExpression Expression
+	 * >> RelationalOperator SimpleExpression
+	 * 
+	 * @return	Type of variable left on stack
+	 */
 	private SR expression() {
 		
 		SR sr1, sr2;
@@ -1111,8 +1221,13 @@ public class Parser {
 		
 	}
 
+	/**
+	 * >> OptionalSign Term TermTail
+	 * 
+	 * @return	Type of variable left on stack
+	 */
 	private SR simpleExpression() {
-		//optional sign
+		// optional sign
 		boolean negative = false;
 		if (lookAhead.getIdentifier()=="mp_plus" || lookAhead.getIdentifier()=="mp_minus") {
 			if (lookAhead.getIdentifier()=="mp_minus") {
@@ -1245,6 +1360,11 @@ public class Parser {
 		return sr;
 	}
 
+	/**
+	 * >> Factor {MultiplyingOperator Factor FactorTail}
+	 * 
+	 * @return	Type of variable left on stack
+	 */
 	private SR term() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_identifier":
@@ -1480,6 +1600,15 @@ public class Parser {
 		return sr;
 	}
 
+	/**
+	 * >> UnsignedInteger
+	 * >> VariableIdentifier
+	 * >> not Factor
+	 * >> "(" Expression ")"
+	 * >> FunctionDesignatorTail
+	 * 
+	 * @return	Type of variable left on stack
+	 */
 	private SR factor() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_integer_lit":
@@ -1557,6 +1686,14 @@ public class Parser {
 
 	}
 
+	/**
+	 * >> "="
+	 * >> "<"
+	 * >> ">"
+	 * >> "<="
+	 * >> ">="
+	 * >> "<>"
+	 */
 	private void relationalOperator() {
 		switch (lookAhead.getIdentifier()) {
 		case "mp_equal":
@@ -1582,6 +1719,11 @@ public class Parser {
 		}
 	}
 
+	/**
+	 * >> "+"
+	 * >> "-"
+	 * >> "or"
+	 */
 	private void addingOperator() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_plus":
@@ -1598,28 +1740,38 @@ public class Parser {
 		}
 	}
 
+	/**
+	 * >> "*"
+	 * >> "div"
+	 * >> "/"
+	 * >> "mod"
+	 * >> "and"
+	 */
 	private void multiplyingOperator() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_times":
-			match("*");
-			break;
-		case "mp_div":
-			match("div");
-			break;
-		case "mp_divide_float":
-			match("/");
-			break;
-		case "mp_mod":
-			match("mod");
-			break;
-		case "mp_and":
-			match("and");
-			break;
-		default:
-			handleError(false, "Multiplying Operator");
+			case "mp_times":
+				match("*");
+				break;
+			case "mp_div":
+				match("div");
+				break;
+			case "mp_divide_float":
+				match("/");
+				break;
+			case "mp_mod":
+				match("mod");
+				break;
+			case "mp_and":
+				match("and");
+				break;
+			default:
+				handleError(false, "Multiplying Operator");
 		}
 	}
 	
+	/**
+	 * >> ProcedureIdentifier {actualParameterList}
+	 */
 	private void procedureStatement() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_identifier": // procedureStatement -> procedureIdentifier, // [actualParameterList]
@@ -1630,7 +1782,6 @@ public class Parser {
 				handleError(false, "Procedure Statement");
 		}
 		
-		// TODO: changed
 		String register = "D"+(passSymbol.getLevel()+1);
 		// leave space for PC pushed by call later
 		compiler.add("SP","#1","SP");
@@ -1648,6 +1799,12 @@ public class Parser {
 		compiler.call(passSymbol.label);
 	}
 
+	/**
+	 * >> FunctionIdentifier
+	 * >> FunctionDesignatorTail
+	 * 
+	 * @return	The return type of the function left on the stack
+	 */
 	private SR functionDesignator() {
 		SR sr = null;
 		switch (lookAhead.getIdentifier()) {
@@ -1662,6 +1819,9 @@ public class Parser {
 		return sr;
 	}
 	
+	/**
+	 * >> empty
+	 */
 	private void functionDesignatorTail() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_lparen":
@@ -1705,6 +1865,11 @@ public class Parser {
 		}
 	}
 
+	/**
+	 * >> variableIdentifier
+	 * 
+	 * @return
+	 */
 	private SR variable() {
 		SR sr = null;
 		switch (lookAhead.getIdentifier()) {
@@ -1721,7 +1886,11 @@ public class Parser {
 		return sr;
 	}
 	
-	// returns number of parameters seen
+	/**
+	 * >>  "(" ActualParameter ActualParameterTail ")"
+	 * 
+	 * @return	number of parameters seen
+	 */
 	private int actualParameterList() {
 		int count = 0;
 		switch (lookAhead.getIdentifier()) {
@@ -1834,35 +2003,9 @@ public class Parser {
 		return count;
 	}
 	
-	/*
-	ActualParameter >> 
-		OrdinalExpression >>
-			Expression >> 
-				SimpleExpression >>
-					OptionalSign >> "+"
-					Term >>
-						Factor >> 
-							UnsignedInteger
-							VariableIdentifier >> 
-								Identifier
-							"not" Factor
-							"(" Expression ")"
-							FunctionIdentifier >> 
-								Identifier
-							OptionalActualParameterList >> 
-								"(" ActualParameter ActualParameterTail ")"
-						FactorTail >> 
-							MultiplyingOperator >> "*"
-							Factor
-							FactorTail
-					TermTail >>
-						AddingOperator >> "+"
-						Term
-						TermTail
-				OptionalRelationalPart >>
-					RelationalOperator >> "="
-					SimpleExpression
-	*/
+	/**
+	 * >> Expression
+	 */
 	private void actualParameter() {
 		switch (lookAhead.getIdentifier()) {
 			case "not":
@@ -1883,7 +2026,9 @@ public class Parser {
 		}
 	}
 
-	// >> "(" readParameter [ "," readParameter ]*
+	/**
+	 * >> "(" readParameter [ "," readParameter ]*
+	 */
 	private void readParameterList() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_lparen":
@@ -1900,7 +2045,9 @@ public class Parser {
 		}
 	}
 
-	// >> VariableIdentifier
+	/**
+	 * >> VariableIdentifier
+	 */
 	private void readParameter() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_identifier":
@@ -1923,7 +2070,9 @@ public class Parser {
 		}
 	}
 
-	// >> "(" writeParameter [ "," writeParameter ]*
+	/**
+	 *  >> "(" writeParameter [ "," writeParameter ]*
+	 */
 	private void writeParameterList() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_scolon":
@@ -1943,7 +2092,9 @@ public class Parser {
 		
 	}
 
-	//  >> OrdinalExpression
+	/**
+	 *   >> OrdinalExpression
+	 */
 	private void writeParameter() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_string_lit":
@@ -1982,7 +2133,9 @@ public class Parser {
 		
 	}
 
-	// >> Expression
+	/**
+	 *  >> Expression
+	 */
 	private void booleanExpression() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_not":
@@ -1998,7 +2151,9 @@ public class Parser {
 		}
 	}
 	
-	// >> Expression
+	/**
+	 *  >> Expression
+	 */
 	private void ordinalExpression() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_not":
@@ -2014,7 +2169,11 @@ public class Parser {
 		}
 	}
 
-	// >> Identifier
+	/**
+	 *  >> Identifier
+	 * 
+	 * @return	The type of the variable that was found
+	 */
 	private SR variableIdentifier() {
 		SR sr = null;
 		switch (lookAhead.getIdentifier()) {
@@ -2031,7 +2190,9 @@ public class Parser {
 		return sr;
 	}
 
-	// >> Identifier
+	/**
+	 *  >> Identifier
+	 */
 	private void procedureIdentifier() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_identifier":
@@ -2044,7 +2205,11 @@ public class Parser {
 		}
 	}
 	
-	// >> Identifier
+	/**
+	 *  >> Identifier
+	 * 
+	 * @return	The return type of the function found
+	 */
 	private SR functionIdentifier() {
 		SR sr = null;
 		switch (lookAhead.getIdentifier()) {
@@ -2058,25 +2223,38 @@ public class Parser {
 		return sr;
 	}
 
-	// >> identifier IdentifierTail
+	/**
+	 *  >> identifier IdentifierTail
+	 * 
+	 * @return	The list of lexemes seen in the list
+	 */
 	private ArrayList<String> identifierList() {
 		switch (lookAhead.getIdentifier()) {
-		case "mp_identifier":
-			ArrayList<String> varLexemes = new ArrayList<String>();
-			varLexemes.add(lookAhead.getLexeme());
-			identifier();
-			while (lookAhead.getIdentifier().equals("mp_comma")) {
-				match(",");
+			case "mp_identifier":
+				ArrayList<String> varLexemes = new ArrayList<String>();
 				varLexemes.add(lookAhead.getLexeme());
 				identifier();
-			}
-			return varLexemes;
-		default:
-			handleError(false, "Identifier List");
-			return null;
+				while (lookAhead.getIdentifier().equals("mp_comma")) {
+					match(",");
+					varLexemes.add(lookAhead.getLexeme());
+					identifier();
+				}
+				return varLexemes;
+			default:
+				handleError(false, "Identifier List");
+				return null;
 		}
 	}
 
+	/**
+	 * >> "identifier"
+	 * >> "mp_string_lit"
+	 * >> "mp_int_lit"
+	 * >> "mp_fixed_lit"
+	 * >> "mp_float_lit"
+	 * 
+	 * @return	The type of the identifier seen
+	 */
 	private SR identifier() {
 		SR sr = null;
 		switch (lookAhead.getIdentifier()) {
@@ -2106,6 +2284,11 @@ public class Parser {
 		return sr;
 	}
 
+	/**
+	 * >> "mp_integer_lit"
+	 * 
+	 * @return	A type of integer
+	 */
 	private SR unsignedInteger() {
 		SR sr = null;
 		switch (lookAhead.getIdentifier()) {
@@ -2119,6 +2302,10 @@ public class Parser {
 		return sr;
 	}
 
+	/**
+	 * >> "+"
+	 * >> "-"
+	 */
 	private void sign() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_plus":
@@ -2133,6 +2320,9 @@ public class Parser {
 		}
 	}
 	
+	/**
+	 * >> empty
+	 */
 	private void digitSequence() {
 		switch (lookAhead.getIdentifier()) {
 			case "mp_integer_lit":
@@ -2152,6 +2342,12 @@ public class Parser {
 		}
 	}
 
+	/**
+	 * Helper function for digitSequence
+	 * 
+	 * @param digit	The digit to search for in character form
+	 * @return		The digit in numerical format
+	 */
 	private boolean digit(char digit) {
 		boolean found = false;
 		char digits[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
@@ -2166,6 +2362,11 @@ public class Parser {
 		return found;
 	}
 	
+	/**
+	 * Retrieves the attributes of all symbols currently in the symbol table.
+	 * 
+	 * @return	A two dimensional array containing the token and type of each symbol
+	 */
 	private String[][] getAttributes(){
 		String[][] params = new String[symbolTable.getSize()][2];
 		for(int i = 0; i<symbolTable.getSize(); i++){
